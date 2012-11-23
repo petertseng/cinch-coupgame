@@ -34,7 +34,12 @@ class Action
     !self.character_required.nil?
   end
 
+  def to_s
+    self.action.to_s
+  end
+
 end
+
 
 #================================================================================
 # GAME
@@ -47,11 +52,6 @@ class Game
 
   MIN_PLAYERS = 3
   MAX_PLAYERS = 6
-  STARTING_DECK = [
-      :duke, :assassin, :contessa, :captain, :ambassador,
-      :duke, :assassin, :contessa, :captain, :ambassador,
-      :duke, :assassin, :contessa, :captain, :ambassador
-    ]
   COINS = 50
   ACTIONS = {
     :income      => Action.new( :action       => :income,
@@ -106,12 +106,13 @@ class Game
                                 :blocks             => :assassin)
   }
 
-  attr_accessor :started, :players, :deck, :turns, :invitation_sent
+  attr_accessor :started, :players, :deck, :discard_pile, :turns, :invitation_sent
   
   def initialize
     self.started         = false
     self.players         = []
-    self.deck            = STARTING_DECK
+    self.deck            = self.build_starting_deck
+    self.discard_pile    = []
     self.turns           = []
     self.invitation_sent = false
   end
@@ -203,6 +204,18 @@ class Game
     self.next_turn
   end
 
+  # Build starting deck
+  #
+  def build_starting_deck
+    deck = []
+    [:duke, :assassin, :contessa, :captain, :ambassador].each do |char|
+      3.times.each do 
+        deck << Character.new(char)
+      end
+    end
+    deck
+  end
+
   # Shuffle the deck, pass out characters and coins
   #
   def pass_out_characters_and_coins
@@ -218,8 +231,23 @@ class Game
     puts "="*80
   end
 
+  # Move a player's characters to discard pile
+  #
+  def discard_characters_for(player)
+    player.characters.each do |c|
+      self.discard_pile << c
+    end
+  end
 
-
+  # Removes character from player, switches with new from deck
+  #
+  def replace_character_with_new(player, character)
+    position = player.character_position(character)
+    old_character = player.characters[position]
+    self.deck << old_character
+    self.deck.shuffle!
+    player.characters[position] = self.deck.shift
+  end
 
 
   # TURNS
@@ -238,14 +266,14 @@ class Game
       self.current_player.give_coins 2
     when :coup
       self.current_player.take_coins 7
-      # TARGET TO LOSE INFLUENCE  
+      self.current_turn.make_decider self.target_player
     when :duke
       self.current_player.give_coins 3
     when :assassin
       self.current_player.take_coins 3
-      # TARGET TO LOSE INFLUENCE  
+      self.current_turn.make_decider self.target_player
     when :ambassador
-      # EXCHANGE CARDS WITH DECK
+      self.current_turn.make_decider self.current_player
     when :captain
       self.current_player.give_coins 2
       self.target_player.take_coins 2
@@ -301,11 +329,11 @@ class Game
   # GAME STATE
 
   def is_over?
-    
+    self.players.one? {|p| p.has_influence? }
   end
 
-  def winner?
-    
+  def winner
+    self.players.find {|p| p.has_influence? }
   end
 
   #----------------------------------------------
@@ -328,15 +356,16 @@ end
 
 class Turn
 
-  attr_accessor :active_player, :action, :target_player, :counteraction, :reactions, :state
+  attr_accessor :active_player, :action, :target_player, :counteraction, :decider, :reactions, :state
 
   def initialize(player)
-    self.state         = :action # action, reactions, decision, end
-    self.active_player = player
-    self.target_player = nil
-    self.action        = nil
-    self.counteraction = nil
-    self.reactions     = {}
+    self.state          = :action # action, reactions, paused, decision, end
+    self.active_player  = player
+    self.target_player  = nil
+    self.action         = nil
+    self.counteraction  = nil
+    self.decider        = nil # for when waiting on flips
+    self.reactions      = {}
   end 
 
 
@@ -351,6 +380,10 @@ class Turn
     end
   end
 
+  def make_decider(player)
+    self.decider = player
+  end
+
   # State methods
 
   def waiting_for_action?
@@ -359,6 +392,10 @@ class Turn
 
   def waiting_for_reactions?
     self.state == :reactions
+  end
+
+  def paused?
+    self.state == :paused
   end
 
   def waiting_for_decision?
@@ -371,6 +408,10 @@ class Turn
 
   def wait_for_reactions
     self.state = :reactions
+  end
+
+  def pause
+    self.state = :paused
   end
 
   def wait_for_decision
@@ -399,7 +440,36 @@ class Player
   end 
 
   def receive_characters(characters)
-    self.characters = characters
+    characters.each do |c|
+      self.characters << c
+    end
+  end
+
+  def flip_character_card(position)
+    # receive 1 or 2, translate to 0 or 1
+    self.characters[position-1].flip_up
+    self.characters[position-1]
+  end
+
+  def has_character?(character)
+    self.characters.select{ |c| c.face_down? }.any?{ |c| c.name == character }
+  end
+
+  def character_position(character)
+    char = self.characters.select{ |c| c.face_down? }.find{ |c| c.name == character }
+    self.characters.index(char)
+  end
+
+  def switch_character(character, position)
+
+  end
+
+  def has_influence?
+    self.characters.any?{ |c| c.face_down? }
+  end
+
+  def influence
+    self.characters.select{ |c| c.face_down? }.size
   end
 
   def give_coins(amount)
@@ -412,6 +482,34 @@ class Player
 
   def to_s
     self.user.nick
+  end
+
+end
+
+
+#================================================================================
+# CHARACTER
+#================================================================================
+
+class Character
+
+  attr_accessor :name, :face_down
+
+  def initialize(name)
+    self.name = name
+    self.face_down = true
+  end 
+
+  def flip_up
+    self.face_down = false
+  end
+
+  def face_down?
+    self.face_down
+  end
+
+  def to_s
+    self.name.to_s.upcase
   end
 
 end

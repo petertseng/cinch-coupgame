@@ -41,6 +41,9 @@ module Cinch
       match /challenge/i,            :method => :react_challenge
       match /bs/i,                   :method => :react_challenge
 
+      match /lose (1|2)/i,           :method => :flip_card      
+
+      match /me$/i,                  :method => :whoami
       match /table$/i,               :method => :show_table
       match /who$/i,                 :method => :list_players
 
@@ -153,7 +156,7 @@ module Cinch
 
               Channel(@channel_name).send "The game has started."
 
-              #self.pass_out_characters
+              self.pass_out_characters
 
               Channel(@channel_name).send "Turn order is: #{@game.players.map{ |p| p.user.nick }.join(' ')}"
               Channel(@channel_name).send "FIRST TURN. Player: #{@game.current_player}. Please choose an action."
@@ -170,6 +173,30 @@ module Cinch
       #--------------------------------------------------------------------------------
       # Game interaction methods
       #--------------------------------------------------------------------------------
+
+      def pass_out_characters
+        @game.players.each do |p|
+          User(p.user).send "="*40
+          self.tell_characters_to(p)
+        end
+      end
+
+      def whoami(m)
+        if @game.started? && @game.has_player?(m.user)
+          player = @game.find_player(m.user)
+          self.tell_characters_to(player)
+        end
+      end
+      
+      def tell_characters_to(player, tell_coins = true)
+        character_1, character_2 = player.characters
+
+        char1_str = character_1.face_down? ? "(#{character_1})" : "[#{character_1}]"
+        char2_str = character_2.face_down? ? "(#{character_2})" : "[#{character_2}]"
+        coins_str = tell_coins ? " - Coins: #{player.coins}" : ""
+        User(player.user).send "#{char1_str} #{char2_str}#{coins_str}"
+      end
+
 
       def do_action(m, action, target = "")
         if @game.started? && @game.has_player?(m.user)
@@ -221,11 +248,80 @@ module Cinch
         end
       end
 
+      def react_challenge(m)
+        if @game.started? && @game.has_player?(m.user)
+          player = @game.find_player(m.user)
+          if @game.current_turn.waiting_for_reactions? && @game.reacting_players.include?(player)
+            if @game.current_turn.action.character_required?
+              @game.current_turn.pause
+              Channel(@channel_name).send "#{m.user.nick} challenges #{@game.current_player} on #{@game.current_turn.action}!"
+              sleep 3
+              if @game.current_player.has_character?(@game.current_turn.action.action)
+                Channel(@channel_name).send "... and #{@game.current_player} has a [#{@game.current_turn.action.character_required.to_s.upcase}]. #{player} loses an influence."
+                @game.replace_character_with_new(@game.current_player, @game.current_turn.action.character_required)
+                Channel(@channel_name).send "#{@game.current_player} switches the character card with one from the deck."
+                self.tell_characters_to(@game.current_player, false)
+                loser = player
+              else 
+                Channel(@channel_name).send "... and #{@game.current_player} does not have a [#{@game.current_turn.action.character_required.to_s.upcase}]. #{@game.current_player} loses an influence."
+                loser = @game.current_player
+              end
+              @game.current_turn.make_decider(loser)
+              @game.current_turn.wait_for_decision
+              self.prompt_to_flip(loser)
+            else
+              User(m.user).send "That action cannot be challenged."
+            end
+          end
+        end
+      end
+
+      def prompt_to_flip(target)
+        if target.influence == 2
+          character_1, character_2 = target.characters
+          User(target.user).send "Choose a character to turn face up: 1 - (#{character_1}) or 2 - (#{character_2}); \"!lose 1\" or \"!lose 2\""
+        else 
+          character = target.characters.find{ |c| c.face_down? }
+          i = target.characters.index(character)
+          User(target.user).send "You only have one character left. #{i+1} - (#{character}); \"!lose #{i+1}\""
+        end
+      end
+
+      def flip_card(m, position)
+        if @game.started? && @game.has_player?(m.user)
+          player = @game.find_player(m.user)
+          if @game.current_turn.waiting_for_decision? && @game.current_turn.decider == player
+            character = player.flip_character_card(position.to_i)
+            Channel(@channel_name).send "#{m.user.nick} turns a #{character} face up."
+            self.check_player_status(player)
+            self.start_new_turn
+          end
+        end
+      end
+
       def show_table(m)
         @game.players.each do |p|
           character_1, character_2 = p.characters
-          # SHOW FACE UP CHARACTERS WHEN THEY ARE FACE UP
-          m.reply "#{dehighlight_nick(p.to_s)}: (########) (########) - Coins: #{p.coins}"
+
+          char1_str = character_1.face_down? ? "(########)" : "[#{character_1}]"
+          char2_str = character_2.face_down? ? "(########)" : "[#{character_2}]"
+          m.reply "#{dehighlight_nick(p.to_s)}: #{char1_str} #{char2_str} - Coins: #{p.coins}"
+        end
+        unless @game.discard_pile.empty?
+          discards = @game.discard_pile.map{ |c| "[#{c}]" }.join(" ")
+          m.reply "Discard Pile: #{discards}"
+        end
+      end
+
+      def check_player_status(player)
+        unless player.has_influence?
+          Channel(@channel_name).send "#{player} has no more influence, and is out of the game."
+          @game.discard_characters_for(player)
+          left = @game.remove_player(player.user)
+          unless left.nil?
+            Channel(@channel_name).devoice(player.user)
+          end
+          self.check_game_state 
         end
       end
 
@@ -236,6 +332,9 @@ module Cinch
         @game.process_current_turn
         if turn.action.needs_decision?
           turn.wait_for_decision
+          if turn.action.action == :coup || turn.action.action == :assassin
+            self.prompt_to_flip(turn.target_player)
+          end
         else
           self.start_new_turn
         end
@@ -251,7 +350,7 @@ module Cinch
         if @game.is_over?
           self.do_end_game
         else
-          self.start_new_round
+          self.start_new_turn
         end
       end
 
@@ -371,27 +470,6 @@ module Cinch
           end
         end
       end
-
-      # def who_spies(m)
-      #   if self.is_mod? m.user.nick
-      #     if @game.started?
-      #       if @game.has_player?(m.user)
-      #         User(m.user).send "You are in the game, goof!"
-      #       else
-      #         spies, resistance = get_loyalty_info  
-      #         if @game.type == :avalon
-      #           User(m.user).send "Avalon Roles:"
-      #           User(m.user).send "Spies are #{spies.join(", ")}."
-      #           User(m.user).send "Resistance are #{resistance.join(", ")}."
-      #         else
-      #           User(m.user).send "Okay! The spies are: #{spies.join(", ")}."
-      #         end
-      #       end
-      #     else
-      #       User(m.user).send "There is no game going on."
-      #     end
-      #   end
-      # end
 
 
       #--------------------------------------------------------------------------------
