@@ -231,7 +231,22 @@ module Cinch
       end
 
       def do_block(m, action)
-        m.reply "Block: #{action}"
+        if @game.started? && @game.has_player?(m.user)
+          player = @game.find_player(m.user)
+          if @game.current_turn.waiting_for_reactions? && @game.reacting_players.include?(player)
+            if @game.current_turn.action.blockable?
+              if Game::ACTIONS[action.to_sym].blocks == @game.current_turn.action.action
+                @game.current_turn.add_counteraction(action, player)
+                Channel(@channel_name).send "#{m.user.nick} uses #{action.upcase}"
+                @game.current_turn.wait_for_reactions
+              else
+                User(m.user).send "#{action.upcase} does not block that #{@game.current_turn.action.action.upcase}."
+              end
+            else
+              User(m.user).send "#{@game.current_turn.action.action.upcase} cannot be blocked."
+            end
+          end
+        end
       end
 
       def react_pass(m)
@@ -252,25 +267,28 @@ module Cinch
         if @game.started? && @game.has_player?(m.user)
           player = @game.find_player(m.user)
           if @game.current_turn.waiting_for_reactions? && @game.reacting_players.include?(player)
-            if @game.current_turn.action.character_required?
+            chall_player = @game.current_turn.challengee_player
+            chall_action = @game.current_turn.challengee_action
+
+            if chall_action.character_required?
               @game.current_turn.pause
-              Channel(@channel_name).send "#{m.user.nick} challenges #{@game.current_player} on #{@game.current_turn.action}!"
+              Channel(@channel_name).send "#{m.user.nick} challenges #{chall_player} on #{chall_action.to_s.upcase}!"
               sleep 3
-              if @game.current_player.has_character?(@game.current_turn.action.action)
-                Channel(@channel_name).send "... and #{@game.current_player} has a [#{@game.current_turn.action.character_required.to_s.upcase}]. #{player} loses an influence."
-                @game.replace_character_with_new(@game.current_player, @game.current_turn.action.character_required)
-                Channel(@channel_name).send "#{@game.current_player} switches the character card with one from the deck."
-                self.tell_characters_to(@game.current_player, false)
+              if chall_player.has_character?(chall_action.action)
+                Channel(@channel_name).send "... and #{chall_player} has a [#{chall_action.character_required.to_s.upcase}]. #{player} loses an influence."
+                @game.replace_character_with_new(chall_player, chall_action.character_required)
+                Channel(@channel_name).send "#{chall_player} switches the character card with one from the deck."
+                self.tell_characters_to(chall_player, false)
                 loser = player
               else 
-                Channel(@channel_name).send "... and #{@game.current_player} does not have a [#{@game.current_turn.action.character_required.to_s.upcase}]. #{@game.current_player} loses an influence."
-                loser = @game.current_player
+                Channel(@channel_name).send "... and #{chall_player} does not have a [#{chall_action.character_required.to_s.upcase}]. #{chall_player} loses an influence."
+                loser = chall_player
               end
               @game.current_turn.make_decider(loser)
               @game.current_turn.wait_for_decision
               self.prompt_to_flip(loser)
             else
-              User(m.user).send "That action cannot be challenged."
+              User(m.user).send "#{chall_action.action.upcase} cannot be challenged."
             end
           end
         end
@@ -327,16 +345,21 @@ module Cinch
 
       def process_turn
         turn = @game.current_turn
-        target_msg = turn.target_player.nil? ? "" : ": #{turn.target_player}"
-        Channel(@channel_name).send "#{@game.current_player} proceeds with #{turn.action.action.upcase}. #{turn.action.effect}#{target_msg}."
-        @game.process_current_turn
-        if turn.action.needs_decision?
-          turn.wait_for_decision
-          if turn.action.action == :coup || turn.action.action == :assassin
-            self.prompt_to_flip(turn.target_player)
-          end
-        else
+        if turn.counteracted? 
+          Channel(@channel_name).send "#{turn.active_player}'s #{turn.action.action.upcase} was blocked by #{turn.counteracting_player} with #{turn.counteraction.action.upcase}."
           self.start_new_turn
+        else
+          target_msg = turn.target_player.nil? ? "" : ": #{turn.target_player}"
+          Channel(@channel_name).send "#{@game.current_player} proceeds with #{turn.action.action.upcase}. #{turn.action.effect}#{target_msg}."
+          @game.process_current_turn
+          if turn.action.needs_decision?
+            turn.wait_for_decision
+            if turn.action.action == :coup || turn.action.action == :assassin
+              self.prompt_to_flip(turn.target_player)
+            end
+          else
+            self.start_new_turn
+          end
         end
       end
 

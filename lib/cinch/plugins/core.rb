@@ -34,6 +34,10 @@ class Action
     !self.character_required.nil?
   end
 
+  def blockable?
+    !self.blockable_by.empty?
+  end
+
   def to_s
     self.action.to_s
   end
@@ -252,11 +256,6 @@ class Game
 
   # TURNS
 
-  # Check and see if action is valid
-  #
-  def valid_action?(action)
-    [:duke, :assassin, :contessa, :captain, :ambassador, :income, :foreign_aid, :coup].include? action
-  end
 
   def process_current_turn
     case self.current_turn.action.action
@@ -321,8 +320,12 @@ class Game
     self.current_turn.target_player
   end
 
+  def counteracting_player
+    self.current_turn.counteracting_player
+  end
+
   def reacting_players
-    self.current_turn.counteraction.nil? ? (self.players - [self.current_player]) : (self.players - [self.target_player])
+    self.current_turn.counteraction.nil? ? (self.players - [self.current_player]) : (self.players - [self.counteracting_player])
   end
 
 
@@ -356,22 +359,29 @@ end
 
 class Turn
 
-  attr_accessor :active_player, :action, :target_player, :counteraction, :decider, :reactions, :state
+  attr_accessor :active_player, :action, :target_player, :counteracting_player, :counteraction, :decider, :reactions, :state
 
   def initialize(player)
-    self.state          = :action # action, reactions, paused, decision, end
-    self.active_player  = player
-    self.target_player  = nil
-    self.action         = nil
-    self.counteraction  = nil
-    self.decider        = nil # for when waiting on flips
-    self.reactions      = {}
+    self.state                = :action # action, reactions, paused, decision, end
+    self.active_player        = player
+    self.target_player        = nil
+    self.action               = nil
+    self.counteraction        = nil
+    self.counteracting_player = nil
+    self.decider              = nil # for when waiting on flips
+    self.reactions            = {}
   end 
 
 
   def add_action(action, target = nil)
     self.action        = Game::ACTIONS[action.to_sym]
     self.target_player = target
+  end
+
+  def add_counteraction(action, player)
+    self.counteraction        = Game::ACTIONS[action.to_sym]
+    self.counteracting_player = player
+    self.reactions            = {}
   end
 
   def pass(player)
@@ -382,6 +392,18 @@ class Turn
 
   def make_decider(player)
     self.decider = player
+  end
+
+  def counteracted?
+    self.counteraction != nil
+  end
+
+  def challengee_action
+    self.counteracted? ? self.counteraction : self.action
+  end
+
+  def challengee_player
+    self.counteracted? ? self.counteracting_player : self.active_player
   end
 
   # State methods
