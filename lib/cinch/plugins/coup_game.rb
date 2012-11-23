@@ -28,12 +28,24 @@ module Cinch
         @idle_timer   = self.start_idle_timer
       end
 
+      # start 
+      match /join/i,                 :method => :join
+      match /leave/i,                :method => :leave
+      match /start/i,                :method => :start_game
+    
+      # game    
+      match /action (duke|ambassador|income|foreign_aid)/i,   :method => :do_action
+      match /action (assassin|captain|coup) (.+)/i,           :method => :do_action
+      match /block (duke|contessa|captain|ambassador)/i,      :method => :do_block
+      match /pass/i,                 :method => :react_pass
+      match /challenge/i,            :method => :react_challenge
+      match /bs/i,                   :method => :react_challenge
 
-      match /join/i,             :method => :join
-      match /leave/i,            :method => :leave
-      match /start/i,            :method => :start_game
+      match /table$/i,               :method => :show_table
+      match /who$/i,                 :method => :list_players
 
-      # helpers
+
+      # other
       match /invite/i,               :method => :invite
       match /subscribe/i,            :method => :subscribe
       match /unsubscribe/i,          :method => :unsubscribe
@@ -42,18 +54,18 @@ module Cinch
       match /rules ?(.+)?/i,         :method => :rules
       match /changelog$/i,           :method => :changelog_dir
       match /changelog (\d+)/i,      :method => :changelog
-      match /about/i,                :method => :about
+      # match /about/i,              :method => :about
    
       # mod only commands
-      match /reset/i,              :method => :reset_game
-      match /replace (.+?) (.+)/i, :method => :replace_user
-      match /kick (.+)/i,          :method => :kick_user
-      match /room (.+)/i,          :method => :room_mode
-      # match /roles/i,              :method => :who_spies
+      match /reset/i,                :method => :reset_game
+      match /replace (.+?) (.+)/i,   :method => :replace_user
+      match /kick (.+)/i,            :method => :kick_user
+      match /room (.+)/i,            :method => :room_mode
+      # match /chars/i,              :method => :who_chars
 
-      listen_to :join,          :method => :voice_if_in_game
-      listen_to :leaving,       :method => :remove_if_not_started
-      listen_to :op,            :method => :devoice_everyone_on_start
+      listen_to :join,               :method => :voice_if_in_game
+      listen_to :leaving,            :method => :remove_if_not_started
+      listen_to :op,                 :method => :devoice_everyone_on_start
 
 
       #--------------------------------------------------------------------------------
@@ -89,6 +101,298 @@ module Cinch
           end
         end
       end
+
+
+      #--------------------------------------------------------------------------------
+      # Main IRC Interface Methods
+      #--------------------------------------------------------------------------------
+
+      def join(m)
+        # self.reset_timer(m)
+        if Channel(@channel_name).has_user?(m.user)
+          if @game.accepting_players? 
+            added = @game.add_player(m.user)
+            unless added.nil?
+              Channel(@channel_name).send "#{m.user.nick} has joined the game (#{@game.players.count}/#{Game::MAX_PLAYERS})"
+              Channel(@channel_name).voice(m.user)
+            end
+          else
+            if @game.started?
+              Channel(@channel_name).send "#{m.user.nick}: Game has already started."
+            elsif @game.at_max_players?
+              Channel(@channel_name).send "#{m.user.nick}: Game is at max players."
+            else
+              Channel(@channel_name).send "#{m.user.nick}: You cannot join."
+            end
+          end
+        else
+          User(m.user).send "You need to be in #{@channel_name} to join the game."
+        end
+      end
+
+      def leave(m)
+        if @game.accepting_players?
+          left = @game.remove_player(m.user)
+          unless left.nil?
+            Channel(@channel_name).send "#{m.user.nick} has left the game (#{@game.players.count}/#{Game::MAX_PLAYERS})"
+            Channel(@channel_name).devoice(m.user)
+          end
+        else
+          if @game.started?
+            m.reply "Game is in progress.", true
+          end
+        end
+      end
+
+      def start_game(m)
+        unless @game.started?
+          if @game.at_min_players?
+            if @game.has_player?(m.user)
+              @idle_timer.stop
+              @game.start_game!
+
+              Channel(@channel_name).send "The game has started."
+
+              #self.pass_out_characters
+
+              Channel(@channel_name).send "Turn order is: #{@game.players.map{ |p| p.user.nick }.join(' ')}"
+              Channel(@channel_name).send "FIRST TURN. Player: #{@game.current_player}. Please choose an action."
+              #User(@game.team_leader.user).send "You are team leader. Please choose a team of #{@game.current_team_size} to go on first mission. \"!team#{team_example(@game.current_team_size)}\""
+            else
+              m.reply "You are not in the game.", true
+            end
+          else
+            m.reply "Need at least #{Game::MIN_PLAYERS} to start a game.", true
+          end
+        end
+      end
+
+      #--------------------------------------------------------------------------------
+      # Game interaction methods
+      #--------------------------------------------------------------------------------
+
+      def do_action(m, action, target = "")
+        if @game.started? && @game.has_player?(m.user)
+          if @game.current_turn.waiting_for_action? && @game.current_player.user == m.user
+
+            if target.empty?
+              target_msg = ""
+            else
+              target_player = @game.find_player(target)
+              if target_player.nil?
+                User(m.user).send "\"#{target}\" is an invalid target."
+              else
+                target_msg = " on #{target}"
+              end
+            end
+
+            unless target_msg.nil?
+              Channel(@channel_name).send "#{m.user.nick} uses #{action.upcase}#{target_msg}"
+              @game.current_turn.add_action(action, target_player)
+              if @game.current_turn.action.needs_reactions?
+                @game.current_turn.wait_for_reactions
+                puts "==== Waiting for reactions"
+              else 
+                self.process_turn
+              end
+            end
+
+          else
+            User(m.user).send "You are not the current player."
+          end
+        end
+      end
+
+      def do_block(m, action)
+        m.reply "Block: #{action}"
+      end
+
+      def react_pass(m)
+        if @game.started? && @game.has_player?(m.user)
+          player = @game.find_player(m.user)
+          if @game.current_turn.waiting_for_reactions? && @game.reacting_players.include?(player)
+            @game.current_turn.pass(player)
+            Channel(@channel_name).send "#{m.user.nick} passes."
+
+            if @game.all_reactions_in?
+              self.process_turn
+            end
+          end
+        end
+      end
+
+      def show_table(m)
+        @game.players.each do |p|
+          character_1, character_2 = p.characters
+          # SHOW FACE UP CHARACTERS WHEN THEY ARE FACE UP
+          m.reply "#{dehighlight_nick(p.to_s)}: (########) (########) - Coins: #{p.coins}"
+        end
+      end
+
+      def process_turn
+        turn = @game.current_turn
+        target_msg = turn.target_player.nil? ? "" : ": #{turn.target_player}"
+        Channel(@channel_name).send "#{@game.current_player} proceeds with #{turn.action.action.upcase}. #{turn.action.effect}#{target_msg}."
+        @game.process_current_turn
+        if turn.action.needs_decision?
+          turn.wait_for_decision
+        else
+          self.start_new_turn
+        end
+      end
+
+      def start_new_turn
+        @game.next_turn
+        Channel(@channel_name).send "#{@game.current_player}: It is your turn. Please choose an action."
+      end
+
+
+      def check_game_state
+        if @game.is_over?
+          self.do_end_game
+        else
+          self.start_new_round
+        end
+      end
+
+      def do_end_game
+        Channel(@channel_name).send "Game is over! #{@game.winner} wins!"
+        self.start_new_game
+      end
+
+      def start_new_game
+        Channel(@channel_name).moderated = false
+        @game.players.each do |p|
+          Channel(@channel_name).devoice(p.user)
+        end
+        @game = Game.new
+        @idle_timer.start
+      end
+
+
+
+      def list_players(m)
+        if @game.players.empty?
+          m.reply "No one has joined the game yet."
+        else
+          m.reply @game.players.map{ |p| dehighlight_nick(p.to_s) }.join(' ')
+        end
+      end
+
+      def devoice_channel
+        Channel(@channel_name).voiced.each do |user|
+          Channel(@channel_name).devoice(user)
+        end
+      end
+
+      def remove_user_from_game(user)
+        if @game.not_started?
+          left = @game.remove_player(user)
+          unless left.nil?
+            Channel(@channel_name).send "#{user.nick} has left the game (#{@game.players.count}/#{Game::MAX_PLAYERS})"
+            Channel(@channel_name).devoice(user)
+          end
+        end
+      end
+
+      def dehighlight_nick(nickname)
+        nickname.chars.to_a.join(8203.chr('UTF-8'))
+      end
+
+      #--------------------------------------------------------------------------------
+      # Mod commands
+      #--------------------------------------------------------------------------------
+
+      def is_mod?(nick)
+        # make sure that the nick is in the mod list and the user in authenticated 
+        user = User(nick) 
+        user.authed? && @mods.include?(user.authname)
+      end
+
+      def reset_game(m)
+        if self.is_mod? m.user.nick
+          if @game.started?
+            spies, resistance = get_loyalty_info
+            Channel(@channel_name).send "The spies were: #{spies.join(", ")}"
+            Channel(@channel_name).send "The resistance were: #{resistance.join(", ")}"
+          end
+          @game = Game.new
+          self.devoice_channel
+          Channel(@channel_name).send "The game has been reset."
+          @idle_timer.start
+        end
+      end
+
+      def kick_user(m, nick)
+        if self.is_mod? m.user.nick
+          if @game.not_started?
+            user = User(nick)
+            left = @game.remove_player(user)
+            unless left.nil?
+              Channel(@channel_name).send "#{user.nick} has left the game (#{@game.players.count}/#{Game::MAX_PLAYERS})"
+              Channel(@channel_name).devoice(user)
+            end
+          else
+            User(m.user).send "You can't kick someone while a game is in progress."
+          end
+        end
+      end
+
+      def replace_user(m, nick1, nick2)
+        if self.is_mod? m.user.nick
+          # find irc users based on nick
+          user1 = User(nick1)
+          user2 = User(nick2)
+          
+          # replace the users for the players
+          player = @game.find_player(user1)
+          player.user = user2
+
+          # devoice/voice the players
+          Channel(@channel_name).devoice(user1)
+          Channel(@channel_name).voice(user2)
+
+          # inform channel
+          Channel(@channel_name).send "#{user1.nick} has been replaced with #{user2.nick}"
+
+          # tell loyalty to new player
+          User(player.user).send "="*40
+          self.tell_loyalty_to(player)
+        end
+      end
+
+      def room_mode(m, mode)
+        if self.is_mod? m.user.nick
+          case mode
+          when "silent"
+            Channel(@channel_name).moderated = true
+          when "vocal"
+            Channel(@channel_name).moderated = false
+          end
+        end
+      end
+
+      # def who_spies(m)
+      #   if self.is_mod? m.user.nick
+      #     if @game.started?
+      #       if @game.has_player?(m.user)
+      #         User(m.user).send "You are in the game, goof!"
+      #       else
+      #         spies, resistance = get_loyalty_info  
+      #         if @game.type == :avalon
+      #           User(m.user).send "Avalon Roles:"
+      #           User(m.user).send "Spies are #{spies.join(", ")}."
+      #           User(m.user).send "Resistance are #{resistance.join(", ")}."
+      #         else
+      #           User(m.user).send "Okay! The spies are: #{spies.join(", ")}."
+      #         end
+      #       end
+      #     else
+      #       User(m.user).send "There is no game going on."
+      #     end
+      #   end
+      # end
+
 
       #--------------------------------------------------------------------------------
       # Helpers
@@ -154,7 +458,16 @@ module Cinch
       end
 
       def status(m)
-        m.reply @game.check_game_state
+        if @game.started?
+            # status = "Waiting on players to PASS or CHALLENGE: #{self.not_back_from_mission.map(&:user).join(", ")}"
+        else
+          if @game.player_count.zero?
+            status = "No game in progress."
+          else
+            status = "Game being started. #{player_count} players have joined: #{self.players.map(&:user).join(", ")}"
+          end
+        end
+        m.reply status
       end
 
       def changelog_dir(m)
@@ -238,243 +551,6 @@ module Cinch
 
 
       #--------------------------------------------------------------------------------
-      # Main IRC Interface Methods
-      #--------------------------------------------------------------------------------
-
-      def join(m)
-        # self.reset_timer(m)
-        if Channel(@channel_name).has_user?(m.user)
-          if @game.accepting_players? 
-            added = @game.add_player(m.user)
-            unless added.nil?
-              Channel(@channel_name).send "#{m.user.nick} has joined the game (#{@game.players.count}/#{Game::MAX_PLAYERS})"
-              Channel(@channel_name).voice(m.user)
-            end
-          else
-            if @game.started?
-              Channel(@channel_name).send "#{m.user.nick}: Game has already started."
-            elsif @game.at_max_players?
-              Channel(@channel_name).send "#{m.user.nick}: Game is at max players."
-            else
-              Channel(@channel_name).send "#{m.user.nick}: You cannot join."
-            end
-          end
-        else
-          User(m.user).send "You need to be in #{@channel_name} to join the game."
-        end
-      end
-
-      def leave(m)
-        if @game.accepting_players?
-          left = @game.remove_player(m.user)
-          unless left.nil?
-            Channel(@channel_name).send "#{m.user.nick} has left the game (#{@game.players.count}/#{Game::MAX_PLAYERS})"
-            Channel(@channel_name).devoice(m.user)
-          end
-        else
-          if @game.started?
-            m.reply "Game is in progress.", true
-          end
-        end
-      end
-
-      def start_game(m)
-        unless @game.started?
-          if @game.at_min_players?
-            if @game.has_player?(m.user)
-              @idle_timer.stop
-              @game.start_game!
-
-              self.pass_out_loyalties
-
-              Channel(@channel_name).send "The game has started. #{self.get_game_info}"
-
-              if @game.avalon? 
-                Channel(@channel_name).send "This is Resistance: Avalon, with #{@game.roles.map(&:capitalize).join(", ")}."
-              end
-              if @game.with_variant?(:blind_spies)
-                Channel(@channel_name).send "VARIANT: This is the Blind Spies variant. Spies do not reveal to each other."
-              end
-              if @game.player_count >= 7
-                Channel(@channel_name).send "NOTE: This is a 7+ player game. Mission 4 will require TWO FAILS for the Spies."
-              end
-
-              Channel(@channel_name).send "Player order is: #{@game.players.map{ |p| p.user.nick }.join(' ')}"
-              Channel(@channel_name).send "MISSION #{@game.current_round.number}. Team Leader: #{@game.team_leader.user.nick}. Please choose a team of #{@game.current_team_size} to go on the first mission."
-              User(@game.team_leader.user).send "You are team leader. Please choose a team of #{@game.current_team_size} to go on first mission. \"!team#{team_example(@game.current_team_size)}\""
-            else
-              m.reply "You are not in the game.", true
-            end
-          else
-            m.reply "Need at least #{Game::MIN_PLAYERS} to start a game.", true
-          end
-        end
-      end
-
-
-
-      #--------------------------------------------------------------------------------
-      # Game interaction methods
-      #--------------------------------------------------------------------------------
-
-
-
-      def check_game_state
-        if @game.is_over?
-          self.do_end_game
-        else
-          self.start_new_round
-        end
-      end
-
-      def do_end_game
-        spies, resistance = get_loyalty_info
-        if @game.spies_win?
-          Channel(@channel_name).send "Game is over! The spies have won!"
-          Channel(@channel_name).send "The spies were: #{spies.join(", ")}"
-          Channel(@channel_name).send "The resistance were: #{resistance.join(", ")}"
-          self.start_new_game
-        else
-          if @game.avalon?
-            assassin = @game.find_player_by_role(:assassin)
-            Channel(@channel_name).send "The resistance successfully completed the missions, but the spies still have a chance."
-            Channel(@channel_name).send "The spies are: #{spies.join(", ")}. Assassin, choose a resistance member to assassinate."
-            User(assassin.user).send "You are the assassin, and it's time to assassinate one of the resistance. \"!assassinate name\""
-          else
-            Channel(@channel_name).send "Game is over! The resistance wins!"
-            Channel(@channel_name).send "The spies were: #{spies.join(", ")}"
-            Channel(@channel_name).send "The resistance were: #{resistance.join(", ")}"
-            self.start_new_game
-          end
-        end
-      end
-
-      def start_new_game
-        Channel(@channel_name).moderated = false
-        @game.players.each do |p|
-          Channel(@channel_name).devoice(p.user)
-        end
-        @game = Game.new
-        @idle_timer.start
-      end
-
-
-      def devoice_channel
-        Channel(@channel_name).voiced.each do |user|
-          Channel(@channel_name).devoice(user)
-        end
-      end
-
-      def remove_user_from_game(user)
-        if @game.not_started?
-          left = @game.remove_player(user)
-          unless left.nil?
-            Channel(@channel_name).send "#{user.nick} has left the game (#{@game.players.count}/#{Game::MAX_PLAYERS})"
-            Channel(@channel_name).devoice(user)
-          end
-        end
-      end
-
-      def dehighlight_nick(nickname)
-        nickname.scan(/.{2}|.+/).join(8203.chr('UTF-8'))
-      end
-
-      #--------------------------------------------------------------------------------
-      # Mod commands
-      #--------------------------------------------------------------------------------
-
-      def is_mod?(nick)
-        # make sure that the nick is in the mod list and the user in authenticated 
-        user = User(nick) 
-        user.authed? && @mods.include?(user.authname)
-      end
-
-      def reset_game(m)
-        if self.is_mod? m.user.nick
-          if @game.started?
-            spies, resistance = get_loyalty_info
-            Channel(@channel_name).send "The spies were: #{spies.join(", ")}"
-            Channel(@channel_name).send "The resistance were: #{resistance.join(", ")}"
-          end
-          @game = Game.new
-          self.devoice_channel
-          Channel(@channel_name).send "The game has been reset."
-          @idle_timer.start
-        end
-      end
-
-      def kick_user(m, nick)
-        if self.is_mod? m.user.nick
-          if @game.not_started?
-            user = User(nick)
-            left = @game.remove_player(user)
-            unless left.nil?
-              Channel(@channel_name).send "#{user.nick} has left the game (#{@game.players.count}/#{Game::MAX_PLAYERS})"
-              Channel(@channel_name).devoice(user)
-            end
-          else
-            User(m.user).send "You can't kick someone while a game is in progress."
-          end
-        end
-      end
-
-      def replace_user(m, nick1, nick2)
-        if self.is_mod? m.user.nick
-          # find irc users based on nick
-          user1 = User(nick1)
-          user2 = User(nick2)
-          
-          # replace the users for the players
-          player = @game.find_player(user1)
-          player.user = user2
-
-          # devoice/voice the players
-          Channel(@channel_name).devoice(user1)
-          Channel(@channel_name).voice(user2)
-
-          # inform channel
-          Channel(@channel_name).send "#{user1.nick} has been replaced with #{user2.nick}"
-
-          # tell loyalty to new player
-          User(player.user).send "="*40
-          self.tell_loyalty_to(player)
-        end
-      end
-
-      def room_mode(m, mode)
-        if self.is_mod? m.user.nick
-          case mode
-          when "silent"
-            Channel(@channel_name).moderated = true
-          when "vocal"
-            Channel(@channel_name).moderated = false
-          end
-        end
-      end
-
-      def who_spies(m)
-        if self.is_mod? m.user.nick
-          if @game.started?
-            if @game.has_player?(m.user)
-              User(m.user).send "You are in the game, goof!"
-            else
-              spies, resistance = get_loyalty_info  
-              if @game.type == :avalon
-                User(m.user).send "Avalon Roles:"
-                User(m.user).send "Spies are #{spies.join(", ")}."
-                User(m.user).send "Resistance are #{resistance.join(", ")}."
-              else
-                User(m.user).send "Okay! The spies are: #{spies.join(", ")}."
-              end
-            end
-          else
-            User(m.user).send "There is no game going on."
-          end
-        end
-      end
-
-
-      #--------------------------------------------------------------------------------
       # Settings
       #--------------------------------------------------------------------------------
       
@@ -499,7 +575,7 @@ module Cinch
 
         changelog
       end
-      
+
 
     end
     

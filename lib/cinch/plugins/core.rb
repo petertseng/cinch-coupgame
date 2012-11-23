@@ -1,6 +1,42 @@
 require 'json'
 
 #================================================================================
+# ACTION
+#================================================================================
+
+class Action
+
+  attr_accessor :action, :name, :character_required, :effect, :needs_target, :has_decision, :cost, :blocks, :blockable_by
+
+  def initialize(options)
+    self.action              = options[:action]
+    self.name                = options[:name] 
+    self.character_required  = options[:character_required] || nil          
+    self.effect              = options[:effect] || ""
+    self.needs_target        = options[:needs_target] || false
+    self.has_decision        = options[:has_decision] || false
+    self.cost                = options[:cost] || 0
+    self.blocks              = options[:blocks] || nil
+    self.blockable_by        = options[:blockable_by] || []
+  end 
+
+  # State methods
+
+  def needs_reactions?
+    !self.blockable_by.empty? || self.character_required?
+  end
+
+  def needs_decision?
+    self.has_decision
+  end
+
+  def character_required?
+    !self.character_required.nil?
+  end
+
+end
+
+#================================================================================
 # GAME
 #================================================================================
 
@@ -17,13 +53,66 @@ class Game
       :duke, :assassin, :contessa, :captain, :ambassador
     ]
   COINS = 50
+  ACTIONS = {
+    :income      => Action.new( :action       => :income,
+                                :name         => "Income",      
+                                :effect       => "Take 1 coin"),
+ 
+    :foreign_aid => Action.new( :action       => :foreign_aid,
+                                :name         => "Foreign Aid", 
+                                :effect       => "Take 2 coins",
+                                :blockable_by => [:duke] ),
+ 
+    :coup        => Action.new( :action       => :coup,
+                                :name         => "Coup",
+                                :effect       => "Pay 7 coins, choose player to lose influence",  
+                                :has_decision => true,
+                                :needs_target => true,
+                                :cost         => 7 ),
 
-  attr_accessor :started, :players, :deck, :invitation_sent
+    :duke        => Action.new( :action             => :duke,      
+                                :character_required => :duke, 
+                                :name               => "Tax",
+                                :effect             => "Take 3 coins",
+                                :blocks             => :foreign_aid),
+
+    :assassin    => Action.new( :action             => :assassin, 
+                                :character_required => :assassin,  
+                                :name               => "Assassinate", 
+                                :effect             => "Pay 3 coins, choose player to lose influence",  
+                                :has_decision       => true,
+                                :needs_target       => true,
+                                :cost               => 3,
+                                :blockable_by       => [:contessa]),
+
+    :ambassador  => Action.new( :action             => :ambassador,  
+                                :character_required => :ambassador,
+                                :name               => "Exchange",
+                                :effect             => "Exchange cards with Court Deck",
+                                :has_decision       => true,
+                                :blocks             => :captain),
+
+    :captain     => Action.new( :action             => :captain, 
+                                :character_required => :captain,  
+                                :name               => "Extort",    
+                                :effect             => "Take 2 coins from another player",  
+                                :needs_target       => true,
+                                :blocks             => :captain,
+                                :blockable_by       => [:captain, :ambassador]),
+
+    :contessa    => Action.new( :action             => :contessa,
+                                :character_required => :contessa,  
+                                :name               => "Contessa",
+                                :blocks             => :assassin)
+  }
+
+  attr_accessor :started, :players, :deck, :turns, :invitation_sent
   
   def initialize
     self.started         = false
     self.players         = []
     self.deck            = STARTING_DECK
+    self.turns           = []
     self.invitation_sent = false
   end
 
@@ -111,7 +200,7 @@ class Game
     self.players.shuffle.rotate!(rand(MAX_PLAYERS)) # shuffle seats
     $player_count = self.player_count
 
-    self.next_turn(players.first)
+    self.next_turn
   end
 
   # Shuffle the deck, pass out characters and coins
@@ -130,7 +219,10 @@ class Game
   end
 
 
-  # TURN
+
+
+
+  # TURNS
 
   # Check and see if action is valid
   #
@@ -138,34 +230,71 @@ class Game
     [:duke, :assassin, :contessa, :captain, :ambassador, :income, :foreign_aid, :coup].include? action
   end
 
-  # def vote_for_mission(player, vote)
-  #   @current_round.mission_votes[self.find_player(player)] = vote
-  # end
-
-  # def not_back_from_mission
-  #   team_players = @current_round.team.players
-  #   back_players = @current_round.mission_votes.keys
-  #   not_back = team_players.reject{ |player| back_players.include?(player) }
-  #   not_back
-  # end
-
-  # def all_mission_votes_in?
-  #   self.not_back_from_mission.size == 0
-  # end
-
-  # NEXT TURN
-
-  def check_game_state
-    if self.started?
-        # status = "Waiting on players to PASS or CHALLENGE: #{self.not_back_from_mission.map(&:user).join(", ")}"
-    else
-      if self.player_count.zero?
-        status = "No game in progress."
-      else
-        status = "Game being started. #{player_count} players have joined: #{self.players.map(&:user).join(", ")}"
-      end
+  def process_current_turn
+    case self.current_turn.action.action
+    when :income
+      self.current_player.give_coins 1
+    when :foreign_aid
+      self.current_player.give_coins 2
+    when :coup
+      self.current_player.take_coins 7
+      # TARGET TO LOSE INFLUENCE  
+    when :duke
+      self.current_player.give_coins 3
+    when :assassin
+      self.current_player.take_coins 3
+      # TARGET TO LOSE INFLUENCE  
+    when :ambassador
+      # EXCHANGE CARDS WITH DECK
+    when :captain
+      self.current_player.give_coins 2
+      self.target_player.take_coins 2
     end
-    status
+  end
+
+  def process_counteraction(player, action)
+    self.current_turn.reactions = {}
+    self.current_turn.counteraction = action
+  end
+
+  def not_reacted
+    reacted_players = self.current_turn.reactions.keys
+    self.reacting_players.reject{ |player| reacted_players.include?(player) }
+  end
+
+  def all_reactions_in?
+    self.not_reacted.size == 0
+  end
+
+
+  # turns
+
+  def next_turn
+    puts "="*80
+    puts "END TURN: State #{self.current_turn.state}; Player #{self.current_turn.active_player}; Action #{self.current_turn.action.action}; Target #{self.current_turn.target_player};\nReactions Action #{self.current_turn.reactions.inspect}" unless current_turn.nil?
+    self.current_turn.end_turn unless current_turn.nil?
+    self.turns << Turn.new(self.players.rotate!.first)
+    puts "-"*80
+    puts "NEW TURN: State #{self.current_turn.state}; Player #{self.current_turn.active_player};"
+    puts "="*80
+  end
+
+  def current_turn
+    self.turns.last 
+  end
+
+  # players
+
+  def current_player
+    self.current_turn.active_player
+  end
+
+  def target_player
+    self.current_turn.target_player
+  end
+
+  def reacting_players
+    self.current_turn.counteraction.nil? ? (self.players - [self.current_player]) : (self.players - [self.target_player])
   end
 
 
@@ -178,7 +307,6 @@ class Game
   def winner?
     
   end
-
 
   #----------------------------------------------
   # Helpers 
@@ -200,14 +328,58 @@ end
 
 class Turn
 
-  attr_accessor :active_player, :action, :reactions
+  attr_accessor :active_player, :action, :target_player, :counteraction, :reactions, :state
 
   def initialize(player)
+    self.state         = :action # action, reactions, decision, end
     self.active_player = player
-    self.action = nil
-    self.reactions = {}
+    self.target_player = nil
+    self.action        = nil
+    self.counteraction = nil
+    self.reactions     = {}
   end 
 
+
+  def add_action(action, target = nil)
+    self.action        = Game::ACTIONS[action.to_sym]
+    self.target_player = target
+  end
+
+  def pass(player)
+    if self.waiting_for_reactions?
+      self.reactions[player] = :pass
+    end
+  end
+
+  # State methods
+
+  def waiting_for_action?
+    self.state == :action
+  end
+
+  def waiting_for_reactions?
+    self.state == :reactions
+  end
+
+  def waiting_for_decision?
+    self.state == :decision
+  end
+
+  def ended?
+    self.state == :end
+  end
+
+  def wait_for_reactions
+    self.state = :reactions
+  end
+
+  def wait_for_decision
+    self.state = :decision
+  end
+
+  def end_turn
+    self.state = :end
+  end
 
 end
 
@@ -232,6 +404,10 @@ class Player
 
   def give_coins(amount)
     self.coins += amount
+  end
+
+  def take_coins(amount)
+    self.coins -= amount
   end
 
   def to_s
