@@ -41,12 +41,12 @@ module Cinch
       match /challenge/i,            :method => :react_challenge
       match /bs/i,                   :method => :react_challenge
 
-      match /lose (1|2)/i,           :method => :flip_card      
+      match /lose (1|2)/i,           :method => :flip_card  
+      match /switch (([1-6]))/i,     :method => :switch_cards
 
       match /me$/i,                  :method => :whoami
       match /table$/i,               :method => :show_table
       match /who$/i,                 :method => :list_players
-
 
       # other
       match /invite/i,               :method => :invite
@@ -312,6 +312,27 @@ module Cinch
             character = player.flip_character_card(position.to_i)
             Channel(@channel_name).send "#{m.user.nick} turns a #{character} face up."
             self.check_player_status(player)
+            self.start_new_turn
+          end
+        end
+      end
+
+      def prompt_to_switch(target)
+        target.get_witch_options
+        User(target.user).send "Choose an option for a new hand; \"!switch #\""
+        for
+          User(target.user).send "You only have one character left. #{i+1} - (#{character}); \"!lose #{i+1}\""
+        end
+      end
+
+      def switch_cards(m, choice)
+        if @game.started? && @game.has_player?(m.user)
+          player = @game.find_player(m.user)
+          if @game.current_turn.waiting_for_decision? && @game.current_turn.decider == player
+
+            character = player.switch_cards(position.to_i)
+            Channel(@channel_name).send "#{m.user.nick} turns a #{character} face up."
+
             self.start_new_turn
           end
         end
