@@ -1,7 +1,11 @@
 require 'cinch'
 require 'yaml'
 
-require File.expand_path(File.dirname(__FILE__)) + '/core'
+require File.expand_path(File.dirname(__FILE__)) + '/core/action'
+require File.expand_path(File.dirname(__FILE__)) + '/core/game'
+require File.expand_path(File.dirname(__FILE__)) + '/core/turn'
+require File.expand_path(File.dirname(__FILE__)) + '/core/player'
+require File.expand_path(File.dirname(__FILE__)) + '/core/character'
 
 module Cinch
   module Plugins
@@ -318,10 +322,20 @@ module Cinch
       end
 
       def prompt_to_switch(target)
-        target.get_witch_options
-        User(target.user).send "Choose an option for a new hand; \"!switch #\""
-        for
-          User(target.user).send "You only have one character left. #{i+1} - (#{character}); \"!lose #{i+1}\""
+        @drawn_cards = @game.draw_cards(2)
+        if target.influence == 2
+          puts "="*80
+          character_options = get_switch_options(@drawn_cards)
+          puts character_options.inspect
+          puts "="*80
+          User(target.user).send "Choose an option for a new hand; \"!switch #\""
+          character_options.each_with_index do |option, i|
+            User(target.user).send "#{i+1} - " + option.map{ |o| "[#{o}]" }.join(" ")
+          end
+        else 
+        #   character = target.characters.find{ |c| c.face_down? }
+        #   i = target.characters.index(character)
+        #   User(target.user).send "You only have one character left. #{i+1} - (#{character}); \"!lose #{i+1}\""
         end
       end
 
@@ -336,6 +350,10 @@ module Cinch
             self.start_new_turn
           end
         end
+      end
+
+      def get_switch_options(new_cards)
+        (target.characters + new_cards).combination(2).to_a.uniq{ |p| p || p.reverse }.shuffle
       end
 
       def show_table(m)
@@ -377,6 +395,8 @@ module Cinch
             turn.wait_for_decision
             if turn.action.action == :coup || turn.action.action == :assassin
               self.prompt_to_flip(turn.target_player)
+            elsif turn.action.action == :ambassador
+              self.prompt_to_switch(turn.active_player)
             end
           else
             self.start_new_turn

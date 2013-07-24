@@ -1,48 +1,5 @@
 require 'json'
 
-#================================================================================
-# ACTION
-#================================================================================
-
-class Action
-
-  attr_accessor :action, :name, :character_required, :effect, :needs_target, :has_decision, :cost, :blocks, :blockable_by
-
-  def initialize(options)
-    self.action              = options[:action]
-    self.name                = options[:name] 
-    self.character_required  = options[:character_required] || nil          
-    self.effect              = options[:effect] || ""
-    self.needs_target        = options[:needs_target] || false
-    self.has_decision        = options[:has_decision] || false
-    self.cost                = options[:cost] || 0
-    self.blocks              = options[:blocks] || nil
-    self.blockable_by        = options[:blockable_by] || []
-  end 
-
-  # State methods
-
-  def needs_reactions?
-    !self.blockable_by.empty? || self.character_required?
-  end
-
-  def needs_decision?
-    self.has_decision
-  end
-
-  def character_required?
-    !self.character_required.nil?
-  end
-
-  def blockable?
-    !self.blockable_by.empty?
-  end
-
-  def to_s
-    self.action.to_s
-  end
-
-end
 
 
 #================================================================================
@@ -228,11 +185,17 @@ class Game
     # assign loyalties
     puts "="*80
     self.players.each do |player|
-      player.receive_characters( self.deck.shift(2) )
+      player.receive_characters( self.draw_cards(2) )
       player.give_coins(2)
       puts "#{player} #{player.characters.inspect} - #{player.coins}"      
     end
     puts "="*80
+  end
+
+  # Draw # of cards from the deck
+  #
+  def draw_cards(count)
+    self.deck.shift(count)
   end
 
   # Move a player's characters to discard pile
@@ -352,192 +315,5 @@ class Game
   end
 
 end
-
-#================================================================================
-# TURN
-#================================================================================
-
-class Turn
-
-  attr_accessor :active_player, :action, :target_player, :counteracting_player, :counteraction, :decider, :reactions, :state
-
-  def initialize(player)
-    self.state                = :action # action, reactions, paused, decision, end
-    self.active_player        = player
-    self.target_player        = nil
-    self.action               = nil
-    self.counteraction        = nil
-    self.counteracting_player = nil
-    self.decider              = nil # for when waiting on flips
-    self.reactions            = {}
-  end 
-
-
-  def add_action(action, target = nil)
-    self.action        = Game::ACTIONS[action.to_sym]
-    self.target_player = target
-  end
-
-  def add_counteraction(action, player)
-    self.counteraction        = Game::ACTIONS[action.to_sym]
-    self.counteracting_player = player
-    self.reactions            = {}
-  end
-
-  def pass(player)
-    if self.waiting_for_reactions?
-      self.reactions[player] = :pass
-    end
-  end
-
-  def make_decider(player)
-    self.decider = player
-  end
-
-  def counteracted?
-    self.counteraction != nil
-  end
-
-  def challengee_action
-    self.counteracted? ? self.counteraction : self.action
-  end
-
-  def challengee_player
-    self.counteracted? ? self.counteracting_player : self.active_player
-  end
-
-  # State methods
-
-  def waiting_for_action?
-    self.state == :action
-  end
-
-  def waiting_for_reactions?
-    self.state == :reactions
-  end
-
-  def paused?
-    self.state == :paused
-  end
-
-  def waiting_for_decision?
-    self.state == :decision
-  end
-
-  def ended?
-    self.state == :end
-  end
-
-  def wait_for_reactions
-    self.state = :reactions
-  end
-
-  def pause
-    self.state = :paused
-  end
-
-  def wait_for_decision
-    self.state = :decision
-  end
-
-  def end_turn
-    self.state = :end
-  end
-
-end
-
-
-#================================================================================
-# PLAYER
-#================================================================================
-
-class Player
-
-  attr_accessor :user, :characters, :coins
-
-  def initialize(user)
-    self.user = user
-    self.characters = []
-    self.coins = 0
-  end 
-
-  def receive_characters(characters)
-    characters.each do |c|
-      self.characters << c
-    end
-  end
-
-  def flip_character_card(position)
-    # receive 1 or 2, translate to 0 or 1
-    self.characters[position-1].flip_up
-    self.characters[position-1]
-  end
-
-  def has_character?(character)
-    self.characters.select{ |c| c.face_down? }.any?{ |c| c.name == character }
-  end
-
-  def character_position(character)
-    char = self.characters.select{ |c| c.face_down? }.find{ |c| c.name == character }
-    self.characters.index(char)
-  end
-
-  def switch_character(character, position)
-
-  end
-
-  def has_influence?
-    self.characters.any?{ |c| c.face_down? }
-  end
-
-  def influence
-    self.characters.select{ |c| c.face_down? }.size
-  end
-
-  def give_coins(amount)
-    self.coins += amount
-  end
-
-  def take_coins(amount)
-    self.coins -= amount
-  end
-
-  def to_s
-    self.user.nick
-  end
-
-end
-
-
-#================================================================================
-# CHARACTER
-#================================================================================
-
-class Character
-
-  attr_accessor :name, :face_down
-
-  def initialize(name)
-    self.name = name
-    self.face_down = true
-  end 
-
-  def flip_up
-    self.face_down = false
-  end
-
-  def face_down?
-    self.face_down
-  end
-
-  def to_s
-    self.name.to_s.upcase
-  end
-
-end
-
-
-
-
 
 
