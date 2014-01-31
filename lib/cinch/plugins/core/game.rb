@@ -216,6 +216,13 @@ class Game
     player.characters[position] = self.deck.shift
   end
 
+  # Shuffles these two cards into the deck
+  def shuffle_into_deck(c1, c2)
+    self.deck << c1
+    self.deck << c2
+    self.deck.shuffle!
+  end
+
 
   # TURNS
 
