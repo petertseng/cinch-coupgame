@@ -240,6 +240,10 @@ module Cinch
           if @game.current_turn.waiting_for_reactions? && @game.reacting_players.include?(player)
             if @game.current_turn.action.blockable?
               if Game::ACTIONS[action.to_sym].blocks == @game.current_turn.action.action
+                if @game.current_turn.action.needs_target && m.user != @game.current_turn.target_player.user
+                  m.user.send "You can only block with #{action.upcase} if you are the target."
+                  return
+                end
                 @game.current_turn.add_counteraction(action, player)
                 Channel(@channel_name).send "#{m.user.nick} uses #{action.upcase}"
                 @game.current_turn.wait_for_reactions
