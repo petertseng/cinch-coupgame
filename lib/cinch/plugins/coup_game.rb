@@ -383,7 +383,14 @@ module Cinch
       end
 
       def get_switch_options(target, new_cards)
-        (target.characters + new_cards).combination(2).to_a.uniq{ |p| p || p.reverse }.shuffle
+        if target.influence == 2
+          (target.characters + new_cards).combination(2).to_a.uniq{ |p| p || p.reverse }.shuffle
+        elsif target.influence == 1
+          facedown = target.characters.select { |c| c.face_down? }
+          (facedown + new_cards).collect { |c| [c] }
+        else
+          raise "Invalid target influence #{target.influence}"
+        end
       end
 
       def show_table(m)
