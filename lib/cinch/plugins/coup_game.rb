@@ -326,7 +326,7 @@ module Cinch
         card_names = @drawn_cards.collect { |c| c.to_s }.join(' and ')
         User(target.user).send "You drew #{card_names} from the Court Deck."
 
-        if target.influence == 2
+        if target.influence == 2 || target.influence == 1
           puts "="*80
           @character_options = get_switch_options(target, @drawn_cards)
           puts @character_options.inspect
@@ -336,9 +336,7 @@ module Cinch
             User(target.user).send "#{i+1} - " + option.map{ |o| "[#{o}]" }.join(" ")
           end
         else 
-        #   character = target.characters.find{ |c| c.face_down? }
-        #   i = target.characters.index(character)
-        #   User(target.user).send "You only have one character left. #{i+1} - (#{character}); \"!lose #{i+1}\""
+          raise "Invalid target influence #{target.influence}"
         end
       end
 
