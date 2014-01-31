@@ -323,6 +323,9 @@ module Cinch
 
       def prompt_to_switch(target)
         @drawn_cards = @game.draw_cards(2)
+        card_names = @drawn_cards.collect { |c| c.to_s }.join(' and ')
+        User(target.user).send "You drew #{card_names} from the Court Deck."
+
         if target.influence == 2
           puts "="*80
           @character_options = get_switch_options(target, @drawn_cards)
