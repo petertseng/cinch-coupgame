@@ -218,6 +218,13 @@ module Cinch
             end
 
             unless target_msg.nil?
+              cost = Game::ACTIONS[action.to_sym].cost
+              if @game.current_player.coins < cost
+                coins = @game.current_player.coins
+                m.user.send "You need #{cost} coins to use #{action.upcase}, but you only have #{coins} coins."
+                return
+              end
+
               Channel(@channel_name).send "#{m.user.nick} uses #{action.upcase}#{target_msg}"
               @game.current_turn.add_action(action, target_player)
               if @game.current_turn.action.needs_reactions?
