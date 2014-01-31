@@ -635,8 +635,6 @@ describe Cinch::Plugins::CoupGame do
     end
 
     # ===== Captain =====
-    # TODO stealing from player with 0 coins should give nothing
-    # TODO stealing from player with 1 coin should give 1 coin only
 
     context 'when player uses captain' do
       before :each do
@@ -739,6 +737,57 @@ describe Cinch::Plugins::CoupGame do
         # If target does have captain, only challenger loses influence.
         # If target does not have captain, they lose influence and money.
       end
+    end
+
+    it 'takes 0 coins from a player with 0 coins' do
+      # 1 uses captain on 3
+      @game.do_action(message_from(@order[1]), 'captain', @order[3])
+
+      # 2, 3 pass
+      @game.react_pass(message_from(@order[2]))
+      @game.react_pass(message_from(@order[3]))
+
+      expect(@game.coins(@players[@order[1]])).to be == 4
+      expect(@game.coins(@players[@order[2]])).to be == 2
+      expect(@game.coins(@players[@order[3]])).to be == 0
+
+      # 2 uses captain on 3
+      @game.do_action(message_from(@order[1]), 'captain', @order[3])
+
+      # 1, 3 pass
+      @game.react_pass(message_from(@order[1]))
+      @game.react_pass(message_from(@order[3]))
+
+      expect(@game.coins(@players[@order[1]])).to be == 4
+      expect(@game.coins(@players[@order[2]])).to be == 2
+      expect(@game.coins(@players[@order[3]])).to be == 0
+    end
+
+    it 'takes 1 coin from a player with 1 coin' do
+      # 1 uses captain on 2
+      @game.do_action(message_from(@order[1]), 'captain', @order[2])
+
+      # 2, 3 pass
+      @game.react_pass(message_from(@order[2]))
+      @game.react_pass(message_from(@order[3]))
+
+      # 2 uses income
+      @game.do_action(message_from(@order[1]), 'income', @order[2])
+
+      expect(@game.coins(@players[@order[1]])).to be == 4
+      expect(@game.coins(@players[@order[2]])).to be == 1
+      expect(@game.coins(@players[@order[3]])).to be == 2
+
+      # 3 uses captain on 2
+      @game.do_action(message_from(@order[3]), 'captain', @order[2])
+
+      # 1, 2 pass
+      @game.react_pass(message_from(@order[1]))
+      @game.react_pass(message_from(@order[2]))
+
+      expect(@game.coins(@players[@order[1]])).to be == 4
+      expect(@game.coins(@players[@order[2]])).to be == 0
+      expect(@game.coins(@players[@order[3]])).to be == 3
     end
 
     # ===== Duke =====
