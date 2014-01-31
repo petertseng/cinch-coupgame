@@ -314,6 +314,11 @@ module Cinch
           player = @game.find_player(m.user)
           if @game.current_turn.waiting_for_decision? && @game.current_turn.decider == player
             character = player.flip_character_card(position.to_i)
+            if character.nil?
+              m.user.send "You have already flipped that card."
+              return
+            end
+
             Channel(@channel_name).send "#{m.user.nick} turns a #{character} face up."
             self.check_player_status(player)
             self.start_new_turn
