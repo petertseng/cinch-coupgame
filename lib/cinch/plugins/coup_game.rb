@@ -325,11 +325,11 @@ module Cinch
         @drawn_cards = @game.draw_cards(2)
         if target.influence == 2
           puts "="*80
-          character_options = get_switch_options(target, @drawn_cards)
-          puts character_options.inspect
+          @character_options = get_switch_options(target, @drawn_cards)
+          puts @character_options.inspect
           puts "="*80
           User(target.user).send "Choose an option for a new hand; \"!switch #\""
-          character_options.each_with_index do |option, i|
+          @character_options.each_with_index do |option, i|
             User(target.user).send "#{i+1} - " + option.map{ |o| "[#{o}]" }.join(" ")
           end
         else 
