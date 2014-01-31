@@ -178,6 +178,11 @@ module Cinch
       # Game interaction methods
       #--------------------------------------------------------------------------------
 
+      # For use in tests, since @game is not exposed to tests
+      def coins(p)
+        @game.find_player(p).coins
+      end
+
       def pass_out_characters
         @game.players.each do |p|
           User(p.user).send "="*40
