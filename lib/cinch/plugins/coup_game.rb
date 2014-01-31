@@ -206,6 +206,11 @@ module Cinch
         if @game.started? && @game.has_player?(m.user)
           if @game.current_turn.waiting_for_action? && @game.current_player.user == m.user
 
+            if @game.current_player.coins >= 10 && action.upcase != "COUP"
+              m.user.send "Since you have 10 coins, you must use COUP. !action coup <target>"
+              return
+            end
+
             if target.empty?
               target_msg = ""
             else
