@@ -183,6 +183,12 @@ module Cinch
         @game.find_player(p).coins
       end
 
+      # for use in tests
+      def force_characters(p, c1, c2)
+        @game.find_player(p).switch_character(Character.new(c1), 0)
+        @game.find_player(p).switch_character(Character.new(c2), 1)
+      end
+
       def pass_out_characters
         @game.players.each do |p|
           User(p.user).send "="*40
