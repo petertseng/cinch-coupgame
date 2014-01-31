@@ -20,6 +20,8 @@ class Player
 
   def flip_character_card(position)
     # receive 1 or 2, translate to 0 or 1
+    return nil unless self.characters[position-1].face_down?
+
     self.characters[position-1].flip_up
     self.characters[position-1]
   end
