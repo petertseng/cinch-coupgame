@@ -159,7 +159,7 @@ class Game
     self.started = true
     self.pass_out_characters_and_coins
   
-    self.players.shuffle.rotate!(rand(MAX_PLAYERS)) # shuffle seats
+    self.players.shuffle!.rotate!(rand(MAX_PLAYERS)) # shuffle seats
     $player_count = self.player_count
 
     self.next_turn
