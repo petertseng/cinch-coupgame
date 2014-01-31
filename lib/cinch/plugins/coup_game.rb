@@ -325,7 +325,7 @@ module Cinch
         @drawn_cards = @game.draw_cards(2)
         if target.influence == 2
           puts "="*80
-          character_options = get_switch_options(@drawn_cards)
+          character_options = get_switch_options(target, @drawn_cards)
           puts character_options.inspect
           puts "="*80
           User(target.user).send "Choose an option for a new hand; \"!switch #\""
@@ -352,7 +352,7 @@ module Cinch
         end
       end
 
-      def get_switch_options(new_cards)
+      def get_switch_options(target, new_cards)
         (target.characters + new_cards).combination(2).to_a.uniq{ |p| p || p.reverse }.shuffle
       end
 
