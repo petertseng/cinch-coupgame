@@ -34,7 +34,7 @@ class Player
   end
 
   def switch_character(character, position)
-    
+    self.characters[position] = character
   end
 
   def has_influence?
