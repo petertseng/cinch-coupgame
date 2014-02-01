@@ -1121,8 +1121,49 @@ describe Cinch::Plugins::CoupGame do
       expect(@game.coins(@players[@order[1]])).to be == 5
     end
 
-    # TODO duke tax challenged
-    # If challenger wins, duke loses influence
-    # If challenger loses, challenger loses influence and duke collects money
+    context 'when duke taxes and is challenged' do
+      before :each do
+        @game.force_characters(@order[1], :duke, :assassin)
+
+        @game.do_action(message_from(@order[1]), 'duke')
+        expect(@chan.messages).to be == ["#{@order[1]} uses DUKE"]
+        @chan.messages.clear
+
+        @game.react_challenge(message_from(@order[2]))
+        expect(@chan.messages).to be == [
+          "#{@order[2]} challenges #{@order[1]} on DUKE!",
+        ]
+        @chan.messages.clear
+      end
+
+      it 'continues to tax if player shows duke' do
+        @game.flip_card(message_from(@order[1]), '1')
+
+        expect(@chan.messages).to be == [
+          "#{@order[1]} reveals a [DUKE]. #{@order[2]} loses an influence.",
+          "#{@order[1]} switches the character card with one from the deck.",
+        ]
+        @chan.messages.clear
+
+        @game.flip_card(message_from(@order[2]), '1')
+
+        expect(@chan.messages.shift).to be =~ /^#{@order[2]} turns a [A-Z]+ face up\.$/
+        expect(@chan.messages).to be == [
+          "#{@order[1]} proceeds with DUKE. Take 3 coins.",
+          "#{@order[2]}: It is your turn. Please choose an action.",
+        ]
+
+        expect(@game.coins(@order[1])).to be == 5
+      end
+
+      it 'no longer taxes if player does not show duke' do
+        @game.flip_card(message_from(@order[1]), '2')
+        expect(@chan.messages).to be == [
+          "#{@order[1]} turns a ASSASSIN face up, losing an influence.",
+          "#{@order[2]}: It is your turn. Please choose an action.",
+        ]
+        expect(@game.coins(@order[1])).to be == 2
+      end
+    end
   end
 end
