@@ -795,33 +795,30 @@ describe Cinch::Plugins::CoupGame do
 
     # ===== Duke =====
 
-    context 'when player uses duke' do
-      before :each do
-        @game.do_action(message_from(@order[1]), 'duke')
-        expect(@chan.messages).to be == ["#{@order[1]} uses DUKE"]
+    it 'gives 3 coins if player uses duke unchallenged' do
+      @game.do_action(message_from(@order[1]), 'duke')
+      expect(@chan.messages).to be == ["#{@order[1]} uses DUKE"]
+      @chan.messages.clear
+
+      p = @players[@order[1]]
+      p.messages.clear
+
+      (2...NUM_PLAYERS).each { |i|
+        @game.react_pass(message_from(@order[i]))
+        expect(@chan.messages).to be == ["#{@order[i]} passes."]
         @chan.messages.clear
-      end
+      }
+      @game.react_pass(message_from(@order[NUM_PLAYERS]))
 
-      it 'gives duke 3 coins if nobody challenges' do
-        (2...NUM_PLAYERS).each { |i|
-          @game.react_pass(message_from(@order[i]))
-          expect(@chan.messages).to be == ["#{@order[i]} passes."]
-          @chan.messages.clear
-        }
-
-        p = @players[@order[1]]
-        p.messages.clear
-        @game.react_pass(message_from(@order[NUM_PLAYERS]))
-        expect(@chan.messages).to be == [
-          "#{@order[NUM_PLAYERS]} passes.",
-          "#{@order[1]} proceeds with DUKE. Take 3 coins.",
-          "#{@order[2]}: It is your turn. Please choose an action.",
-        ]
-      end
-
-      # TODO duke tax challenged
-      # If challenger wins, duke loses influence
-      # If challenger loses, challenger loses influence and duke collects money
+      expect(@chan.messages).to be == [
+        "#{@order[NUM_PLAYERS]} passes.",
+        "#{@order[1]} proceeds with DUKE. Take 3 coins.",
+        "#{@order[2]}: It is your turn. Please choose an action.",
+      ]
     end
+
+    # TODO duke tax challenged
+    # If challenger wins, duke loses influence
+    # If challenger loses, challenger loses influence and duke collects money
   end
 end
