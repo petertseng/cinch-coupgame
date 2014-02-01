@@ -70,6 +70,7 @@ class MyChannel
     nil
   end
   alias :devoice :voice
+  alias :moderated= :voice
 end
 
 describe Cinch::Plugins::CoupGame do
