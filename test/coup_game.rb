@@ -901,7 +901,7 @@ describe Cinch::Plugins::CoupGame do
       end
 
       it 'steals two coins if target does not block' do
-        @game.do_pass(message_from(@order[2]))
+        @game.react_pass(message_from(@order[2]))
 
         expect(@chan.messages).to be == [
           "#{@order[2]} passes.",
