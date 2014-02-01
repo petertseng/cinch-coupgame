@@ -701,6 +701,7 @@ describe Cinch::Plugins::CoupGame do
 
           expect(p.messages.size).to be == 1
           expect(p.messages[-1]).to be =~ CHOICE_REGEX
+          @chan.messages.clear
         end
 
         it 'deducts 3 gold from assassin' do
@@ -712,7 +713,6 @@ describe Cinch::Plugins::CoupGame do
           expect(@chan.messages.size).to be == 2
           expect(@chan.messages[-2]).to be =~ /^#{@order[2]} turns a [A-Z]+ face up\.$/
           expect(@chan.messages[-1]).to be == "#{@order[2]}: It is your turn. Please choose an action."
-          @chan.messages.clear
         end
 
         it 'does not lets target switch' do
