@@ -729,11 +729,54 @@ describe Cinch::Plugins::CoupGame do
         end
       end
 
-      # TODO assassin kill block challenged
-      # If target does have contessa, only challenger loses influence.
-      # If target does not have contessa, they are out of the game!
-    end
+      context 'when contessa blocks and is challenged' do
+        before :each do
+          @game.force_characters(@order[2], :contessa, :captain)
 
+          @game.do_block(message_from(@order[2]), 'contessa')
+          expect(@chan.messages).to be == ["#{@order[2]} uses CONTESSA"]
+          @chan.messages.clear
+
+          @game.react_challenge(message_from(@order[1]))
+          expect(@chan.messages).to be == [
+            "#{@order[1]} challenges #{@order[2]} on CONTESSA!",
+          ]
+          @chan.messages.clear
+        end
+
+        it 'continues to block if player shows contessa' do
+          @game.flip_card(message_from(@order[2]), '1')
+
+          expect(@chan.messages).to be == [
+            "#{@order[2]} reveals a [CONTESSA]. #{@order[1]} loses an influence.",
+            "#{@order[2]} switches the character card with one from the deck.",
+          ]
+          @chan.messages.clear
+
+          @game.flip_card(message_from(@order[1]), '1')
+
+          expect(@chan.messages.shift).to be =~ /^#{@order[1]} turns a [A-Z]+ face up\.$/
+          expect(@chan.messages).to be == [
+            "#{@order[1]}'s ASSASSIN was blocked by #{@order[2]} with CONTESSA.",
+            "#{@order[2]}: It is your turn. Please choose an action.",
+          ]
+
+          # But assassin still pays
+          expect(@game.coins(@order[1])).to be == 0
+        end
+
+        it 'no longer blocks if player does not show contessa' do
+          @game.flip_card(message_from(@order[2]), '2')
+          expect(@chan.messages).to be == [
+            "#{@order[2]} turns a CAPTAIN face up, losing an influence.",
+            "#{@order[1]} proceeds with ASSASSIN. Pay 3 coins, choose player to lose influence: #{@order[2]}.",
+          ]
+
+          # And assassin still pays
+          expect(@game.coins(@order[1])).to be == 0
+        end
+      end
+    end
 
     context 'when assassin kills and is challenged' do
       before :each do
