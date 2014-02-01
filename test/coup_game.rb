@@ -629,6 +629,7 @@ describe Cinch::Plugins::CoupGame do
 
     # TODO assassin kill challenged
     # If challenger wins, only assassin loses influence.
+    # Assassin gets back his 3 gold in this case.
     # If target challenges and loses, target is out of the game!
     # If an unrelated player challenges and loses, target and challenger each lose influence!
     # (In either order is possible?!)
