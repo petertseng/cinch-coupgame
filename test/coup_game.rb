@@ -874,6 +874,51 @@ describe Cinch::Plugins::CoupGame do
 
     # ===== Assassin Double Kills =====
 
+    context 'when target with 2 influence bluffs contessa' do
+      before :each do
+        (1..NUM_PLAYERS).each { |i|
+          @game.do_action(message_from(@order[i]), 'income')
+        }
+
+        @game.force_characters(@order[2], :assassin, :assassin)
+
+        # 1st uses assassin on 2nd
+        @game.do_action(message_from(@order[1]), 'assassin', @order[2])
+
+        # Players pass challenge
+        @game.react_pass(message_from(@order[2]))
+        @game.react_pass(message_from(@order[3]))
+
+        # Target claims contessa
+        @game.do_block(message_from(@order[2]), 'contessa')
+        # Assassin challenges
+        @game.react_challenge(message_from(@order[1]))
+
+        @chan.messages.clear
+
+        @game.flip_card(message_from(@order[2]), '1')
+        expect(@chan.messages).to be == [
+          "#{@order[2]} turns a ASSASSIN face up, losing an influence.",
+          "#{@order[1]} proceeds with ASSASSIN. Pay 3 coins, choose player to lose influence: #{@order[2]}.",
+        ]
+        @chan.messages.clear
+
+        @game.flip_card(message_from(@order[2]), '2')
+      end
+
+      it 'moves on to the next turn after flip' do
+        expect(@chan.messages).to be == [
+          "#{@order[2]} turns a ASSASSIN face up.",
+          "#{@order[2]} has no more influence, and is out of the game.",
+          "#{@order[3]}: It is your turn. Please choose an action.",
+        ]
+      end
+
+      it 'deducts money from assassin' do
+        expect(@game.coins(@order[1])).to be == 0
+      end
+    end
+
     context 'when target with 1 influence bluffs contessa' do
       before :each do
         5.times do
@@ -916,6 +961,53 @@ describe Cinch::Plugins::CoupGame do
 
       it 'deducts money from assassin' do
         expect(@game.coins(@order[2])).to be == 4
+      end
+    end
+
+    context 'when target with 2 influence challenges assassin' do
+      before :each do
+        (1..NUM_PLAYERS).each { |i|
+          @game.do_action(message_from(@order[i]), 'income')
+        }
+
+        @game.force_characters(@order[1], :assassin, :assassin)
+
+        # 1st uses assassin on 2nd
+        @game.do_action(message_from(@order[1]), 'assassin', @order[2])
+
+        # 2nd challenges
+        @game.react_challenge(message_from(@order[2]))
+
+        # assassin wins challenge
+        @game.flip_card(message_from(@order[1]), '1')
+
+        @chan.messages.clear
+
+        # target dies from challenge
+        @game.flip_card(message_from(@order[2]), '2')
+        expect(@chan.messages.shift).to be =~ /^#{@order[2]} turns a [A-Z]+ face up\.$/
+        expect(@chan.messages).to be == [
+          "#{@order[2]}: Would you like to block the ASSASSIN (\"!block contessa\") or not (\"!pass\")?",
+        ]
+
+        # target passes block
+        @game.react_pass(message_from(@order[2]))
+
+        @chan.messages.clear
+
+        @game.flip_card(message_from(@order[2]), '1')
+      end
+
+      it 'moves on to the next turn after flip' do
+        expect(@chan.messages.shift).to be =~ /^#{@order[2]} turns a [A-Z]+ face up\.$/
+        expect(@chan.messages).to be == [
+          "#{@order[2]} has no more influence, and is out of the game.",
+          "#{@order[3]}: It is your turn. Please choose an action.",
+        ]
+      end
+
+      it 'deducts money from assassin' do
+        expect(@game.coins(@order[1])).to be == 0
       end
     end
 
