@@ -578,6 +578,10 @@ describe Cinch::Plugins::CoupGame do
           expect(p.messages[-1]).to be =~ CHOICE_REGEX
         end
 
+        it 'deducts 3 gold from assassin' do
+          expect(@game.coins(@order[1])).to be == 0
+        end
+
         it 'lets target flip a card' do
           @game.flip_card(message_from(@order[2]), '1')
           expect(@chan.messages.size).to be == 2
@@ -619,6 +623,9 @@ describe Cinch::Plugins::CoupGame do
             "#{@order[1]}'s ASSASSIN was blocked by #{@order[2]} with CONTESSA.",
             "#{@order[2]}: It is your turn. Please choose an action.",
           ]
+
+          # But assassin still pays
+          expect(@game.coins(@order[1])).to be == 0
         end
       end
 
