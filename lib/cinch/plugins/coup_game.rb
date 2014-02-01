@@ -353,7 +353,7 @@ module Cinch
 
             if chall_action.character_required?
               Channel(@channel_name).send "#{m.user.nick} challenges #{chall_player} on #{chall_action.to_s.upcase}!"
-              self.prompt_challenge_defendant
+              self.prompt_challenge_defendant(chall_player, chall_action)
               if @game.current_turn.waiting_for_action_challenge?
                 @game.current_turn.wait_for_action_challenge_reply
                 @game.current_turn.action_challenger = player
@@ -368,8 +368,17 @@ module Cinch
         end
       end
 
-      def prompt_challenge_defendant
-        #Channel(@channel_name).send("Would prompt challenge defendant")
+      def prompt_challenge_defendant(target, action)
+        user = User(target.user)
+        user.send("You are being challenged to show a #{action}!")
+        if target.influence == 2
+          character_1, character_2 = target.characters
+          user.send("Choose a character to reveal: 1 - (#{character_1}) or 2 - (#{character_2}); \"!flip 1\" or \"!flip 2\"")
+        else
+          character = target.characters.find{ |c| c.face_down? }
+          i = target.characters.index(character)
+          user.send("You only have one character left. #{i+1} - (#{character}); \"!flip #{i+1}\"")
+        end
       end
 
       def prompt_to_flip(target)
