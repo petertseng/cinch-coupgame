@@ -848,6 +848,8 @@ describe Cinch::Plugins::CoupGame do
           "#{@order[2]}: Would you like to block the ASSASSIN (\"!block contessa\") or not (\"!pass\")?",
         ]
 
+        @game.react_pass(message_from(@order[2]))
+
         expect(@game.coins(@order[1])).to be == 0
       end
 
