@@ -253,34 +253,30 @@ describe Cinch::Plugins::CoupGame do
         expect(@game.coins(@order[1])).to be == 4
       end
 
-      context 'when a player blocks with duke' do
-        before :each do
-          @game.do_block(message_from(@order[2]), 'duke')
-          expect(@chan.messages).to be == ["#{@order[2]} uses DUKE"]
+      it 'blocks aid if a player blocks with duke unchallenged' do
+        @game.do_block(message_from(@order[2]), 'duke')
+        expect(@chan.messages).to be == ["#{@order[2]} uses DUKE"]
+        @chan.messages.clear
+
+        (3..NUM_PLAYERS).each { |i|
+          @game.react_pass(message_from(@order[i]))
+          expect(@chan.messages).to be == ["#{@order[i]} passes."]
           @chan.messages.clear
-        end
+        }
 
-        it 'blocks aid if nobody challenges' do
-          (3..NUM_PLAYERS).each { |i|
-            @game.react_pass(message_from(@order[i]))
-            expect(@chan.messages).to be == ["#{@order[i]} passes."]
-            @chan.messages.clear
-          }
+        @game.react_pass(message_from(@order[1]))
+        expect(@chan.messages).to be == [
+          "#{@order[1]} passes.",
+          "#{@order[1]}'s FOREIGN_AID was blocked by #{@order[2]} with DUKE.",
+          "#{@order[2]}: It is your turn. Please choose an action.",
+        ]
 
-          @game.react_pass(message_from(@order[1]))
-          expect(@chan.messages).to be == [
-            "#{@order[1]} passes.",
-            "#{@order[1]}'s FOREIGN_AID was blocked by #{@order[2]} with DUKE.",
-            "#{@order[2]}: It is your turn. Please choose an action.",
-          ]
-
-          expect(@game.coins(@order[1])).to be == 2
-        end
-
-        # TODO foreign aid block challenged
-        # If challenger wins, duke loses influence and player gets foreign aid
-        # If challenger loses, challenger loses influence
+        expect(@game.coins(@order[1])).to be == 2
       end
+
+      # TODO foreign aid block challenged
+      # If challenger wins, duke loses influence and player gets foreign aid
+      # If challenger loses, challenger loses influence
     end
 
     # ===== Coup =====
@@ -605,32 +601,30 @@ describe Cinch::Plugins::CoupGame do
         expect(p.messages).to be == ['You can only block with CONTESSA if you are the target.']
       end
 
-      context 'when target blocks with contessa' do
+      it 'blocks assassination if target blocks with contessa unchallenged' do
         before :each do
           @game.do_block(message_from(@order[2]), 'contessa')
           expect(@chan.messages).to be == ["#{@order[2]} uses CONTESSA"]
           @chan.messages.clear
-        end
 
-        it 'blocks assassination if nobody challenges' do
           (3..NUM_PLAYERS).each { |i|
             @game.react_pass(message_from(@order[i]))
             expect(@chan.messages).to be == ["#{@order[i]} passes."]
             @chan.messages.clear
           }
-
           @game.react_pass(message_from(@order[1]))
+
           expect(@chan.messages).to be == [
             "#{@order[1]} passes.",
             "#{@order[1]}'s ASSASSIN was blocked by #{@order[2]} with CONTESSA.",
             "#{@order[2]}: It is your turn. Please choose an action.",
           ]
         end
-
-        # TODO assassin kill block challenged
-        # If target does have contessa, only challenger loses influence.
-        # If target does not have contessa, they are out of the game!
       end
+
+      # TODO assassin kill block challenged
+      # If target does have contessa, only challenger loses influence.
+      # If target does not have contessa, they are out of the game!
     end
 
     # TODO assassin kill challenged
@@ -697,59 +691,51 @@ describe Cinch::Plugins::CoupGame do
         expect(p.messages).to be == ['You can only block with CAPTAIN if you are the target.']
       end
 
-      context 'when target blocks with ambassador' do
-        before :each do
-          @game.do_block(message_from(@order[2]), 'ambassador')
-          expect(@chan.messages).to be == ["#{@order[2]} uses AMBASSADOR"]
+      it 'blocks steal if target blocks with ambassador' do
+        @game.do_block(message_from(@order[2]), 'ambassador')
+        expect(@chan.messages).to be == ["#{@order[2]} uses AMBASSADOR"]
+        @chan.messages.clear
+
+        (3..NUM_PLAYERS).each { |i|
+          @game.react_pass(message_from(@order[i]))
+          expect(@chan.messages).to be == ["#{@order[i]} passes."]
           @chan.messages.clear
-        end
+        }
 
-        it 'blocks steal if nobody challenges' do
-          (3..NUM_PLAYERS).each { |i|
-            @game.react_pass(message_from(@order[i]))
-            expect(@chan.messages).to be == ["#{@order[i]} passes."]
-            @chan.messages.clear
-          }
-
-          @game.react_pass(message_from(@order[1]))
-          expect(@chan.messages).to be == [
-            "#{@order[1]} passes.",
-            "#{@order[1]}'s CAPTAIN was blocked by #{@order[2]} with AMBASSADOR.",
-            "#{@order[2]}: It is your turn. Please choose an action.",
-          ]
-        end
-
-        # TODO captain steal block challenged
-        # If target does have ambassador, only challenger loses influence.
-        # If target does not have ambassador, they lose influence and money.
+        @game.react_pass(message_from(@order[1]))
+        expect(@chan.messages).to be == [
+          "#{@order[1]} passes.",
+          "#{@order[1]}'s CAPTAIN was blocked by #{@order[2]} with AMBASSADOR.",
+          "#{@order[2]}: It is your turn. Please choose an action.",
+        ]
       end
 
-      context 'when target blocks with captain' do
-        before :each do
-          @game.do_block(message_from(@order[2]), 'captain')
-          expect(@chan.messages).to be == ["#{@order[2]} uses CAPTAIN"]
+      # TODO captain steal block challenged
+      # If target does have ambassador, only challenger loses influence.
+      # If target does not have ambassador, they lose influence and money.
+
+      it 'blocks steal if target blocks with captain unchallenged' do
+        @game.do_block(message_from(@order[2]), 'captain')
+        expect(@chan.messages).to be == ["#{@order[2]} uses CAPTAIN"]
+        @chan.messages.clear
+
+        (3..NUM_PLAYERS).each { |i|
+          @game.react_pass(message_from(@order[i]))
+          expect(@chan.messages).to be == ["#{@order[i]} passes."]
           @chan.messages.clear
-        end
+        }
+        @game.react_pass(message_from(@order[1]))
 
-        it 'blocks steal if nobody challenges' do
-          (3..NUM_PLAYERS).each { |i|
-            @game.react_pass(message_from(@order[i]))
-            expect(@chan.messages).to be == ["#{@order[i]} passes."]
-            @chan.messages.clear
-          }
-
-          @game.react_pass(message_from(@order[1]))
-          expect(@chan.messages).to be == [
-            "#{@order[1]} passes.",
-            "#{@order[1]}'s CAPTAIN was blocked by #{@order[2]} with CAPTAIN.",
-            "#{@order[2]}: It is your turn. Please choose an action.",
-          ]
-        end
-
-        # TODO captain steal block challenged
-        # If target does have captain, only challenger loses influence.
-        # If target does not have captain, they lose influence and money.
+        expect(@chan.messages).to be == [
+          "#{@order[1]} passes.",
+          "#{@order[1]}'s CAPTAIN was blocked by #{@order[2]} with CAPTAIN.",
+          "#{@order[2]}: It is your turn. Please choose an action.",
+        ]
       end
+
+      # TODO captain steal block challenged
+      # If target does have captain, only challenger loses influence.
+      # If target does not have captain, they lose influence and money.
     end
 
     # TODO captain steal challenged
