@@ -695,7 +695,7 @@ describe Cinch::Plugins::CoupGame do
           @game.react_pass(message_from(@order[2]))
 
           expect(@chan.messages).to be == [
-            "#{@order[NUM_PLAYERS]} passes.",
+            "#{@order[2]} passes.",
             "#{@order[1]} proceeds with ASSASSIN. Pay 3 coins, choose player to lose influence: #{@order[2]}.",
           ]
 
