@@ -815,6 +815,8 @@ describe Cinch::Plugins::CoupGame do
         "#{@order[1]} proceeds with DUKE. Take 3 coins.",
         "#{@order[2]}: It is your turn. Please choose an action.",
       ]
+
+      expect(@game.coins(@players[@order[1]])).to be == 5
     end
 
     # TODO duke tax challenged
