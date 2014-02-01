@@ -682,7 +682,6 @@ describe Cinch::Plugins::CoupGame do
 
         expect(@chan.messages).to be == [
           "#{@order[NUM_PLAYERS]} passes.",
-          "#{@order[1]} proceeds with ASSASSIN. Pay 3 coins, choose player to lose influence: #{@order[2]}.",
           "#{@order[2]}: Would you like to block the ASSASSIN (\"!block contessa\") or not (\"!pass\")?",
         ]
         @chan.messages.clear
@@ -848,7 +847,6 @@ describe Cinch::Plugins::CoupGame do
 
         expect(@chan.messages.shift).to be =~ /^#{@order[2]} turns a [A-Z]+ face up\.$/
         expect(@chan.messages).to be == [
-          "#{@order[1]} proceeds with ASSASSIN. Pay 3 coins, choose player to lose influence: #{@order[2]}.",
           "#{@order[2]}: Would you like to block the ASSASSIN (\"!block contessa\") or not (\"!pass\")?",
         ]
 
@@ -897,7 +895,6 @@ describe Cinch::Plugins::CoupGame do
 
         expect(@chan.messages).to be == [
           "#{@order[NUM_PLAYERS]} passes.",
-          "#{@order[1]} proceeds with CAPTAIN. Take 2 coins from another player: #{@order[2]}.",
           "#{@order[2]}: Would you like to block the CAPTAIN (\"!block captain\" or \"!block ambassador\") or not (\"!pass\")?",
         ]
         @chan.messages.clear
@@ -1121,7 +1118,6 @@ describe Cinch::Plugins::CoupGame do
 
         expect(@chan.messages.shift).to be =~ /^#{@order[2]} turns a [A-Z]+ face up\.$/
         expect(@chan.messages).to be == [
-          "#{@order[1]} proceeds with CAPTAIN. Take 2 coins from another player: #{@order[2]}.",
           "#{@order[2]}: Would you like to block the CAPTAIN (\"!block captain\" or \"!block ambassador\") or not (\"!pass\")?",
         ]
       end
