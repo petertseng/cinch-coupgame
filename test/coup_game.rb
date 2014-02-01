@@ -469,81 +469,133 @@ describe Cinch::Plugins::CoupGame do
             @chan.messages.clear
           }
 
-          p = @players[@order[2]]
-          p.messages.clear
-
           @game.react_pass(message_from(@order[NUM_PLAYERS]))
           expect(@chan.messages).to be == [
             "#{@order[NUM_PLAYERS]} passes.",
             "#{@order[1]} proceeds with ASSASSIN. Pay 3 coins, choose player to lose influence: #{@order[2]}.",
+            "#{@order[2]}: Would you like to block the ASSASSIN (\"!block contessa\") or not (\"!pass\")?",
           ]
           @chan.messages.clear
-
-          expect(p.messages.size).to be == 1
-          expect(p.messages[-1]).to be =~ CHOICE_REGEX
-
-          @game.flip_card(message_from(@order[2]), '1')
-          expect(@chan.messages.size).to be == 2
-          expect(@chan.messages[-2]).to be =~ /^#{@order[2]} turns a [A-Z]+ face up\.$/
-          expect(@chan.messages[-1]).to be == "#{@order[2]}: It is your turn. Please choose an action."
-          @chan.messages.clear
         end
 
-        it 'makes second player flip a card' do
-          # It's already in the before
-        end
-
-        context 'when player with 1 influence uses ambassador' do
+        context 'when target does not block' do
           before :each do
-            @game.do_action(message_from(@order[2]), 'ambassador')
-            expect(@chan.messages).to be == ["#{@order[2]} uses AMBASSADOR"]
+            p = @players[@order[2]]
+            p.messages.clear
+
+            @game.react_pass(message_from(@order[2]))
+
+            expect(p.messages.size).to be == 1
+            expect(p.messages[-1]).to be =~ CHOICE_REGEX
+          end
+
+          it 'lets target flip a card' do
+            @game.flip_card(message_from(@order[2]), '1')
+            expect(@chan.messages.size).to be == 2
+            expect(@chan.messages[-2]).to be =~ /^#{@order[2]} turns a [A-Z]+ face up\.$/
+            expect(@chan.messages[-1]).to be == "#{@order[2]}: It is your turn. Please choose an action."
             @chan.messages.clear
           end
 
-          context 'when nobody challenges' do
-            before :each do
-              (3..NUM_PLAYERS).each { |i|
-                @game.react_pass(message_from(@order[i]))
-                expect(@chan.messages).to be == ["#{@order[i]} passes."]
-                @chan.messages.clear
-              }
+          it 'does not lets target switch' do
+            @game.switch_cards(message_from(@order[2]), '1')
+            expect(@chan.messages.size).to be == 0
+          end
 
-              p = @players[@order[2]]
-              p.messages.clear
-              @game.react_pass(message_from(@order[1]))
-              expect(@chan.messages).to be == [
-                "#{@order[1]} passes.",
-                "#{@order[2]} proceeds with AMBASSADOR. Exchange cards with Court Deck.",
-              ]
+          context 'when player with 1 influence uses ambassador' do
+            before :each do
+              # DOH, repeat code
+              @game.flip_card(message_from(@order[2]), '1')
+              expect(@chan.messages.size).to be == 2
+              expect(@chan.messages[-2]).to be =~ /^#{@order[2]} turns a [A-Z]+ face up\.$/
+              expect(@chan.messages[-1]).to be == "#{@order[2]}: It is your turn. Please choose an action."
               @chan.messages.clear
 
-              expect(p.messages.size).to be == 5
-
-              expect(p.messages[-5]).to be =~ /You drew [A-Z]+ and [A-Z]+ from the Court Deck./
-              expect(p.messages[-4]).to be == "Choose an option for a new hand; \"!switch #\""
-              choices = Array.new(3)
-              (1..3).each { |i|
-                index = -4 + i
-                match = /^#{i} - \[(\w+)\]$/.match(p.messages[index])
-                expect(match).to_not be_nil
-                choices[i] = match
-              }
-
+              @game.do_action(message_from(@order[2]), 'ambassador')
+              expect(@chan.messages).to be == ["#{@order[2]} uses AMBASSADOR"]
+              @chan.messages.clear
             end
 
-            it 'lets player switch' do
-              @game.switch_cards(message_from(@order[2]), '1')
-              expect(@chan.messages).to be == [
-                "#{@order[2]} shuffles two cards into the Court Deck.",
-                "#{@order[3]}: It is your turn. Please choose an action.",
-              ]
-            end
+            context 'when nobody challenges' do
+              before :each do
+                (3..NUM_PLAYERS).each { |i|
+                  @game.react_pass(message_from(@order[i]))
+                  expect(@chan.messages).to be == ["#{@order[i]} passes."]
+                  @chan.messages.clear
+                }
 
-            it 'does not let player flip card' do
-              @game.flip_card(message_from(@order[2]), '1')
-              expect(@chan.messages).to be == []
+                p = @players[@order[2]]
+                p.messages.clear
+                @game.react_pass(message_from(@order[1]))
+                expect(@chan.messages).to be == [
+                  "#{@order[1]} passes.",
+                  "#{@order[2]} proceeds with AMBASSADOR. Exchange cards with Court Deck.",
+                ]
+                @chan.messages.clear
+
+                expect(p.messages.size).to be == 5
+
+                expect(p.messages[-5]).to be =~ /You drew [A-Z]+ and [A-Z]+ from the Court Deck./
+                expect(p.messages[-4]).to be == "Choose an option for a new hand; \"!switch #\""
+                choices = Array.new(3)
+                (1..3).each { |i|
+                  index = -4 + i
+                  match = /^#{i} - \[(\w+)\]$/.match(p.messages[index])
+                  expect(match).to_not be_nil
+                  choices[i] = match
+                }
+              end
+
+              it 'lets player switch' do
+                @game.switch_cards(message_from(@order[2]), '1')
+                expect(@chan.messages).to be == [
+                  "#{@order[2]} shuffles two cards into the Court Deck.",
+                  "#{@order[3]}: It is your turn. Please choose an action.",
+                ]
+              end
+
+              it 'does not let player flip card' do
+                @game.flip_card(message_from(@order[2]), '1')
+                expect(@chan.messages).to be == []
+              end
             end
           end
+        end
+
+        it 'does not let unrelated player block with contessa' do
+          p = @players[@order[3]]
+          p.messages.clear
+
+          @game.do_block(message_from(@order[3]), 'contessa')
+          expect(@chan.messages).to be == []
+          expect(p.messages).to be == ['You can only block with CONTESSA if you are the target.']
+        end
+
+        context 'when target blocks with contessa' do
+          before :each do
+            @game.do_block(message_from(@order[2]), 'contessa')
+            expect(@chan.messages).to be == ["#{@order[2]} uses CONTESSA"]
+            @chan.messages.clear
+          end
+
+          it 'blocks assassination if nobody challenges' do
+            (3..NUM_PLAYERS).each { |i|
+              @game.react_pass(message_from(@order[i]))
+              expect(@chan.messages).to be == ["#{@order[i]} passes."]
+              @chan.messages.clear
+            }
+
+            @game.react_pass(message_from(@order[1]))
+            expect(@chan.messages).to be == [
+              "#{@order[1]} passes.",
+              "#{@order[1]}'s ASSASSIN was blocked by #{@order[2]} with CONTESSA.",
+              "#{@order[2]}: It is your turn. Please choose an action.",
+            ]
+          end
+
+          # TODO assassin kill block challenged
+          # If target does have contessa, only challenger loses influence.
+          # If target does not have contessa, they are out of the game!
         end
       end
 
@@ -553,41 +605,6 @@ describe Cinch::Plugins::CoupGame do
       # If an unrelated player challenges and loses, target and challenger each lose influence!
       # (In either order is possible?!)
 
-      it 'does not let unrelated player block with contessa' do
-        p = @players[@order[3]]
-        p.messages.clear
-
-        @game.do_block(message_from(@order[3]), 'contessa')
-        expect(@chan.messages).to be == []
-        expect(p.messages).to be == ['You can only block with CONTESSA if you are the target.']
-      end
-
-      context 'when target blocks with contessa' do
-        before :each do
-          @game.do_block(message_from(@order[2]), 'contessa')
-          expect(@chan.messages).to be == ["#{@order[2]} uses CONTESSA"]
-          @chan.messages.clear
-        end
-
-        it 'blocks assassination if nobody challenges' do
-          (3..NUM_PLAYERS).each { |i|
-            @game.react_pass(message_from(@order[i]))
-            expect(@chan.messages).to be == ["#{@order[i]} passes."]
-            @chan.messages.clear
-          }
-
-          @game.react_pass(message_from(@order[1]))
-          expect(@chan.messages).to be == [
-            "#{@order[1]} passes.",
-            "#{@order[1]}'s ASSASSIN was blocked by #{@order[2]} with CONTESSA.",
-            "#{@order[2]}: It is your turn. Please choose an action.",
-          ]
-        end
-
-        # TODO assassin kill block challenged
-        # If target does have contessa, only challenger loses influence.
-        # If target does not have contessa, they are out of the game!
-      end
     end
 
     it 'does not let player flip a flipped card' do
@@ -599,8 +616,11 @@ describe Cinch::Plugins::CoupGame do
       # 1 uses assassin on 3
       @game.do_action(message_from(@order[1]), 'assassin', @order[3])
 
-      # 2, 3 pass
+      # 2, 3 pass on challenge
       @game.react_pass(message_from(@order[2]))
+      @game.react_pass(message_from(@order[3]))
+
+      # 3 passes on block
       @game.react_pass(message_from(@order[3]))
 
       # 3 flips card 1
@@ -609,8 +629,11 @@ describe Cinch::Plugins::CoupGame do
       # 2 uses assassin on 3
       @game.do_action(message_from(@order[2]), 'assassin', @order[3])
 
-      # 1, 3 pass
+      # 1, 3 pass on challenge
       @game.react_pass(message_from(@order[1]))
+      @game.react_pass(message_from(@order[3]))
+
+      # 3 passes on block
       @game.react_pass(message_from(@order[3]))
 
       @chan.messages.clear
@@ -621,26 +644,6 @@ describe Cinch::Plugins::CoupGame do
       @game.flip_card(message_from(@order[3]), '1')
       expect(@chan.messages).to be == []
       expect(p.messages).to be == ['You have already flipped that card.']
-    end
-
-    it 'does not let player switch instead of flip when assassinated' do
-      # Have each player take income to bump them up to 3 coins
-      (1..NUM_PLAYERS).each { |i|
-        @game.do_action(message_from(@order[i]), 'income')
-      }
-
-      # 1 uses assassin on 2
-      @game.do_action(message_from(@order[1]), 'assassin', @order[2])
-
-      # 2, 3 pass
-      @game.react_pass(message_from(@order[2]))
-      @game.react_pass(message_from(@order[3]))
-
-      @chan.messages.clear
-
-      # 2 will now... switch?!
-      @game.switch_cards(message_from(@order[2]), '1')
-      expect(@chan.messages).to be == []
     end
 
     # ===== Captain =====
