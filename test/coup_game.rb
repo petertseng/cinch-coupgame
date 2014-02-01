@@ -772,7 +772,7 @@ describe Cinch::Plugins::CoupGame do
       @game.react_pass(message_from(@order[3]))
 
       # 2 uses income
-      @game.do_action(message_from(@order[1]), 'income', @order[2])
+      @game.do_action(message_from(@order[2]), 'income')
 
       expect(@game.coins(@players[@order[1]])).to be == 4
       expect(@game.coins(@players[@order[2]])).to be == 1
