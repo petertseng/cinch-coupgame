@@ -860,7 +860,7 @@ describe Cinch::Plugins::CoupGame do
         expect(@chan.messages).to be == [
           "#{@order[NUM_PLAYERS]} passes.",
           "#{@order[1]} proceeds with CAPTAIN. Take 2 coins from another player: #{@order[2]}.",
-          "#{@order[2]}: Would you like to block the CAPTAIN (\"!block ambassador\" or \"block captain\") or not (\"!pass\")?",
+          "#{@order[2]}: Would you like to block the CAPTAIN (\"!block captain\" or \"block ambassador\") or not (\"!pass\")?",
         ]
         @chan.messages.clear
       end
