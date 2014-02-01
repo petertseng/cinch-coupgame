@@ -1137,8 +1137,11 @@ describe Cinch::Plugins::CoupGame do
       # 1 uses captain on 3
       @game.do_action(message_from(@order[1]), 'captain', @order[3])
 
-      # 2, 3 pass
+      # 2, 3 pass challenge
       @game.react_pass(message_from(@order[2]))
+      @game.react_pass(message_from(@order[3]))
+
+      # 3 passes block
       @game.react_pass(message_from(@order[3]))
 
       expect(@game.coins(@players[@order[1]])).to be == 4
@@ -1148,8 +1151,11 @@ describe Cinch::Plugins::CoupGame do
       # 2 uses captain on 3
       @game.do_action(message_from(@order[2]), 'captain', @order[3])
 
-      # 1, 3 pass
+      # 1, 3 pass challenge
       @game.react_pass(message_from(@order[1]))
+      @game.react_pass(message_from(@order[3]))
+
+      # 3 passes block
       @game.react_pass(message_from(@order[3]))
 
       expect(@game.coins(@players[@order[1]])).to be == 4
@@ -1161,9 +1167,12 @@ describe Cinch::Plugins::CoupGame do
       # 1 uses captain on 2
       @game.do_action(message_from(@order[1]), 'captain', @order[2])
 
-      # 2, 3 pass
+      # 2, 3 pass challenge
       @game.react_pass(message_from(@order[2]))
       @game.react_pass(message_from(@order[3]))
+
+      # 2 passes block
+      @game.react_pass(message_from(@order[2]))
 
       # 2 uses income
       @game.do_action(message_from(@order[2]), 'income')
@@ -1175,8 +1184,11 @@ describe Cinch::Plugins::CoupGame do
       # 3 uses captain on 2
       @game.do_action(message_from(@order[3]), 'captain', @order[2])
 
-      # 1, 2 pass
+      # 1, 2 pass challenge
       @game.react_pass(message_from(@order[1]))
+      @game.react_pass(message_from(@order[2]))
+
+      # 2 passes block
       @game.react_pass(message_from(@order[2]))
 
       expect(@game.coins(@players[@order[1]])).to be == 4
