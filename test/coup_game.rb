@@ -6,7 +6,7 @@ CHOICE_REGEX = /^Choose a character to turn face up: 1 - \([A-Z]+\) or 2 - \([A-
 
 CHANNAME = '#playcoup'
 
-CHALLENGE_PROMPT = 'All other players: would you like to challenge ("!challenge") or not ("!pass")?'
+CHALLENGE_PROMPT = 'All other players: Would you like to challenge ("!challenge") or not ("!pass")?'
 
 class Message
   attr_reader :user, :channel
@@ -230,7 +230,7 @@ describe Cinch::Plugins::CoupGame do
         @game.do_action(message_from(@order[1]), 'foreign_aid')
         expect(@chan.messages).to be == [
           "#{@order[1]} uses FOREIGN_AID",
-          "All other players: would you like to block the FOREIGN AID (\"!block duke\") or not (\"!pass\")?",
+          "All other players: Would you like to block the FOREIGN_AID (\"!block duke\") or not (\"!pass\")?",
         ]
         @chan.messages.clear
       end
