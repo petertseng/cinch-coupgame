@@ -918,9 +918,54 @@ describe Cinch::Plugins::CoupGame do
         expect(@game.coins(@players[@order[2]])).to be == 2
       end
 
-      # TODO captain steal block challenged
-      # If target does have ambassador, only challenger loses influence.
-      # If target does not have ambassador, they lose influence and money.
+      context 'when ambassador blocks and is challenged' do
+        before :each do
+          @game.force_characters(@order[2], :ambassador, :duke)
+
+          @game.do_block(message_from(@order[2]), 'ambassador')
+          expect(@chan.messages).to be == ["#{@order[2]} uses AMBASSADOR"]
+          @chan.messages.clear
+
+          @game.react_challenge(message_from(@order[1]))
+          expect(@chan.messages).to be == [
+            "#{@order[1]} challenges #{@order[2]} on AMBASSADOR!",
+          ]
+          @chan.messages.clear
+        end
+
+        it 'continues to block if player shows ambassador' do
+          @game.flip_card(message_from(@order[2]), '1')
+
+          expect(@chan.messages).to be == [
+            "#{@order[2]} reveals a [AMBASSADOR]. #{@order[1]} loses an influence.",
+            "#{@order[2]} switches the character card with one from the deck.",
+          ]
+          @chan.messages.clear
+
+          @game.flip_card(message_from(@order[1]), '1')
+
+          expect(@chan.messages.shift).to be =~ /^#{@order[1]} turns a [A-Z]+ face up\.$/
+          expect(@chan.messages).to be == [
+            "#{@order[1]}'s CAPTAIN was blocked by #{@order[2]} with AMBASSADOR.",
+            "#{@order[2]}: It is your turn. Please choose an action.",
+          ]
+
+          expect(@game.coins(@order[1])).to be == 2
+          expect(@game.coins(@order[2])).to be == 2
+        end
+
+        it 'no longer blocks if player does not show ambassador' do
+          @game.flip_card(message_from(@order[2]), '2')
+          expect(@chan.messages).to be == [
+            "#{@order[2]} turns a DUKE face up, losing an influence.",
+            "#{@order[1]} proceeds with CAPTAIN. Take 2 coins from another player: #{@order[2]}.",
+            "#{@order[2]}: It is your turn. Please choose an action.",
+          ]
+
+          expect(@game.coins(@order[1])).to be == 4
+          expect(@game.coins(@order[2])).to be == 0
+        end
+      end
 
       it 'blocks steal if target blocks with captain unchallenged' do
         @game.do_block(message_from(@order[2]), 'captain')
