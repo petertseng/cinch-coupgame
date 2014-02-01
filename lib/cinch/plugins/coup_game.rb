@@ -444,7 +444,7 @@ module Cinch
           # Finish the turn.
           self.process_turn
         else
-          raise "respond_to_challenge in #{turn.state}"
+          raise "lose_challenge in #{turn.state}"
         end
       end
 
