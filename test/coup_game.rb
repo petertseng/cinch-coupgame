@@ -274,9 +274,72 @@ describe Cinch::Plugins::CoupGame do
         expect(@game.coins(@order[1])).to be == 2
       end
 
-      # TODO foreign aid block challenged
-      # If challenger wins, duke loses influence and player gets foreign aid
-      # If challenger loses, challenger loses influence
+      it 'blocks aid if a player blocks with duke unchallenged' do
+        @game.do_block(message_from(@order[2]), 'duke')
+        expect(@chan.messages).to be == ["#{@order[2]} uses DUKE"]
+        @chan.messages.clear
+
+        (3..NUM_PLAYERS).each { |i|
+          @game.react_pass(message_from(@order[i]))
+          expect(@chan.messages).to be == ["#{@order[i]} passes."]
+          @chan.messages.clear
+        }
+
+        @game.react_pass(message_from(@order[1]))
+        expect(@chan.messages).to be == [
+          "#{@order[1]} passes.",
+          "#{@order[1]}'s FOREIGN_AID was blocked by #{@order[2]} with DUKE.",
+          "#{@order[2]}: It is your turn. Please choose an action.",
+        ]
+
+        expect(@game.coins(@order[1])).to be == 2
+      end
+
+      context 'when duke blocks and is challenged' do
+        before :each do
+          @game.force_characters(@order[2], :duke, :assassin)
+
+          @game.do_block(message_from(@order[2]), 'duke')
+          expect(@chan.messages).to be == ["#{@order[2]} uses DUKE"]
+          @chan.messages.clear
+
+          @game.react_challenge(message_from(@order[1]))
+          expect(@chan.messages).to be == [
+            "#{@order[1]} challenges #{@order[2]} on DUKE!",
+          ]
+          @chan.messages.clear
+        end
+
+        it 'continues to block if player shows duke' do
+          @game.flip_card(message_from(@order[2]), '1')
+
+          expect(@chan.messages).to be == [
+            "#{@order[2]} reveals a [DUKE]. #{@order[1]} loses an influence.",
+            "#{@order[2]} switches the character card with one from the deck.",
+          ]
+          @chan.messages.clear
+
+          @game.flip_card(message_from(@order[1]), '1')
+
+          expect(@chan.messages.shift).to be =~ /^#{@order[1]} turns a [A-Z]+ face up\.$/
+          expect(@chan.messages).to be == [
+            "#{@order[1]}'s FOREIGN_AID was blocked by #{@order[2]} with DUKE.",
+            "#{@order[2]}: It is your turn. Please choose an action.",
+          ]
+
+          expect(@game.coins(@order[1])).to be == 2
+        end
+
+        it 'no longer blocks if player does not show duke' do
+          @game.flip_card(message_from(@order[2]), '2')
+          expect(@chan.messages).to be == [
+            "#{@order[2]} turns a ASSASSIN face up, losing an influence.",
+            "#{@order[1]} proceeds with FOREIGN_AID. Take 2 coins.",
+            "#{@order[2]}: It is your turn. Please choose an action.",
+          ]
+          expect(@game.coins(@order[1])).to be == 4
+        end
+      end
     end
 
     # ===== Coup =====
