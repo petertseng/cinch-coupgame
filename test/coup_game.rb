@@ -6,6 +6,8 @@ CHOICE_REGEX = /^Choose a character to turn face up: 1 - \([A-Z]+\) or 2 - \([A-
 
 CHANNAME = '#playcoup'
 
+CHALLENGE_PROMPT = 'All other players: would you like to challenge ("!challenge") or not ("!pass")?'
+
 class Message
   attr_reader :user, :channel
   def initialize(user, channel)
@@ -226,7 +228,10 @@ describe Cinch::Plugins::CoupGame do
     context 'when player takes foreign aid' do
       before :each do
         @game.do_action(message_from(@order[1]), 'foreign_aid')
-        expect(@chan.messages).to be == ["#{@order[1]} uses FOREIGN_AID"]
+        expect(@chan.messages).to be == [
+          "#{@order[1]} uses FOREIGN_AID",
+          "All other players: would you like to block the FOREIGN AID (\"!block duke\") or not (\"!pass\")?",
+        ]
         @chan.messages.clear
       end
 
@@ -255,7 +260,10 @@ describe Cinch::Plugins::CoupGame do
 
       it 'blocks aid if a player blocks with duke unchallenged' do
         @game.do_block(message_from(@order[2]), 'duke')
-        expect(@chan.messages).to be == ["#{@order[2]} uses DUKE"]
+        expect(@chan.messages).to be == [
+          "#{@order[2]} uses DUKE",
+          CHALLENGE_PROMPT,
+        ].compact
         @chan.messages.clear
 
         (3..NUM_PLAYERS).each { |i|
@@ -276,7 +284,10 @@ describe Cinch::Plugins::CoupGame do
 
       it 'blocks aid if a player blocks with duke unchallenged' do
         @game.do_block(message_from(@order[2]), 'duke')
-        expect(@chan.messages).to be == ["#{@order[2]} uses DUKE"]
+        expect(@chan.messages).to be == [
+          "#{@order[2]} uses DUKE",
+          CHALLENGE_PROMPT,
+        ].compact
         @chan.messages.clear
 
         (3..NUM_PLAYERS).each { |i|
@@ -300,7 +311,10 @@ describe Cinch::Plugins::CoupGame do
           @game.force_characters(@order[2], :duke, :assassin)
 
           @game.do_block(message_from(@order[2]), 'duke')
-          expect(@chan.messages).to be == ["#{@order[2]} uses DUKE"]
+          expect(@chan.messages).to be == [
+            "#{@order[2]} uses DUKE",
+            CHALLENGE_PROMPT,
+          ].compact
           @chan.messages.clear
 
           @game.react_challenge(message_from(@order[1]))
@@ -468,7 +482,10 @@ describe Cinch::Plugins::CoupGame do
     context 'when player with 2 influence uses ambassador unchallenged' do
       before :each do
         @game.do_action(message_from(@order[1]), 'ambassador')
-        expect(@chan.messages).to be == ["#{@order[1]} uses AMBASSADOR"]
+        expect(@chan.messages).to be == [
+          "#{@order[1]} uses AMBASSADOR",
+          CHALLENGE_PROMPT,
+        ].compact
         @chan.messages.clear
 
         p = @players[@order[1]]
@@ -532,7 +549,10 @@ describe Cinch::Plugins::CoupGame do
         @chan.messages.clear
 
         @game.do_action(message_from(@order[2]), 'ambassador')
-        expect(@chan.messages).to be == ["#{@order[2]} uses AMBASSADOR"]
+        expect(@chan.messages).to be == [
+          "#{@order[2]} uses AMBASSADOR",
+          CHALLENGE_PROMPT,
+        ].compact
         @chan.messages.clear
 
         p = @players[@order[2]]
@@ -584,7 +604,10 @@ describe Cinch::Plugins::CoupGame do
         @game.force_characters(@order[1], :ambassador, :duke)
 
         @game.do_action(message_from(@order[1]), 'ambassador')
-        expect(@chan.messages).to be == ["#{@order[1]} uses AMBASSADOR"]
+        expect(@chan.messages).to be == [
+          "#{@order[1]} uses AMBASSADOR",
+          CHALLENGE_PROMPT,
+        ].compact
         @chan.messages.clear
 
         @game.react_challenge(message_from(@order[2]))
@@ -643,7 +666,10 @@ describe Cinch::Plugins::CoupGame do
 
         # Now first player uses assassin action
         @game.do_action(message_from(@order[1]), 'assassin', @order[2])
-        expect(@chan.messages).to be == ["#{@order[1]} uses ASSASSIN on #{@order[2]}"]
+        expect(@chan.messages).to be == [
+          "#{@order[1]} uses ASSASSIN on #{@order[2]}",
+          CHALLENGE_PROMPT,
+        ].compact
         @chan.messages.clear
 
         # Have everyone pass
@@ -708,7 +734,10 @@ describe Cinch::Plugins::CoupGame do
       it 'blocks assassination if target blocks with contessa unchallenged' do
         before :each do
           @game.do_block(message_from(@order[2]), 'contessa')
-          expect(@chan.messages).to be == ["#{@order[2]} uses CONTESSA"]
+          expect(@chan.messages).to be == [
+            "#{@order[2]} uses CONTESSA",
+            CHALLENGE_PROMPT,
+          ].compact
           @chan.messages.clear
 
           (3..NUM_PLAYERS).each { |i|
@@ -734,7 +763,10 @@ describe Cinch::Plugins::CoupGame do
           @game.force_characters(@order[2], :contessa, :captain)
 
           @game.do_block(message_from(@order[2]), 'contessa')
-          expect(@chan.messages).to be == ["#{@order[2]} uses CONTESSA"]
+          expect(@chan.messages).to be == [
+            "#{@order[2]} uses CONTESSA",
+            CHALLENGE_PROMPT,
+          ].compact
           @chan.messages.clear
 
           @game.react_challenge(message_from(@order[1]))
@@ -790,7 +822,10 @@ describe Cinch::Plugins::CoupGame do
         @chan.messages.clear
 
         @game.do_action(message_from(@order[1]), 'assassin', @order[2])
-        expect(@chan.messages).to be == ["#{@order[1]} uses ASSASSIN on #{@order[2]}"]
+        expect(@chan.messages).to be == [
+          "#{@order[1]} uses ASSASSIN on #{@order[2]}",
+          CHALLENGE_PROMPT,
+        ].compact
         @chan.messages.clear
 
         @game.react_challenge(message_from(@order[2]))
@@ -843,7 +878,10 @@ describe Cinch::Plugins::CoupGame do
     context 'when player uses captain unchallenged' do
       before :each do
         @game.do_action(message_from(@order[1]), 'captain', @order[2])
-        expect(@chan.messages).to be == ["#{@order[1]} uses CAPTAIN on #{@order[2]}"]
+        expect(@chan.messages).to be == [
+          "#{@order[1]} uses CAPTAIN on #{@order[2]}",
+          CHALLENGE_PROMPT,
+        ].compact
         @chan.messages.clear
 
         p = @players[@order[2]]
@@ -898,7 +936,10 @@ describe Cinch::Plugins::CoupGame do
 
       it 'blocks steal if target blocks with ambassador' do
         @game.do_block(message_from(@order[2]), 'ambassador')
-        expect(@chan.messages).to be == ["#{@order[2]} uses AMBASSADOR"]
+        expect(@chan.messages).to be == [
+          "#{@order[2]} uses AMBASSADOR",
+          CHALLENGE_PROMPT,
+        ].compact
         @chan.messages.clear
 
         (3..NUM_PLAYERS).each { |i|
@@ -923,7 +964,10 @@ describe Cinch::Plugins::CoupGame do
           @game.force_characters(@order[2], :ambassador, :duke)
 
           @game.do_block(message_from(@order[2]), 'ambassador')
-          expect(@chan.messages).to be == ["#{@order[2]} uses AMBASSADOR"]
+          expect(@chan.messages).to be == [
+            "#{@order[2]} uses AMBASSADOR",
+            CHALLENGE_PROMPT,
+          ].compact
           @chan.messages.clear
 
           @game.react_challenge(message_from(@order[1]))
@@ -969,7 +1013,10 @@ describe Cinch::Plugins::CoupGame do
 
       it 'blocks steal if target blocks with captain unchallenged' do
         @game.do_block(message_from(@order[2]), 'captain')
-        expect(@chan.messages).to be == ["#{@order[2]} uses CAPTAIN"]
+        expect(@chan.messages).to be == [
+          "#{@order[2]} uses CAPTAIN",
+          CHALLENGE_PROMPT,
+        ].compact
         @chan.messages.clear
 
         (3..NUM_PLAYERS).each { |i|
@@ -994,7 +1041,10 @@ describe Cinch::Plugins::CoupGame do
           @game.force_characters(@order[2], :captain, :ambassador)
 
           @game.do_block(message_from(@order[2]), 'captain')
-          expect(@chan.messages).to be == ["#{@order[2]} uses CAPTAIN"]
+          expect(@chan.messages).to be == [
+            "#{@order[2]} uses CAPTAIN",
+            CHALLENGE_PROMPT,
+          ].compact
           @chan.messages.clear
 
           @game.react_challenge(message_from(@order[1]))
@@ -1045,7 +1095,10 @@ describe Cinch::Plugins::CoupGame do
         @game.force_characters(@order[1], :captain, :ambassador)
 
         @game.do_action(message_from(@order[1]), 'captain', @order[2])
-        expect(@chan.messages).to be == ["#{@order[1]} uses CAPTAIN on #{@order[2]}"]
+        expect(@chan.messages).to be == [
+          "#{@order[1]} uses CAPTAIN on #{@order[2]}",
+          CHALLENGE_PROMPT,
+        ].compact
         @chan.messages.clear
 
         @game.react_challenge(message_from(@order[2]))
@@ -1139,7 +1192,10 @@ describe Cinch::Plugins::CoupGame do
 
     it 'gives 3 coins if player uses duke unchallenged' do
       @game.do_action(message_from(@order[1]), 'duke')
-      expect(@chan.messages).to be == ["#{@order[1]} uses DUKE"]
+      expect(@chan.messages).to be == [
+        "#{@order[1]} uses DUKE",
+        CHALLENGE_PROMPT,
+      ].compact
       @chan.messages.clear
 
       p = @players[@order[1]]
@@ -1166,7 +1222,10 @@ describe Cinch::Plugins::CoupGame do
         @game.force_characters(@order[1], :duke, :assassin)
 
         @game.do_action(message_from(@order[1]), 'duke')
-        expect(@chan.messages).to be == ["#{@order[1]} uses DUKE"]
+        expect(@chan.messages).to be == [
+          "#{@order[1]} uses DUKE",
+          CHALLENGE_PROMPT,
+        ].compact
         @chan.messages.clear
 
         @game.react_challenge(message_from(@order[2]))
