@@ -989,9 +989,55 @@ describe Cinch::Plugins::CoupGame do
         expect(@game.coins(@players[@order[2]])).to be == 2
       end
 
-      # TODO captain steal block challenged
-      # If target does have captain, only challenger loses influence.
-      # If target does not have captain, they lose influence and money.
+      context 'when captain blocks and is challenged' do
+        before :each do
+          @game.force_characters(@order[2], :captain, :ambassador)
+
+          @game.do_block(message_from(@order[2]), 'captain')
+          expect(@chan.messages).to be == ["#{@order[2]} uses CAPTAIN"]
+          @chan.messages.clear
+
+          @game.react_challenge(message_from(@order[1]))
+          expect(@chan.messages).to be == [
+            "#{@order[1]} challenges #{@order[2]} on CAPTAIN!",
+          ]
+          @chan.messages.clear
+        end
+
+        it 'continues to block if player shows captain' do
+          @game.flip_card(message_from(@order[2]), '1')
+
+          expect(@chan.messages).to be == [
+            "#{@order[2]} reveals a [CAPTAIN]. #{@order[1]} loses an influence.",
+            "#{@order[2]} switches the character card with one from the deck.",
+          ]
+          @chan.messages.clear
+
+          @game.flip_card(message_from(@order[1]), '1')
+
+          expect(@chan.messages.shift).to be =~ /^#{@order[1]} turns a [A-Z]+ face up\.$/
+          expect(@chan.messages).to be == [
+            "#{@order[1]}'s CAPTAIN was blocked by #{@order[2]} with CAPTAIN.",
+            "#{@order[2]}: It is your turn. Please choose an action.",
+          ]
+
+          expect(@game.coins(@order[1])).to be == 2
+          expect(@game.coins(@order[2])).to be == 2
+        end
+
+        it 'no longer blocks if player does not show captain' do
+          @game.flip_card(message_from(@order[2]), '2')
+          expect(@chan.messages).to be == [
+            "#{@order[2]} turns a AMBASSADOR face up, losing an influence.",
+            "#{@order[1]} proceeds with CAPTAIN. Take 2 coins from another player: #{@order[2]}.",
+            "#{@order[2]}: It is your turn. Please choose an action.",
+          ]
+
+          expect(@game.coins(@order[1])).to be == 4
+          expect(@game.coins(@order[2])).to be == 0
+        end
+      end
+
     end
 
     # TODO captain steal challenged
