@@ -872,6 +872,52 @@ describe Cinch::Plugins::CoupGame do
       end
     end
 
+    # ===== Assassin Double Kills =====
+
+    it 'double kills two separate players' do
+      5.times do
+        (1..NUM_PLAYERS).each { |i|
+          @game.do_action(message_from(@order[i]), 'income')
+        }
+      end
+
+      # two players coup each other
+      @game.do_action(message_from(@order[1]), 'coup', @order[2])
+      @game.flip_card(message_from(@order[2]), '1')
+      @game.do_action(message_from(@order[2]), 'coup', @order[1])
+      @game.flip_card(message_from(@order[1]), '1')
+
+      @game.force_characters(@order[3], :assassin, :assassin)
+      @game.do_action(message_from(@order[3]), 'assassin', @order[1])
+      @game.react_challenge(message_from(@order[2]))
+      @game.flip_card(message_from(@order[3]), '1')
+
+      @chan.messages.clear
+
+      @game.flip_card(message_from(@order[2]), '2')
+
+      expect(@chan.messages.shift).to be =~ /^#{@order[2]} turns a [A-Z]+ face up\.$/
+      expect(@chan.messages).to be == [
+        "#{@order[2]} has no more influence, and is out of the game.",
+        "#{@order[1]}: Would you like to block the ASSASSIN (\"!block contessa\") or not (\"!pass\")?",
+      ]
+      @chan.messages.clear
+
+      @game.react_pass(message_from(@order[1]))
+      expect(@chan.messages).to be == [
+        "#{@order[1]} passes.",
+        "#{@order[3]} proceeds with ASSASSIN. Pay 3 coins, choose player to lose influence: #{@order[1]}.",
+      ]
+      @chan.messages.clear
+
+      @game.flip_card(message_from(@order[1]), '2')
+      expect(@chan.messages.shift).to be =~ /^#{@order[1]} turns a [A-Z]+ face up\.$/
+      expect(@chan.messages).to be == [
+        "#{@order[1]} has no more influence, and is out of the game.",
+        "Game is over! #{@order[3]} wins!",
+      ]
+    end
+
     # ===== Captain =====
 
     context 'when player uses captain unchallenged' do
