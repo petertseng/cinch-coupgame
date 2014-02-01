@@ -624,8 +624,6 @@ module Cinch
       def check_game_state
         if @game.is_over?
           self.do_end_game
-        else
-          self.start_new_turn
         end
       end
 
