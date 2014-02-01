@@ -236,7 +236,7 @@ describe Cinch::Plugins::CoupGame do
         expect(@players[@order[2]].messages[-1]).to be == 'CAPTAIN does not block that FOREIGN_AID.'
       end
 
-      it 'gives player two coins if nobody challenges' do
+      it 'gives player two coins if nobody blocks' do
         (2...NUM_PLAYERS).each { |i|
           @game.react_pass(message_from(@order[i]))
           expect(@chan.messages).to be == ["#{@order[i]} passes."]
