@@ -324,6 +324,17 @@ describe Cinch::Plugins::CoupGame do
         expect(p.messages[-1]).to be =~ CHOICE_REGEX
       end
 
+      it 'deducts 7 coins from the player' do
+        expect(@game.coins(@order[1])).to be == 0
+      end
+
+      it 'lets target flip' do
+        @game.flip_card(message_from(@order[2]), '1')
+        expect(@chan.messages.size).to be == 2
+        expect(@chan.messages[-2]).to be =~ /^#{@order[2]} turns a [A-Z]+ face up\.$/
+        expect(@chan.messages[-1]).to be == "#{@order[2]}: It is your turn. Please choose an action."
+      end
+
       it 'does not let target switch instead of flip' do
         # 2 will now... switch?!
         @game.switch_cards(message_from(@order[2]), '1')
