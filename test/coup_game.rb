@@ -579,9 +579,46 @@ describe Cinch::Plugins::CoupGame do
       end
     end
 
-    # TODO ambassador switch challenged
-    # If challenger wins, ambassador loses influence
-    # If challenger loses, challenger loses influence AND ambassador still switches (in either order is possible?!)
+    context 'when ambassador switches and is challenged' do
+      before :each do
+        @game.force_characters(@order[1], :ambassador, :duke)
+
+        @game.do_action(message_from(@order[1]), 'ambassador')
+        expect(@chan.messages).to be == ["#{@order[1]} uses AMBASSADOR"]
+        @chan.messages.clear
+
+        @game.react_challenge(message_from(@order[2]))
+        expect(@chan.messages).to be == [
+          "#{@order[2]} challenges #{@order[1]} on AMBASSADOR!",
+        ]
+        @chan.messages.clear
+      end
+
+      it 'continues to switch if player shows ambassador' do
+        @game.flip_card(message_from(@order[1]), '1')
+
+        expect(@chan.messages).to be == [
+          "#{@order[1]} reveals a [AMBASSADOR]. #{@order[2]} loses an influence.",
+          "#{@order[1]} switches the character card with one from the deck.",
+        ]
+        @chan.messages.clear
+
+        @game.flip_card(message_from(@order[2]), '1')
+
+        expect(@chan.messages.shift).to be =~ /^#{@order[2]} turns a [A-Z]+ face up\.$/
+        expect(@chan.messages).to be == [
+          "#{@order[1]} proceeds with AMBASSADOR. Exchange cards with Court Deck.",
+        ]
+      end
+
+      it 'no longer switches if player does not show ambassador' do
+        @game.flip_card(message_from(@order[1]), '2')
+        expect(@chan.messages).to be == [
+          "#{@order[1]} turns a DUKE face up, losing an influence.",
+          "#{@order[2]}: It is your turn. Please choose an action.",
+        ]
+      end
+    end
 
 
     # ===== Assassin =====
