@@ -226,6 +226,14 @@ class Game
 
   # TURNS
 
+  def pay_for_current_turn
+    case self.current_turn.action.action
+    when :coup
+      self.current_player.take_coins 7
+    when :assassin
+      self.current_player.take_coins 3
+    end
+  end
 
   def process_current_turn
     case self.current_turn.action.action
@@ -234,12 +242,10 @@ class Game
     when :foreign_aid
       self.current_player.give_coins 2
     when :coup
-      self.current_player.take_coins 7
       self.current_turn.make_decider self.target_player
     when :duke
       self.current_player.give_coins 3
     when :assassin
-      self.current_player.take_coins 3
       self.current_turn.make_decider self.target_player
     when :ambassador
       self.current_turn.make_decider self.current_player

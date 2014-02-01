@@ -244,9 +244,14 @@ module Cinch
 
               Channel(@channel_name).send "#{m.user.nick} uses #{action.upcase}#{target_msg}"
               @game.current_turn.add_action(action, target_player)
-              if @game.current_turn.action.needs_reactions?
-                @game.current_turn.wait_for_reactions
-                puts "==== Waiting for reactions"
+              if @game.current_turn.action.character_required?
+                @game.current_turn.wait_for_action_challenge
+                self.prompt_challengers
+                puts '==== Waiting for action challenge'
+              elsif @game.current_turn.action.blockable?
+                @game.current_turn.wait_for_block
+                self.prompt_blocker
+                puts '==== Waiting for block'
               else 
                 self.process_turn
               end
@@ -258,10 +263,27 @@ module Cinch
         end
       end
 
+      def prompt_challengers
+        Channel(@channel_name).send('All other players: Would you like to challenge ("!challenge") or not ("!pass")?')
+      end
+
+      def prompt_blocker
+        action = @game.current_turn.action
+        blockers = action.blockable_by.collect { |c|
+          "\"!block #{c.to_s.downcase}\""
+        }.join(' or ')
+        if action.needs_target
+          prefix = @game.current_turn.target_player.to_s
+        else
+          prefix = 'All other players'
+        end
+        Channel(@channel_name).send("#{prefix}: Would you like to block the #{action.action.to_s.upcase} (#{blockers}) or not (\"!pass\")?")
+      end
+
       def do_block(m, action)
         if @game.started? && @game.has_player?(m.user)
           player = @game.find_player(m.user)
-          if @game.current_turn.waiting_for_reactions? && @game.reacting_players.include?(player)
+          if @game.current_turn.waiting_for_block? && @game.reacting_players.include?(player)
             if @game.current_turn.action.blockable?
               if Game::ACTIONS[action.to_sym].blocks == @game.current_turn.action.action
                 if @game.current_turn.action.needs_target && m.user != @game.current_turn.target_player.user
@@ -270,7 +292,8 @@ module Cinch
                 end
                 @game.current_turn.add_counteraction(action, player)
                 Channel(@channel_name).send "#{m.user.nick} uses #{action.upcase}"
-                @game.current_turn.wait_for_reactions
+                self.prompt_challengers
+                @game.current_turn.wait_for_block_challenge
               else
                 User(m.user).send "#{action.upcase} does not block that #{@game.current_turn.action.action.upcase}."
               end
@@ -284,12 +307,38 @@ module Cinch
       def react_pass(m)
         if @game.started? && @game.has_player?(m.user)
           player = @game.find_player(m.user)
-          if @game.current_turn.waiting_for_reactions? && @game.reacting_players.include?(player)
+          turn = @game.current_turn
+          if turn.waiting_for_challenges? && @game.reacting_players.include?(player)
             @game.current_turn.pass(player)
             Channel(@channel_name).send "#{m.user.nick} passes."
 
             if @game.all_reactions_in?
+              if turn.waiting_for_action_challenge?
+                # Nobody wanted to challenge the actor.
+                if @game.current_turn.action.blockable?
+                  # If action is blockable, ask for block now.
+                  @game.current_turn.wait_for_block
+                  self.prompt_blocker
+                else
+                  # If action is unblockable, process turn.
+                  self.process_turn
+                end
+              elsif turn.waiting_for_block_challenge?
+                # Nobody challenges blocker. Process turn.
+                self.process_turn
+              end
+            end
+          elsif turn.waiting_for_block?
+            if turn.action.needs_target && turn.target_player == player
+              # Blocker didn't want to block. Process turn.
+              Channel(@channel_name).send "#{m.user.nick} passes."
               self.process_turn
+            elsif !turn.action.needs_target
+              # This blocker didn't want to block, but maybe someone else will
+              @game.current_turn.pass(player)
+              Channel(@channel_name).send "#{m.user.nick} passes."
+              # So we wait until all reactions are in.
+              self.process_turn if @game.all_reactions_in?
             end
           end
         end
@@ -298,32 +347,29 @@ module Cinch
       def react_challenge(m)
         if @game.started? && @game.has_player?(m.user)
           player = @game.find_player(m.user)
-          if @game.current_turn.waiting_for_reactions? && @game.reacting_players.include?(player)
+          if @game.current_turn.waiting_for_challenges? && @game.reacting_players.include?(player)
             chall_player = @game.current_turn.challengee_player
             chall_action = @game.current_turn.challengee_action
 
             if chall_action.character_required?
-              @game.current_turn.pause
               Channel(@channel_name).send "#{m.user.nick} challenges #{chall_player} on #{chall_action.to_s.upcase}!"
-              sleep 3
-              if chall_player.has_character?(chall_action.action)
-                Channel(@channel_name).send "... and #{chall_player} has a [#{chall_action.character_required.to_s.upcase}]. #{player} loses an influence."
-                @game.replace_character_with_new(chall_player, chall_action.character_required)
-                Channel(@channel_name).send "#{chall_player} switches the character card with one from the deck."
-                self.tell_characters_to(chall_player, false)
-                loser = player
-              else 
-                Channel(@channel_name).send "... and #{chall_player} does not have a [#{chall_action.character_required.to_s.upcase}]. #{chall_player} loses an influence."
-                loser = chall_player
+              self.prompt_challenge_defendant
+              if @game.current_turn.waiting_for_action_challenge?
+                @game.current_turn.wait_for_action_challenge_reply
+                @game.current_turn.action_challenger = player
+              elsif @game.current_turn.waiting_for_block_challenge?
+                @game.current_turn.wait_for_block_challenge_reply
+                @game.current_turn.block_challenger = player
               end
-              @game.current_turn.make_decider(loser)
-              @game.current_turn.wait_for_decision
-              self.prompt_to_flip(loser)
             else
               User(m.user).send "#{chall_action.action.upcase} cannot be challenged."
             end
           end
         end
+      end
+
+      def prompt_challenge_defendant
+        #Channel(@channel_name).send("Would prompt challenge defendant")
       end
 
       def prompt_to_flip(target)
@@ -340,7 +386,9 @@ module Cinch
       def flip_card(m, position)
         if @game.started? && @game.has_player?(m.user)
           player = @game.find_player(m.user)
-          if @game.current_turn.waiting_for_decision? && @game.current_turn.decider == player
+          turn = @game.current_turn
+
+          if turn.waiting_for_decision? && turn.decider == player && turn.action.action != :ambassador
             character = player.flip_character_card(position.to_i)
             if character.nil?
               m.user.send "You have already flipped that card."
@@ -350,6 +398,95 @@ module Cinch
             Channel(@channel_name).send "#{m.user.nick} turns a #{character} face up."
             self.check_player_status(player)
             self.start_new_turn
+          elsif turn.waiting_for_action_challenge_reply? && turn.active_player == player
+            self.respond_to_challenge(m, player, position, turn.action, turn.action_challenger)
+          elsif turn.waiting_for_block_challenge_reply? && turn.counteracting_player == player
+            self.respond_to_challenge(m, player, position, turn.counteraction, turn.block_challenger)
+          elsif turn.waiting_for_action_challenge_loser? && turn.action_challenger == player
+            self.lose_challenge(m, player, position)
+          elsif turn.waiting_for_block_challenge_loser? && turn.block_challenger == player
+            self.lose_challenge(m, player, position)
+          end
+        end
+      end
+
+      def lose_challenge(m, player, position)
+        pos = position.to_i
+        unless pos == 1 || pos == 2
+          m.user.send("#{pos} is not a valid option to reveal.")
+          return
+        end
+
+        character = player.flip_character_card(pos)
+        if character.nil?
+          m.user.send "You have already flipped that card."
+          return
+        end
+
+        Channel(@channel_name).send "#{m.user.nick} turns a #{character} face up."
+
+        self.check_player_status(player)
+
+        turn = @game.current_turn
+
+        if turn.waiting_for_action_challenge_loser?
+          # The action challenge fails. The original action holds.
+          # We now need to ask for the blocker, if any.
+          if turn.action.blockable?
+            @game.current_turn.wait_for_block
+            self.prompt_blocker
+            puts '==== Waiting for block'
+          else
+            self.process_turn
+          end
+        elsif turn.waiting_for_block_challenge_loser?
+          # The block challenge fails. The block holds.
+          # Finish the turn.
+          self.process_turn
+        else
+          raise "respond_to_challenge in #{turn.state}"
+        end
+      end
+
+
+      def respond_to_challenge(m, player, position, action, challenger)
+        pos = position.to_i
+        unless pos == 1 || pos == 2
+          m.user.send("#{pos} is not a valid option to reveal.")
+          return
+        end
+
+        revealed = player.characters[pos - 1]
+        unless revealed.face_down?
+          m.user.send('You have already flipped that card.')
+          return
+        end
+
+        turn = @game.current_turn
+
+        if revealed.to_s == action.character_required.to_s.upcase
+          Channel(@channel_name).send "#{player} reveals a [#{action.character_required.to_s.upcase}]. #{challenger} loses an influence."
+          @game.replace_character_with_new(player, action.character_required)
+          Channel(@channel_name).send "#{player} switches the character card with one from the deck."
+          self.tell_characters_to(player, false)
+          turn.wait_for_challenge_loser
+          self.prompt_to_flip(challenger)
+        else
+          Channel(@channel_name).send "#{player} turns a #{revealed} face up, losing an influence."
+          revealed.flip_up
+          self.check_player_status(player)
+          if turn.waiting_for_action_challenge_reply?
+            # The action challenge succeeds, interrupting the action.
+            # We don't need to ask for a block. Just finish the turn.
+            turn.action_challenge_successful = true
+            self.process_turn
+          elsif turn.waiting_for_block_challenge_reply?
+            # The block challenge succeeds, interrupting the block.
+            # That means the original action holds. Finish the turn.
+            turn.block_challenge_successful = true
+            self.process_turn
+          else
+            raise "respond_to_challenge in #{turn.state}"
           end
         end
       end
@@ -376,13 +513,15 @@ module Cinch
       def switch_cards(m, choice)
         if @game.started? && @game.has_player?(m.user)
           player = @game.find_player(m.user)
-          facedown_indices = [0, 1].select { |i|
-            player.characters[i].face_down?
-          }
-          facedowns = facedown_indices.collect { |i| player.characters[i] }
-          cards_to_return = facedowns + @drawn_cards
+          turn = @game.current_turn
 
-          if @game.current_turn.waiting_for_decision? && @game.current_turn.decider == player
+          if turn.waiting_for_decision? && turn.decider == player && turn.action.action == :ambassador
+            facedown_indices = [0, 1].select { |i|
+              player.characters[i].face_down?
+            }
+            facedowns = facedown_indices.collect { |i| player.characters[i] }
+            cards_to_return = facedowns + @drawn_cards
+
             choice = choice.to_i
             if 1 <= choice && choice <= @character_options.size
               new_hand = @character_options[choice - 1]
@@ -452,12 +591,14 @@ module Cinch
 
       def process_turn
         turn = @game.current_turn
-        if turn.counteracted? 
+        if turn.counteracted? && !turn.block_challenge_successful
+          @game.pay_for_current_turn
           Channel(@channel_name).send "#{turn.active_player}'s #{turn.action.action.upcase} was blocked by #{turn.counteracting_player} with #{turn.counteraction.action.upcase}."
           self.start_new_turn
-        else
+        elsif !turn.action_challenge_successful
           target_msg = turn.target_player.nil? ? "" : ": #{turn.target_player}"
           Channel(@channel_name).send "#{@game.current_player} proceeds with #{turn.action.action.upcase}. #{turn.action.effect}#{target_msg}."
+          @game.pay_for_current_turn
           @game.process_current_turn
           if turn.action.needs_decision?
             turn.wait_for_decision
@@ -469,6 +610,8 @@ module Cinch
           else
             self.start_new_turn
           end
+        else
+          self.start_new_turn
         end
       end
 
