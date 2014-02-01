@@ -379,63 +379,57 @@ describe Cinch::Plugins::CoupGame do
 
     # ===== Ambassador =====
 
-    context 'when player with 2 influence uses ambassador' do
+    context 'when player with 2 influence uses ambassador unchallenged' do
       before :each do
         @game.do_action(message_from(@order[1]), 'ambassador')
         expect(@chan.messages).to be == ["#{@order[1]} uses AMBASSADOR"]
         @chan.messages.clear
-      end
 
-      context 'when nobody challenges' do
-        before :each do
-          (2...NUM_PLAYERS).each { |i|
-            @game.react_pass(message_from(@order[i]))
-            expect(@chan.messages).to be == ["#{@order[i]} passes."]
-            @chan.messages.clear
-          }
+        p = @players[@order[1]]
+        p.messages.clear
 
-          p = @players[@order[1]]
-          p.messages.clear
-          @game.react_pass(message_from(@order[NUM_PLAYERS]))
-          expect(@chan.messages).to be == [
-            "#{@order[NUM_PLAYERS]} passes.",
-            "#{@order[1]} proceeds with AMBASSADOR. Exchange cards with Court Deck.",
-          ]
+        # Have everyone pass
+        (2...NUM_PLAYERS).each { |i|
+          @game.react_pass(message_from(@order[i]))
+          expect(@chan.messages).to be == ["#{@order[i]} passes."]
           @chan.messages.clear
+        }
+        @game.react_pass(message_from(@order[NUM_PLAYERS]))
 
-          expect(p.messages.size).to be == 8
+        expect(@chan.messages).to be == [
+          "#{@order[NUM_PLAYERS]} passes.",
+          "#{@order[1]} proceeds with AMBASSADOR. Exchange cards with Court Deck.",
+        ]
+        @chan.messages.clear
 
-          expect(p.messages[-8]).to be =~ /You drew [A-Z]+ and [A-Z]+ from the Court Deck./
-          expect(p.messages[-7]).to be == "Choose an option for a new hand; \"!switch #\""
-          choices = Array.new(7)
-          (1..6).each { |i|
-            index = -7 + i
-            match = /^#{i} - \[(\w+)\] \[(\w+)\]$/.match(p.messages[index])
-            expect(match).to_not be_nil
-            choices[i] = match
-          }
-        end
+        expect(p.messages.size).to be == 8
 
-        it 'lets player switch' do
-          @game.switch_cards(message_from(@order[1]), '1')
-          expect(@chan.messages).to be == [
-            "#{@order[1]} shuffles two cards into the Court Deck.",
-            "#{@order[2]}: It is your turn. Please choose an action.",
-          ]
-        end
-
-        it 'does not let player flip card' do
-          @game.flip_card(message_from(@order[1]), '1')
-          expect(@chan.messages).to be == []
-        end
+        expect(p.messages[-8]).to be =~ /You drew [A-Z]+ and [A-Z]+ from the Court Deck./
+        expect(p.messages[-7]).to be == "Choose an option for a new hand; \"!switch #\""
+        choices = Array.new(7)
+        (1..6).each { |i|
+          index = -7 + i
+          match = /^#{i} - \[(\w+)\] \[(\w+)\]$/.match(p.messages[index])
+          expect(match).to_not be_nil
+          choices[i] = match
+        }
       end
 
-      # TODO ambassador switch challenged
-      # If challenger wins, ambassador loses influence
-      # If challenger loses, challenger loses influence AND ambassador still switches (in either order is possible?!)
+      it 'lets player switch' do
+        @game.switch_cards(message_from(@order[1]), '1')
+        expect(@chan.messages).to be == [
+          "#{@order[1]} shuffles two cards into the Court Deck.",
+          "#{@order[2]}: It is your turn. Please choose an action.",
+        ]
+      end
+
+      it 'does not let player flip card' do
+        @game.flip_card(message_from(@order[1]), '1')
+        expect(@chan.messages).to be == []
+      end
     end
 
-    context 'when player with 1 influence uses ambassador' do
+    context 'when player with 1 influence uses ambassador unchallenged' do
       before :each do
         # Have each player take income to bump them up to 7 coins
         5.times do
@@ -454,53 +448,55 @@ describe Cinch::Plugins::CoupGame do
         @game.do_action(message_from(@order[2]), 'ambassador')
         expect(@chan.messages).to be == ["#{@order[2]} uses AMBASSADOR"]
         @chan.messages.clear
+
+        p = @players[@order[2]]
+        p.messages.clear
+
+        # Have everyone pass
+        (3..NUM_PLAYERS).each { |i|
+          @game.react_pass(message_from(@order[i]))
+          expect(@chan.messages).to be == ["#{@order[i]} passes."]
+          @chan.messages.clear
+        }
+        @game.react_pass(message_from(@order[1]))
+
+        expect(@chan.messages).to be == [
+          "#{@order[1]} passes.",
+          "#{@order[2]} proceeds with AMBASSADOR. Exchange cards with Court Deck.",
+        ]
+        @chan.messages.clear
+
+        expect(p.messages.size).to be == 5
+
+        expect(p.messages[-5]).to be =~ /You drew [A-Z]+ and [A-Z]+ from the Court Deck./
+        expect(p.messages[-4]).to be == "Choose an option for a new hand; \"!switch #\""
+        choices = Array.new(3)
+        (1..3).each { |i|
+          index = -4 + i
+          match = /^#{i} - \[(\w+)\]$/.match(p.messages[index])
+          expect(match).to_not be_nil
+          choices[i] = match
+        }
       end
 
-      context 'when nobody challenges' do
-        before :each do
-          (3..NUM_PLAYERS).each { |i|
-            @game.react_pass(message_from(@order[i]))
-            expect(@chan.messages).to be == ["#{@order[i]} passes."]
-            @chan.messages.clear
-          }
+      it 'lets player switch' do
+        @game.switch_cards(message_from(@order[2]), '1')
+        expect(@chan.messages).to be == [
+          "#{@order[2]} shuffles two cards into the Court Deck.",
+          "#{@order[3]}: It is your turn. Please choose an action.",
+        ]
+      end
 
-          p = @players[@order[2]]
-          p.messages.clear
-
-          @game.react_pass(message_from(@order[1]))
-          expect(@chan.messages).to be == [
-            "#{@order[1]} passes.",
-            "#{@order[2]} proceeds with AMBASSADOR. Exchange cards with Court Deck.",
-          ]
-          @chan.messages.clear
-
-          expect(p.messages.size).to be == 5
-
-          expect(p.messages[-5]).to be =~ /You drew [A-Z]+ and [A-Z]+ from the Court Deck./
-          expect(p.messages[-4]).to be == "Choose an option for a new hand; \"!switch #\""
-          choices = Array.new(3)
-          (1..3).each { |i|
-            index = -4 + i
-            match = /^#{i} - \[(\w+)\]$/.match(p.messages[index])
-            expect(match).to_not be_nil
-            choices[i] = match
-          }
-        end
-
-        it 'lets player switch' do
-          @game.switch_cards(message_from(@order[2]), '1')
-          expect(@chan.messages).to be == [
-            "#{@order[2]} shuffles two cards into the Court Deck.",
-            "#{@order[3]}: It is your turn. Please choose an action.",
-          ]
-        end
-
-        it 'does not let player flip card' do
-          @game.flip_card(message_from(@order[2]), '1')
-          expect(@chan.messages).to be == []
-        end
+      it 'does not let player flip card' do
+        @game.flip_card(message_from(@order[2]), '1')
+        expect(@chan.messages).to be == []
       end
     end
+
+    # TODO ambassador switch challenged
+    # If challenger wins, ambassador loses influence
+    # If challenger loses, challenger loses influence AND ambassador still switches (in either order is possible?!)
+
 
     # ===== Assassin =====
 
