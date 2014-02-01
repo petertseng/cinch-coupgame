@@ -605,7 +605,13 @@ module Cinch
           if turn.action.needs_decision?
             turn.wait_for_decision
             if turn.action.action == :coup || turn.action.action == :assassin
-              self.prompt_to_flip(turn.target_player)
+              # In a double-kill situation, the target may already be out.
+              # If target is already out, just move on to next turn.
+              if turn.target_player.has_influence?
+                self.prompt_to_flip(turn.target_player)
+              else
+                self.start_new_turn
+              end
             elsif turn.action.action == :ambassador
               self.prompt_to_switch(turn.active_player)
             end
