@@ -734,12 +734,66 @@ describe Cinch::Plugins::CoupGame do
       # If target does not have contessa, they are out of the game!
     end
 
-    # TODO assassin kill challenged
-    # If challenger wins, only assassin loses influence.
-    # Assassin gets back his 3 gold in this case.
-    # If target challenges and loses, target is out of the game!
-    # If an unrelated player challenges and loses, target and challenger each lose influence!
-    # (In either order is possible?!)
+
+    context 'when assassin kills and is challenged' do
+      before :each do
+        @game.force_characters(@order[1], :assassin, :contessa)
+
+        # Have each player take income to bump them up to 3 coins
+        (1..NUM_PLAYERS).each { |i|
+          @game.do_action(message_from(@order[i]), 'income')
+          expect(@chan.messages.size).to be == 3 * i
+        }
+        @chan.messages.clear
+
+        @game.do_action(message_from(@order[1]), 'assassin', @order[2])
+        expect(@chan.messages).to be == ["#{@order[1]} uses ASSASSIN on #{@order[2]}"]
+        @chan.messages.clear
+
+        @game.react_challenge(message_from(@order[2]))
+        expect(@chan.messages).to be == [
+          "#{@order[2]} challenges #{@order[1]} on ASSASSIN!",
+        ]
+        @chan.messages.clear
+      end
+
+      it 'continues to kill if player shows assassin' do
+        @game.flip_card(message_from(@order[1]), '1')
+
+        expect(@chan.messages).to be == [
+          "#{@order[1]} reveals a [ASSASSIN]. #{@order[2]} loses an influence.",
+          "#{@order[1]} switches the character card with one from the deck.",
+        ]
+        @chan.messages.clear
+
+        @game.flip_card(message_from(@order[2]), '1')
+
+        expect(@chan.messages.shift).to be =~ /^#{@order[2]} turns a [A-Z]+ face up\.$/
+        expect(@chan.messages).to be == [
+          "#{@order[1]} proceeds with ASSASSIN. Pay 3 coins, choose player to lose influence: #{@order[2]}.",
+          "#{@order[2]}: Would you like to block the ASSASSIN (\"!block contessa\") or not (\"!pass\")?",
+        ]
+
+        expect(@game.coins(@order[1])).to be == 0
+      end
+
+      context 'when player does not show assassin' do
+        before :each do
+          @game.flip_card(message_from(@order[1]), '2')
+        end
+
+        it 'does not kill' do
+          expect(@chan.messages).to be == [
+            "#{@order[1]} turns a CONTESSA face up, losing an influence.",
+            "#{@order[2]}: It is your turn. Please choose an action.",
+          ]
+        end
+
+        it 'refunds the cost' do
+          expect(@game.coins(@order[1])).to be == 3
+        end
+      end
+    end
 
     # ===== Captain =====
 
