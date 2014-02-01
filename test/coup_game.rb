@@ -731,30 +731,28 @@ describe Cinch::Plugins::CoupGame do
       end
 
       it 'blocks assassination if target blocks with contessa unchallenged' do
-        before :each do
-          @game.do_block(message_from(@order[2]), 'contessa')
-          expect(@chan.messages).to be == [
-            "#{@order[2]} uses CONTESSA",
-            CHALLENGE_PROMPT,
-          ].compact
+        @game.do_block(message_from(@order[2]), 'contessa')
+        expect(@chan.messages).to be == [
+          "#{@order[2]} uses CONTESSA",
+          CHALLENGE_PROMPT,
+        ].compact
+        @chan.messages.clear
+
+        (3..NUM_PLAYERS).each { |i|
+          @game.react_pass(message_from(@order[i]))
+          expect(@chan.messages).to be == ["#{@order[i]} passes."]
           @chan.messages.clear
+        }
+        @game.react_pass(message_from(@order[1]))
 
-          (3..NUM_PLAYERS).each { |i|
-            @game.react_pass(message_from(@order[i]))
-            expect(@chan.messages).to be == ["#{@order[i]} passes."]
-            @chan.messages.clear
-          }
-          @game.react_pass(message_from(@order[1]))
+        expect(@chan.messages).to be == [
+          "#{@order[1]} passes.",
+          "#{@order[1]}'s ASSASSIN was blocked by #{@order[2]} with CONTESSA.",
+          "#{@order[2]}: It is your turn. Please choose an action.",
+        ]
 
-          expect(@chan.messages).to be == [
-            "#{@order[1]} passes.",
-            "#{@order[1]}'s ASSASSIN was blocked by #{@order[2]} with CONTESSA.",
-            "#{@order[2]}: It is your turn. Please choose an action.",
-          ]
-
-          # But assassin still pays
-          expect(@game.coins(@order[1])).to be == 0
-        end
+        # But assassin still pays
+        expect(@game.coins(@order[1])).to be == 0
       end
 
       context 'when contessa blocks and is challenged' do
