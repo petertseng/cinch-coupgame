@@ -616,34 +616,22 @@ describe Cinch::Plugins::CoupGame do
 
     end
 
-    it 'does not let player flip a flipped card' do
-      # Have each player take income to bump them up to 3 coins
-      (1..NUM_PLAYERS).each { |i|
-        @game.do_action(message_from(@order[i]), 'income')
-      }
+    it 'does not let player flip an already-flipped card' do
+      # Have each player take income to bump them up to 7 coins
+      5.times do
+        (1..NUM_PLAYERS).each { |i|
+          @game.do_action(message_from(@order[i]), 'income')
+        }
+      end
 
-      # 1 uses assassin on 3
-      @game.do_action(message_from(@order[1]), 'assassin', @order[3])
-
-      # 2, 3 pass on challenge
-      @game.react_pass(message_from(@order[2]))
-      @game.react_pass(message_from(@order[3]))
-
-      # 3 passes on block
-      @game.react_pass(message_from(@order[3]))
+      # 1 uses coup on 3
+      @game.do_action(message_from(@order[1]), 'coup', @order[3])
 
       # 3 flips card 1
       @game.flip_card(message_from(@order[3]), '1')
 
-      # 2 uses assassin on 3
-      @game.do_action(message_from(@order[2]), 'assassin', @order[3])
-
-      # 1, 3 pass on challenge
-      @game.react_pass(message_from(@order[1]))
-      @game.react_pass(message_from(@order[3]))
-
-      # 3 passes on block
-      @game.react_pass(message_from(@order[3]))
+      # 2 uses coup on 3
+      @game.do_action(message_from(@order[2]), 'coup', @order[3])
 
       @chan.messages.clear
       p = @players[@order[3]]
