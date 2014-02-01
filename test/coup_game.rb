@@ -717,7 +717,7 @@ describe Cinch::Plugins::CoupGame do
 
         it 'does not lets target switch' do
           @game.switch_cards(message_from(@order[2]), '1')
-          expect(@chan.messages.size).to be == 0
+          expect(@chan.messages).to be == []
         end
       end
 
