@@ -641,30 +641,42 @@ describe Cinch::Plugins::CoupGame do
 
     # ===== Captain =====
 
-    context 'when player uses captain' do
+    context 'when player uses captain unchallenged' do
       before :each do
         @game.do_action(message_from(@order[1]), 'captain', @order[2])
         expect(@chan.messages).to be == ["#{@order[1]} uses CAPTAIN on #{@order[2]}"]
         @chan.messages.clear
-      end
 
-      it 'steals two coins if nobody challenges' do
+        p = @players[@order[2]]
+        p.messages.clear
+
+        # Have everyone pass
         (2...NUM_PLAYERS).each { |i|
           @game.react_pass(message_from(@order[i]))
           expect(@chan.messages).to be == ["#{@order[i]} passes."]
           @chan.messages.clear
         }
-
-        p = @players[@order[2]]
-        p.messages.clear
-
         @game.react_pass(message_from(@order[NUM_PLAYERS]))
+
         expect(@chan.messages).to be == [
           "#{@order[NUM_PLAYERS]} passes.",
           "#{@order[1]} proceeds with CAPTAIN. Take 2 coins from another player: #{@order[2]}.",
-          "#{@order[2]}: It is your turn. Please choose an action.",
+          "#{@order[2]}: Would you like to block the CAPTAIN (\"!block ambassador\" or \"block captain\") or not (\"!pass\")?",
         ]
         @chan.messages.clear
+      end
+
+      it 'steals two coins if target does not block' do
+        @game.do_pass(message_from(@order[2]))
+
+        expect(@chan.messages).to be == [
+          "#{@order[2]} passes.",
+          "#{@order[1]} proceeds with CAPTAIN. Take 2 coins from another player: #{@order[2]}.",
+          "#{@order[2]}: It is your turn. Please choose an action.",
+        ]
+
+        expect(@game.coins(@order[1])) == 4
+        expect(@game.coins(@order[2])) == 0
       end
 
       it 'does not let unrelated player block with ambassador' do
@@ -684,10 +696,6 @@ describe Cinch::Plugins::CoupGame do
         expect(@chan.messages).to be == []
         expect(p.messages).to be == ['You can only block with CAPTAIN if you are the target.']
       end
-
-      # TODO captain steal challenged
-      # If challenger wins, only captain loses influence.
-      # If challenger loses, challenger loses influence and captain steals.
 
       context 'when target blocks with ambassador' do
         before :each do
@@ -743,6 +751,10 @@ describe Cinch::Plugins::CoupGame do
         # If target does not have captain, they lose influence and money.
       end
     end
+
+    # TODO captain steal challenged
+    # If challenger wins, only captain loses influence.
+    # If challenger loses, challenger loses influence and captain steals.
 
     it 'takes 0 coins from a player with 0 coins' do
       # 1 uses captain on 3
