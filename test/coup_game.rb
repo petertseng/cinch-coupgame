@@ -752,7 +752,7 @@ describe Cinch::Plugins::CoupGame do
       expect(@game.coins(@players[@order[3]])).to be == 0
 
       # 2 uses captain on 3
-      @game.do_action(message_from(@order[1]), 'captain', @order[3])
+      @game.do_action(message_from(@order[2]), 'captain', @order[3])
 
       # 1, 3 pass
       @game.react_pass(message_from(@order[1]))
