@@ -217,6 +217,8 @@ describe Cinch::Plugins::CoupGame do
         "#{@order[1]} proceeds with INCOME. Take 1 coin.",
         "#{@order[2]}: It is your turn. Please choose an action.",
       ]
+
+      expect(@game.coins(@order[1])).to be == 3
     end
 
     # ===== Foreign Aid =====
@@ -247,6 +249,8 @@ describe Cinch::Plugins::CoupGame do
           "#{@order[1]} proceeds with FOREIGN_AID. Take 2 coins.",
           "#{@order[2]}: It is your turn. Please choose an action.",
         ]
+
+        expect(@game.coins(@order[1])).to be == 4
       end
 
       context 'when a player blocks with duke' do
@@ -269,6 +273,8 @@ describe Cinch::Plugins::CoupGame do
             "#{@order[1]}'s FOREIGN_AID was blocked by #{@order[2]} with DUKE.",
             "#{@order[2]}: It is your turn. Please choose an action.",
           ]
+
+          expect(@game.coins(@order[1])).to be == 2
         end
 
         # TODO foreign aid block challenged
