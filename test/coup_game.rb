@@ -1040,9 +1040,49 @@ describe Cinch::Plugins::CoupGame do
 
     end
 
-    # TODO captain steal challenged
-    # If challenger wins, only captain loses influence.
-    # If challenger loses, challenger loses influence and captain steals.
+    context 'when captain steals and is challenged' do
+      before :each do
+        @game.force_characters(@order[1], :captain, :ambassador)
+
+        @game.do_action(message_from(@order[1]), 'captain', @order[2])
+        expect(@chan.messages).to be == ["#{@order[1]} uses CAPTAIN on #{@order[2]}"]
+        @chan.messages.clear
+
+        @game.react_challenge(message_from(@order[2]))
+        expect(@chan.messages).to be == [
+          "#{@order[2]} challenges #{@order[1]} on CAPTAIN!",
+        ]
+        @chan.messages.clear
+      end
+
+      it 'continues to steal if player shows captain' do
+        @game.flip_card(message_from(@order[1]), '1')
+
+        expect(@chan.messages).to be == [
+          "#{@order[1]} reveals a [CAPTAIN]. #{@order[2]} loses an influence.",
+          "#{@order[1]} switches the character card with one from the deck.",
+        ]
+        @chan.messages.clear
+
+        @game.flip_card(message_from(@order[2]), '1')
+
+        expect(@chan.messages.shift).to be =~ /^#{@order[2]} turns a [A-Z]+ face up\.$/
+        expect(@chan.messages).to be == [
+          "#{@order[1]} proceeds with CAPTAIN. Take 2 coins from another player: #{@order[2]}.",
+          "#{@order[2]}: Would you like to block the CAPTAIN (\"!block captain\" or \"block ambassador\") or not (\"!pass\")?",
+        ]
+      end
+
+      it 'no longer steals if player does not show captain' do
+        @game.flip_card(message_from(@order[1]), '2')
+        expect(@chan.messages).to be == [
+          "#{@order[1]} turns a AMBASSADOR face up, losing an influence.",
+          "#{@order[2]}: It is your turn. Please choose an action.",
+        ]
+        expect(@game.coins(@order[1])).to be == 2
+        expect(@game.coins(@order[2])).to be == 2
+      end
+    end
 
     it 'takes 0 coins from a player with 0 coins' do
       # 1 uses captain on 3
