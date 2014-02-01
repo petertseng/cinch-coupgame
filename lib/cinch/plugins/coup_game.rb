@@ -45,6 +45,7 @@ module Cinch
       match /challenge/i,            :method => :react_challenge
       match /bs/i,                   :method => :react_challenge
 
+      match /flip (1|2)/i,           :method => :flip_card
       match /lose (1|2)/i,           :method => :flip_card  
       match /switch (([1-6]))/i,     :method => :switch_cards
 
