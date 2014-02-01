@@ -244,8 +244,8 @@ class Game
     when :ambassador
       self.current_turn.make_decider self.current_player
     when :captain
-      self.current_player.give_coins 2
-      self.target_player.take_coins 2
+      taken = self.target_player.take_coins 2
+      self.current_player.give_coins taken
     end
   end
 

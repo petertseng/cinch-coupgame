@@ -52,7 +52,13 @@ class Player
   end
 
   def take_coins(amount)
+    if self.coins < amount
+      taken = self.coins
+      self.coins = 0
+      return taken
+    end
     self.coins -= amount
+    amount
   end
 
   def to_s
