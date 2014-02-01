@@ -435,9 +435,15 @@ module Cinch
           # The action challenge fails. The original action holds.
           # We now need to ask for the blocker, if any.
           if turn.action.blockable?
-            @game.current_turn.wait_for_block
-            self.prompt_blocker
-            puts '==== Waiting for block'
+            # In a double-kill, losing challenge may kill the blocker.
+            # If he's dead, just skip to processing turn.
+            if turn.target_player.has_influence?
+              turn.wait_for_block
+              self.prompt_blocker
+              puts '==== Waiting for block'
+            else
+              self.process_turn
+            end
           else
             self.process_turn
           end
