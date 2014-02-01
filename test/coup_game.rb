@@ -301,42 +301,34 @@ describe Cinch::Plugins::CoupGame do
       expect(p.messages).to be == ['You need 7 coins to use COUP, but you only have 6 coins.']
     end
 
-    it 'lets a player with 7 coins use coup' do
-      5.times do
-        (1..NUM_PLAYERS).each { |i|
-          @game.do_action(message_from(@order[i]), 'income')
-        }
-      end
-      @chan.messages.clear
+    context 'when a player with 7 coins uses coup' do
+      before :each do
+        5.times do
+          (1..NUM_PLAYERS).each { |i|
+            @game.do_action(message_from(@order[i]), 'income')
+          }
+        end
+        @chan.messages.clear
 
-      p = @players[@order[2]]
-      p.messages.clear
+        p = @players[@order[2]]
+        p.messages.clear
 
-      @game.do_action(message_from(@order[1]), 'coup', @order[2])
-      expect(@chan.messages).to be == [
-        "#{@order[1]} uses COUP on #{@order[2]}",
-        "#{@order[1]} proceeds with COUP. Pay 7 coins, choose player to lose influence: #{@order[2]}.",
-      ]
+        @game.do_action(message_from(@order[1]), 'coup', @order[2])
+        expect(@chan.messages).to be == [
+          "#{@order[1]} uses COUP on #{@order[2]}",
+          "#{@order[1]} proceeds with COUP. Pay 7 coins, choose player to lose influence: #{@order[2]}.",
+        ]
+        @chan.messages.clear
 
-      expect(p.messages.size).to be == 1
-      expect(p.messages[-1]).to be =~ CHOICE_REGEX
-    end
-
-    it 'does not let player switch instead of flip when couped' do
-      5.times do
-        (1..NUM_PLAYERS).each { |i|
-          @game.do_action(message_from(@order[i]), 'income')
-        }
+        expect(p.messages.size).to be == 1
+        expect(p.messages[-1]).to be =~ CHOICE_REGEX
       end
 
-      # 1 uses coup on 2
-      @game.do_action(message_from(@order[1]), 'coup', @order[2])
-
-      @chan.messages.clear
-
-      # 2 will now... switch?!
-      @game.switch_cards(message_from(@order[2]), '1')
-      expect(@chan.messages).to be == []
+      it 'does not let target switch instead of flip' do
+        # 2 will now... switch?!
+        @game.switch_cards(message_from(@order[2]), '1')
+        expect(@chan.messages).to be == []
+      end
     end
 
     context 'when a player has 10 coins' do
