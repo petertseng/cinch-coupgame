@@ -77,8 +77,8 @@ class MyChannel
 end
 
 describe Cinch::Plugins::CoupGame do
-  def message_from(username)
-    Message.new(@players[username], @chan)
+  def message_from(username, channel = nil)
+    Message.new(@players[username], channel || @chan)
   end
   def pm_from(username)
     Message.new(@players[username], nil)
