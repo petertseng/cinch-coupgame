@@ -102,7 +102,7 @@ module Cinch
           game.players.map{|p| p.user }.each do |user|
             user.refresh
             if user.idle > @idle_timer_length
-              self.remove_user_from_game(user, game)
+              self.remove_user_from_game(user, game) if game.not_started?
               user.send "You have been removed from the #{@channel_name} game due to inactivity."
             end
           end
