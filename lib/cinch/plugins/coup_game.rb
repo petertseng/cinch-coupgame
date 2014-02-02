@@ -27,8 +27,7 @@ module Cinch
         @idle_timer_length    = config[:allowed_idle]
         @invite_timer_length  = config[:invite_reset]
 
-        @game = Game.new(@channel_name)
-        @games = { @channel_name => @game }
+        @games = { @channel_name => Game.new(@channel_name) }
 
         @idle_timer   = self.start_idle_timer
       end
@@ -82,15 +81,13 @@ module Cinch
       #--------------------------------------------------------------------------------
       
       def voice_if_in_game(m)
-        if @game.has_player?(m.user)
-          Channel(@channel_name).voice(m.user)
-        end
+        game = @games[m.channel.name]
+        m.channel.voice(m.user) if game && game.has_player?(m.user)
       end
 
       def remove_if_not_started(m, user)
-        if @game.not_started?
-          self.remove_user_from_game(user)
-        end
+        game = @games[m.channel.name]
+        self.remove_user_from_game(user, game) if game.not_started?
       end
 
       def devoice_everyone_on_start(m, user)
@@ -100,11 +97,12 @@ module Cinch
       end
 
       def start_idle_timer
+        game = @games[@channel_name]
         Timer(300) do
-          @game.players.map{|p| p.user }.each do |user|
+          game.players.map{|p| p.user }.each do |user|
             user.refresh
             if user.idle > @idle_timer_length
-              self.remove_user_from_game(user)
+              self.remove_user_from_game(user, game)
               user.send "You have been removed from the #{@channel_name} game due to inactivity."
             end
           end
@@ -118,17 +116,18 @@ module Cinch
 
       def join(m)
         # self.reset_timer(m)
+        game = @games[@channel_name]
         if Channel(@channel_name).has_user?(m.user)
-          if @game.accepting_players? 
-            added = @game.add_player(m.user)
+          if game.accepting_players? 
+            added = game.add_player(m.user)
             unless added.nil?
-              Channel(@channel_name).send "#{m.user.nick} has joined the game (#{@game.players.count}/#{Game::MAX_PLAYERS})"
+              Channel(@channel_name).send "#{m.user.nick} has joined the game (#{game.players.count}/#{Game::MAX_PLAYERS})"
               Channel(@channel_name).voice(m.user)
             end
           else
-            if @game.started?
+            if game.started?
               Channel(@channel_name).send "#{m.user.nick}: Game has already started."
-            elsif @game.at_max_players?
+            elsif game.at_max_players?
               Channel(@channel_name).send "#{m.user.nick}: Game is at max players."
             else
               Channel(@channel_name).send "#{m.user.nick}: You cannot join."
@@ -140,32 +139,34 @@ module Cinch
       end
 
       def leave(m)
-        if @game.accepting_players?
-          left = @game.remove_player(m.user)
+        game = @games[@channel_name]
+        if game.accepting_players?
+          left = game.remove_player(m.user)
           unless left.nil?
-            Channel(@channel_name).send "#{m.user.nick} has left the game (#{@game.players.count}/#{Game::MAX_PLAYERS})"
+            Channel(@channel_name).send "#{m.user.nick} has left the game (#{game.players.count}/#{Game::MAX_PLAYERS})"
             Channel(@channel_name).devoice(m.user)
           end
         else
-          if @game.started?
+          if game.started?
             m.reply "Game is in progress.", true
           end
         end
       end
 
       def start_game(m)
-        unless @game.started?
-          if @game.at_min_players?
-            if @game.has_player?(m.user)
+        game = @games[@channel_name]
+        unless game.started?
+          if game.at_min_players?
+            if game.has_player?(m.user)
               @idle_timer.stop
-              @game.start_game!
+              game.start_game!
 
               Channel(@channel_name).send "The game has started."
 
               self.pass_out_characters
 
-              Channel(@channel_name).send "Turn order is: #{@game.players.map{ |p| p.user.nick }.join(' ')}"
-              Channel(@channel_name).send "FIRST TURN. Player: #{@game.current_player}. Please choose an action."
+              Channel(@channel_name).send "Turn order is: #{game.players.map{ |p| p.user.nick }.join(' ')}"
+              Channel(@channel_name).send "FIRST TURN. Player: #{game.current_player}. Please choose an action."
               #User(@game.team_leader.user).send "You are team leader. Please choose a team of #{@game.current_team_size} to go on first mission. \"!team#{team_example(@game.current_team_size)}\""
             else
               m.reply "You are not in the game.", true
@@ -182,25 +183,29 @@ module Cinch
 
       # For use in tests, since @game is not exposed to tests
       def coins(p)
-        @game.find_player(p).coins
+        game = @games[@channel_name]
+        game.find_player(p).coins
       end
 
       # for use in tests
       def force_characters(p, c1, c2)
-        @game.find_player(p).switch_character(Character.new(c1), 0)
-        @game.find_player(p).switch_character(Character.new(c2), 1)
+        game = @games[@channel_name]
+        game.find_player(p).switch_character(Character.new(c1), 0)
+        game.find_player(p).switch_character(Character.new(c2), 1)
       end
 
       def pass_out_characters
-        @game.players.each do |p|
+        game = @games[@channel_name]
+        game.players.each do |p|
           User(p.user).send "="*40
           self.tell_characters_to(p)
         end
       end
 
       def whoami(m)
-        if @game.started? && @game.has_player?(m.user)
-          player = @game.find_player(m.user)
+        game = @games[@channel_name]
+        if game.started? && game.has_player?(m.user)
+          player = game.find_player(m.user)
           self.tell_characters_to(player)
         end
       end
@@ -216,10 +221,11 @@ module Cinch
 
 
       def do_action(m, action, target = "")
-        if @game.started? && @game.has_player?(m.user)
-          if @game.current_turn.waiting_for_action? && @game.current_player.user == m.user
+        game = @games[@channel_name]
+        if game.started? && game.has_player?(m.user)
+          if game.current_turn.waiting_for_action? && game.current_player.user == m.user
 
-            if @game.current_player.coins >= 10 && action.upcase != "COUP"
+            if game.current_player.coins >= 10 && action.upcase != "COUP"
               m.user.send "Since you have 10 coins, you must use COUP. !action coup <target>"
               return
             end
@@ -227,7 +233,7 @@ module Cinch
             if target.empty?
               target_msg = ""
             else
-              target_player = @game.find_player(target)
+              target_player = game.find_player(target)
               if target_player.nil?
                 User(m.user).send "\"#{target}\" is an invalid target."
               else
@@ -237,20 +243,20 @@ module Cinch
 
             unless target_msg.nil?
               cost = Game::ACTIONS[action.to_sym].cost
-              if @game.current_player.coins < cost
-                coins = @game.current_player.coins
+              if game.current_player.coins < cost
+                coins = game.current_player.coins
                 m.user.send "You need #{cost} coins to use #{action.upcase}, but you only have #{coins} coins."
                 return
               end
 
               Channel(@channel_name).send "#{m.user.nick} uses #{action.upcase}#{target_msg}"
-              @game.current_turn.add_action(action, target_player)
-              if @game.current_turn.action.character_required?
-                @game.current_turn.wait_for_action_challenge
+              game.current_turn.add_action(action, target_player)
+              if game.current_turn.action.character_required?
+                game.current_turn.wait_for_action_challenge
                 self.prompt_challengers
                 puts '==== Waiting for action challenge'
-              elsif @game.current_turn.action.blockable?
-                @game.current_turn.wait_for_block
+              elsif game.current_turn.action.blockable?
+                game.current_turn.wait_for_block
                 self.prompt_blocker
                 puts '==== Waiting for block'
               else 
@@ -269,12 +275,13 @@ module Cinch
       end
 
       def prompt_blocker
-        action = @game.current_turn.action
+        game = @games[@channel_name]
+        action = game.current_turn.action
         blockers = action.blockable_by.collect { |c|
           "\"!block #{c.to_s.downcase}\""
         }.join(' or ')
         if action.needs_target
-          prefix = @game.current_turn.target_player.to_s
+          prefix = game.current_turn.target_player.to_s
         else
           prefix = 'All other players'
         end
@@ -282,43 +289,45 @@ module Cinch
       end
 
       def do_block(m, action)
-        if @game.started? && @game.has_player?(m.user)
-          player = @game.find_player(m.user)
-          if @game.current_turn.waiting_for_block? && @game.reacting_players.include?(player)
-            if @game.current_turn.action.blockable?
-              if Game::ACTIONS[action.to_sym].blocks == @game.current_turn.action.action
-                if @game.current_turn.action.needs_target && m.user != @game.current_turn.target_player.user
+        game = @games[@channel_name]
+        if game.started? && game.has_player?(m.user)
+          player = game.find_player(m.user)
+          if game.current_turn.waiting_for_block? && game.reacting_players.include?(player)
+            if game.current_turn.action.blockable?
+              if Game::ACTIONS[action.to_sym].blocks == game.current_turn.action.action
+                if game.current_turn.action.needs_target && m.user != game.current_turn.target_player.user
                   m.user.send "You can only block with #{action.upcase} if you are the target."
                   return
                 end
-                @game.current_turn.add_counteraction(action, player)
+                game.current_turn.add_counteraction(action, player)
                 Channel(@channel_name).send "#{m.user.nick} uses #{action.upcase}"
                 self.prompt_challengers
-                @game.current_turn.wait_for_block_challenge
+                game.current_turn.wait_for_block_challenge
               else
-                User(m.user).send "#{action.upcase} does not block that #{@game.current_turn.action.action.upcase}."
+                User(m.user).send "#{action.upcase} does not block that #{game.current_turn.action.action.upcase}."
               end
             else
-              User(m.user).send "#{@game.current_turn.action.action.upcase} cannot be blocked."
+              User(m.user).send "#{game.current_turn.action.action.upcase} cannot be blocked."
             end
           end
         end
       end
 
       def react_pass(m)
-        if @game.started? && @game.has_player?(m.user)
-          player = @game.find_player(m.user)
-          turn = @game.current_turn
-          if turn.waiting_for_challenges? && @game.reacting_players.include?(player)
-            @game.current_turn.pass(player)
+        game = @games[@channel_name]
+        if game.started? && game.has_player?(m.user)
+          player = game.find_player(m.user)
+          turn = game.current_turn
+          if turn.waiting_for_challenges? && game.reacting_players.include?(player)
+            game.current_turn.pass(player)
             Channel(@channel_name).send "#{m.user.nick} passes."
 
-            if @game.all_reactions_in?
+            if game.all_reactions_in?
               if turn.waiting_for_action_challenge?
                 # Nobody wanted to challenge the actor.
-                if @game.current_turn.action.blockable?
+                if game.current_turn.action.blockable?
                   # If action is blockable, ask for block now.
-                  @game.current_turn.wait_for_block
+                  game.current_turn.wait_for_block
                   self.prompt_blocker
                 else
                   # If action is unblockable, process turn.
@@ -336,31 +345,32 @@ module Cinch
               self.process_turn
             elsif !turn.action.needs_target
               # This blocker didn't want to block, but maybe someone else will
-              @game.current_turn.pass(player)
+              game.current_turn.pass(player)
               Channel(@channel_name).send "#{m.user.nick} passes."
               # So we wait until all reactions are in.
-              self.process_turn if @game.all_reactions_in?
+              self.process_turn if game.all_reactions_in?
             end
           end
         end
       end
 
       def react_challenge(m)
-        if @game.started? && @game.has_player?(m.user)
-          player = @game.find_player(m.user)
-          if @game.current_turn.waiting_for_challenges? && @game.reacting_players.include?(player)
-            chall_player = @game.current_turn.challengee_player
-            chall_action = @game.current_turn.challengee_action
+        game = @games[@channel_name]
+        if game.started? && game.has_player?(m.user)
+          player = game.find_player(m.user)
+          if game.current_turn.waiting_for_challenges? && game.reacting_players.include?(player)
+            chall_player = game.current_turn.challengee_player
+            chall_action = game.current_turn.challengee_action
 
             if chall_action.character_required?
               Channel(@channel_name).send "#{m.user.nick} challenges #{chall_player} on #{chall_action.to_s.upcase}!"
               self.prompt_challenge_defendant(chall_player, chall_action)
-              if @game.current_turn.waiting_for_action_challenge?
-                @game.current_turn.wait_for_action_challenge_reply
-                @game.current_turn.action_challenger = player
-              elsif @game.current_turn.waiting_for_block_challenge?
-                @game.current_turn.wait_for_block_challenge_reply
-                @game.current_turn.block_challenger = player
+              if game.current_turn.waiting_for_action_challenge?
+                game.current_turn.wait_for_action_challenge_reply
+                game.current_turn.action_challenger = player
+              elsif game.current_turn.waiting_for_block_challenge?
+                game.current_turn.wait_for_block_challenge_reply
+                game.current_turn.block_challenger = player
               end
             else
               User(m.user).send "#{chall_action.action.upcase} cannot be challenged."
@@ -394,9 +404,10 @@ module Cinch
       end
 
       def flip_card(m, position)
-        if @game.started? && @game.has_player?(m.user)
-          player = @game.find_player(m.user)
-          turn = @game.current_turn
+        game = @games[@channel_name]
+        if game.started? && game.has_player?(m.user)
+          player = game.find_player(m.user)
+          turn = game.current_turn
 
           if turn.waiting_for_decision? && turn.decider == player && turn.action.action != :ambassador
             character = player.flip_character_card(position.to_i)
@@ -406,10 +417,10 @@ module Cinch
             end
 
             Channel(@channel_name).send "#{m.user.nick} turns a #{character} face up."
-            old_game = @game
+            old_game = game
             self.check_player_status(player)
             # If I haven't started a new game, start a new turn
-            self.start_new_turn if @game == old_game
+            self.start_new_turn if @games[@channel_name] == old_game
           elsif turn.waiting_for_action_challenge_reply? && turn.active_player == player
             self.respond_to_challenge(m, player, position, turn.action, turn.action_challenger)
           elsif turn.waiting_for_block_challenge_reply? && turn.counteracting_player == player
@@ -423,6 +434,8 @@ module Cinch
       end
 
       def lose_challenge(m, player, position)
+        game = @games[@channel_name]
+
         pos = position.to_i
         unless pos == 1 || pos == 2
           m.user.send("#{pos} is not a valid option to reveal.")
@@ -439,7 +452,7 @@ module Cinch
 
         self.check_player_status(player)
 
-        turn = @game.current_turn
+        turn = game.current_turn
 
         if turn.waiting_for_action_challenge_loser?
           # The action challenge fails. The original action holds.
@@ -468,6 +481,8 @@ module Cinch
 
 
       def respond_to_challenge(m, player, position, action, challenger)
+        game = @games[@channel_name]
+
         pos = position.to_i
         unless pos == 1 || pos == 2
           m.user.send("#{pos} is not a valid option to reveal.")
@@ -480,11 +495,11 @@ module Cinch
           return
         end
 
-        turn = @game.current_turn
+        turn = game.current_turn
 
         if revealed.to_s == action.character_required.to_s.upcase
           Channel(@channel_name).send "#{player} reveals a [#{action.character_required.to_s.upcase}]. #{challenger} loses an influence."
-          @game.replace_character_with_new(player, action.character_required)
+          game.replace_character_with_new(player, action.character_required)
           Channel(@channel_name).send "#{player} switches the character card with one from the deck."
           self.tell_characters_to(player, false)
           turn.wait_for_challenge_loser
@@ -510,7 +525,8 @@ module Cinch
       end
 
       def prompt_to_switch(target)
-        @drawn_cards = @game.draw_cards(2)
+        game = @games[@channel_name]
+        @drawn_cards = game.draw_cards(2)
         card_names = @drawn_cards.collect { |c| c.to_s }.join(' and ')
         User(target.user).send "You drew #{card_names} from the Court Deck."
 
@@ -529,9 +545,10 @@ module Cinch
       end
 
       def switch_cards(m, choice)
-        if @game.started? && @game.has_player?(m.user)
-          player = @game.find_player(m.user)
-          turn = @game.current_turn
+        game = @games[@channel_name]
+        if game.started? && game.has_player?(m.user)
+          player = game.find_player(m.user)
+          turn = game.current_turn
 
           if turn.waiting_for_decision? && turn.decider == player && turn.action.action == :ambassador
             facedown_indices = [0, 1].select { |i|
@@ -559,7 +576,7 @@ module Cinch
                 player.switch_character(new_hand[j], i)
               }
 
-              @game.shuffle_into_deck(*cards_to_return)
+              game.shuffle_into_deck(*cards_to_return)
               Channel(@channel_name).send "#{m.user.nick} shuffles two cards into the Court Deck."
 
               self.start_new_turn
@@ -582,24 +599,26 @@ module Cinch
       end
 
       def show_table(m)
-        @game.players.each do |p|
+        game = @games[@channel_name]
+        game.players.each do |p|
           character_1, character_2 = p.characters
 
           char1_str = character_1.face_down? ? "(########)" : "[#{character_1}]"
           char2_str = character_2.face_down? ? "(########)" : "[#{character_2}]"
           m.reply "#{dehighlight_nick(p.to_s)}: #{char1_str} #{char2_str} - Coins: #{p.coins}"
         end
-        unless @game.discard_pile.empty?
-          discards = @game.discard_pile.map{ |c| "[#{c}]" }.join(" ")
+        unless game.discard_pile.empty?
+          discards = game.discard_pile.map{ |c| "[#{c}]" }.join(" ")
           m.reply "Discard Pile: #{discards}"
         end
       end
 
       def check_player_status(player)
+        game = @games[@channel_name]
         unless player.has_influence?
           Channel(@channel_name).send "#{player} has no more influence, and is out of the game."
-          @game.discard_characters_for(player)
-          left = @game.remove_player(player.user)
+          game.discard_characters_for(player)
+          left = game.remove_player(player.user)
           unless left.nil?
             Channel(@channel_name).devoice(player.user)
           end
@@ -608,16 +627,17 @@ module Cinch
       end
 
       def process_turn
-        turn = @game.current_turn
+        game = @games[@channel_name]
+        turn = game.current_turn
         if turn.counteracted? && !turn.block_challenge_successful
-          @game.pay_for_current_turn
+          game.pay_for_current_turn
           Channel(@channel_name).send "#{turn.active_player}'s #{turn.action.action.upcase} was blocked by #{turn.counteracting_player} with #{turn.counteraction.action.upcase}."
           self.start_new_turn
         elsif !turn.action_challenge_successful
           target_msg = turn.target_player.nil? ? "" : ": #{turn.target_player}"
-          Channel(@channel_name).send "#{@game.current_player} proceeds with #{turn.action.action.upcase}. #{turn.action.effect}#{target_msg}."
-          @game.pay_for_current_turn
-          @game.process_current_turn
+          Channel(@channel_name).send "#{game.current_player} proceeds with #{turn.action.action.upcase}. #{turn.action.effect}#{target_msg}."
+          game.pay_for_current_turn
+          game.process_current_turn
           if turn.action.needs_decision?
             turn.wait_for_decision
             if turn.action.action == :coup || turn.action.action == :assassin
@@ -640,38 +660,43 @@ module Cinch
       end
 
       def start_new_turn
-        @game.next_turn
-        Channel(@channel_name).send "#{@game.current_player}: It is your turn. Please choose an action."
+        game = @games[@channel_name]
+        game.next_turn
+        Channel(@channel_name).send "#{game.current_player}: It is your turn. Please choose an action."
       end
 
 
       def check_game_state
-        if @game.is_over?
+        game = @games[@channel_name]
+        if game.is_over?
           self.do_end_game
         end
       end
 
       def do_end_game
-        Channel(@channel_name).send "Game is over! #{@game.winner} wins!"
+        game = @games[@channel_name]
+        Channel(@channel_name).send "Game is over! #{game.winner} wins!"
         self.start_new_game
       end
 
       def start_new_game
+        game = @games[@channel_name]
         Channel(@channel_name).moderated = false
-        @game.players.each do |p|
+        game.players.each do |p|
           Channel(@channel_name).devoice(p.user)
         end
-        @game = Game.new
+        @games[@channel_name] = Game.new(@channel_name)
         @idle_timer.start
       end
 
 
 
       def list_players(m)
-        if @game.players.empty?
+        game = @games[@channel_name]
+        if game.players.empty?
           m.reply "No one has joined the game yet."
         else
-          m.reply @game.players.map{ |p| dehighlight_nick(p.to_s) }.join(' ')
+          m.reply game.players.map{ |p| dehighlight_nick(p.to_s) }.join(' ')
         end
       end
 
@@ -681,11 +706,11 @@ module Cinch
         end
       end
 
-      def remove_user_from_game(user)
-        if @game.not_started?
-          left = @game.remove_player(user)
+      def remove_user_from_game(user, game)
+        if game.not_started?
+          left = game.remove_player(user)
           unless left.nil?
-            Channel(@channel_name).send "#{user.nick} has left the game (#{@game.players.count}/#{Game::MAX_PLAYERS})"
+            Channel(@channel_name).send "#{user.nick} has left the game (#{game.players.count}/#{Game::MAX_PLAYERS})"
             Channel(@channel_name).devoice(user)
           end
         end
@@ -706,13 +731,14 @@ module Cinch
       end
 
       def reset_game(m)
+        game = @games[@channel_name]
         if self.is_mod? m.user.nick
-          if @game.started?
+          if game.started?
             spies, resistance = get_loyalty_info
             Channel(@channel_name).send "The spies were: #{spies.join(", ")}"
             Channel(@channel_name).send "The resistance were: #{resistance.join(", ")}"
           end
-          @game = Game.new
+          @games[@channel_name] = Game.new(@channel_name)
           self.devoice_channel
           Channel(@channel_name).send "The game has been reset."
           @idle_timer.start
@@ -720,12 +746,13 @@ module Cinch
       end
 
       def kick_user(m, nick)
+        game = @games[@channel_name]
         if self.is_mod? m.user.nick
-          if @game.not_started?
+          if game.not_started?
             user = User(nick)
-            left = @game.remove_player(user)
+            left = game.remove_player(user)
             unless left.nil?
-              Channel(@channel_name).send "#{user.nick} has left the game (#{@game.players.count}/#{Game::MAX_PLAYERS})"
+              Channel(@channel_name).send "#{user.nick} has left the game (#{game.players.count}/#{Game::MAX_PLAYERS})"
               Channel(@channel_name).devoice(user)
             end
           else
@@ -735,13 +762,14 @@ module Cinch
       end
 
       def replace_user(m, nick1, nick2)
+        game = @games[@channel_name]
         if self.is_mod? m.user.nick
           # find irc users based on nick
           user1 = User(nick1)
           user2 = User(nick2)
           
           # replace the users for the players
-          player = @game.find_player(user1)
+          player = game.find_player(user1)
           player.user = user2
 
           # devoice/voice the players
@@ -825,18 +853,20 @@ module Cinch
       end
 
       def list_players(m)
-        if @game.players.empty?
+        game = @games[@channel_name]
+        if game.players.empty?
           m.reply "No one has joined the game yet."
         else
-          m.reply @game.players.map{ |p| p == @game.hammer ? "#{dehighlight_nick(p.user.nick)}*" : dehighlight_nick(p.user.nick) }.join(' ')
+          m.reply game.players.map{ |p| p == game.hammer ? "#{dehighlight_nick(p.user.nick)}*" : dehighlight_nick(p.user.nick) }.join(' ')
         end
       end
 
       def status(m)
-        if @game.started?
+        game = @games[@channel_name]
+        if game.started?
             # status = "Waiting on players to PASS or CHALLENGE: #{self.not_back_from_mission.map(&:user).join(", ")}"
         else
-          if @game.player_count.zero?
+          if game.player_count.zero?
             status = "No game in progress."
           else
             status = "Game being started. #{player_count} players have joined: #{self.players.map(&:user).join(", ")}"
@@ -860,17 +890,18 @@ module Cinch
       end
 
       def invite(m)
-        if @game.accepting_players?
-          if @game.invitation_sent?
+        game = @games[@channel_name]
+        if game.accepting_players?
+          if game.invitation_sent?
             m.reply "An invitation cannot be sent out again so soon."
           else      
-            @game.mark_invitation_sent
+            game.mark_invitation_sent
             User("BG3PO").send "!invite_to_coup_game"
             User(m.user).send "Invitation has been sent."
 
             settings = load_settings || {}
             subscribers = settings["subscribers"]
-            current_players = @game.players.map{ |p| p.user.nick }
+            current_players = game.players.map{ |p| p.user.nick }
             subscribers.each do |subscriber|
               unless current_players.include? subscriber
                 User(subscriber).refresh
@@ -882,7 +913,7 @@ module Cinch
 
             # allow for reset after provided time
             Timer(@invite_timer_length, shots: 1) do
-              @game.reset_invitation
+              game.reset_invitation
             end
           end
         end
