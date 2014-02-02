@@ -6,6 +6,7 @@ CHOICE_REGEX = /^Choose a character to turn face up: 1 - \([A-Z]+\) or 2 - \([A-
 
 CHANNAME = '#playcoup'
 CHANNAME2 = '#otherchannel'
+BOGUS_CHANNEL = '#blahblahblah'
 
 CHALLENGE_PROMPT = 'All other players: Would you like to challenge ("!challenge") or not ("!pass")?'
 
@@ -112,6 +113,8 @@ describe Cinch::Plugins::CoupGame do
         @chan
       elsif x == CHANNAME2
         @chan2
+      elsif x == BOGUS_CHANNEL
+        MyChannel.new(BOGUS_CHANNEL, [])
       else
         raise 'Asked for channel ' + x
       end
