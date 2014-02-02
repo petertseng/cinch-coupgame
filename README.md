@@ -25,7 +25,7 @@ Here's an example of what your *bot.rb* might look like:
         ]
         c.plugins.options[Cinch::Plugins::CoupGame] = {
           :mods     => ["caitlinface", "shard8"],
-          :channel  => "#playcoup",
+          :channels => ["#playcoup"],
           :settings => "settings.yml"
         }
       end
