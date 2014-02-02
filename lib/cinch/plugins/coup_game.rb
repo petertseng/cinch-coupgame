@@ -28,6 +28,7 @@ module Cinch
         @invite_timer_length  = config[:invite_reset]
 
         @game = Game.new(@channel_name)
+        @games = { @channel_name => @game }
 
         @idle_timer   = self.start_idle_timer
       end
