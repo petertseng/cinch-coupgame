@@ -544,17 +544,17 @@ module Cinch
 
       def prompt_to_switch(target)
         game = @games[@channel_name]
-        @drawn_cards = game.draw_cards(2)
-        card_names = @drawn_cards.collect { |c| c.to_s }.join(' and ')
+        game.ambassador_cards = game.draw_cards(2)
+        card_names = game.ambassador_cards.collect { |c| c.to_s }.join(' and ')
         User(target.user).send "You drew #{card_names} from the Court Deck."
 
         if target.influence == 2 || target.influence == 1
           puts "="*80
-          @character_options = get_switch_options(target, @drawn_cards)
-          puts @character_options.inspect
+          game.ambassador_options = get_switch_options(target, game.ambassador_cards)
+          puts game.ambassador_options.inspect
           puts "="*80
           User(target.user).send "Choose an option for a new hand; \"!switch #\""
-          @character_options.each_with_index do |option, i|
+          game.ambassador_options.each_with_index do |option, i|
             User(target.user).send "#{i+1} - " + option.map{ |o| "[#{o}]" }.join(" ")
           end
         else 
@@ -573,11 +573,11 @@ module Cinch
               player.characters[i].face_down?
             }
             facedowns = facedown_indices.collect { |i| player.characters[i] }
-            cards_to_return = facedowns + @drawn_cards
+            cards_to_return = facedowns + game.ambassador_cards
 
             choice = choice.to_i
-            if 1 <= choice && choice <= @character_options.size
-              new_hand = @character_options[choice - 1]
+            if 1 <= choice && choice <= game.ambassador_options.size
+              new_hand = game.ambassador_options[choice - 1]
               # Remove the new hand from cards_to_return
               new_hand.each { |c|
                 card_index = cards_to_return.index(c)

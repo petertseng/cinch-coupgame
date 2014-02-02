@@ -68,6 +68,7 @@ class Game
   }
 
   attr_accessor :started, :players, :deck, :discard_pile, :turns, :invitation_sent
+  attr_accessor :ambassador_cards, :ambassador_options
   attr_reader :channel_name
   
   def initialize(channel_name)
@@ -78,6 +79,8 @@ class Game
     self.discard_pile    = []
     self.turns           = []
     self.invitation_sent = false
+    @ambassador_cards = []
+    @ambassador_options = []
   end
 
   #----------------------------------------------
