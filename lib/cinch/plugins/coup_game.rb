@@ -707,12 +707,10 @@ module Cinch
       end
 
       def remove_user_from_game(user, game)
-        if game.not_started?
-          left = game.remove_player(user)
-          unless left.nil?
-            Channel(@channel_name).send "#{user.nick} has left the game (#{game.players.count}/#{Game::MAX_PLAYERS})"
-            Channel(@channel_name).devoice(user)
-          end
+        left = game.remove_player(user)
+        unless left.nil?
+          Channel(@channel_name).send "#{user.nick} has left the game (#{game.players.count}/#{Game::MAX_PLAYERS})"
+          Channel(@channel_name).devoice(user)
         end
       end
 
