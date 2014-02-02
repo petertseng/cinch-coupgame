@@ -15,9 +15,10 @@ class Message
     @channel = channel
   end
 
-  def reply(msg, _)
+  def reply(msg, prefix = false)
     if @channel
-      @channel.send(msg)
+      pre = prefix ? (@user.name + ': ') : ''
+      @channel.send(pre + msg)
     else
       @user.send(msg)
     end
