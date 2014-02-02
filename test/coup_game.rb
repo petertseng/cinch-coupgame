@@ -198,6 +198,77 @@ describe Cinch::Plugins::CoupGame do
     end
   end
 
+  describe 'Multiple channels' do
+    it 'prompts for a channel if a player joins via PM without arg' do
+      @game.join(pm_from('p1'))
+      expect(@players['p1'].messages).to be == [
+        'To join a game via PM you must specify the channel: !join #channel',
+      ]
+    end
+
+    it 'lets a player join via PM with arg' do
+      @game.join(pm_from('p1'), CHANNAME)
+      expect(@chan.messages).to be == ['p1 has joined the game (1/6)']
+    end
+
+    it 'lets a player join a different channel publicly with arg' do
+      @game.join(pm_from('p1'), CHANNAME2)
+      expect(@chan.messages).to be == []
+      expect(@chan2.messages).to be == ['p1 has joined the game (1/6)']
+    end
+
+    it 'forbids joining the game of an unknown channel' do
+      @game.join(message_from('p1'), BOGUS_CHANNEL)
+      expect(@chan.messages).to be == ["p1: #{BOGUS_CHANNEL} is not a valid channel to join"]
+    end
+
+    context 'when p1 joins channel 1 and p2 joins channel 2' do
+      before :each do
+        @game.join(message_from('p1', @chan))
+        @game.join(message_from('p2', @chan2))
+        expect(@chan.messages).to be == ['p1 has joined the game (1/6)']
+        expect(@chan2.messages).to be == ['p2 has joined the game (1/6)']
+        @chan.messages.clear
+        @chan2.messages.clear
+      end
+
+      it 'forbids p1 from publicly joining channel 2 as well' do
+        @game.join(message_from('p1', @chan2))
+        expect(@chan2.messages).to be == ["p1: You are already in the #{CHANNAME} game"]
+      end
+
+      it 'forbids p1 from privately joining channel 2 as well' do
+        @game.join(pm_from('p1'), CHANNAME2)
+        expect(@chan2.messages).to be == []
+        expect(@players['p1'].messages).to be == ["You are already in the #{CHANNAME} game"]
+      end
+
+      it 'makes p1 leave channel 1 when p1 leaves in PM' do
+        @game.leave(pm_from('p1'))
+        expect(@chan.messages).to be == ['p1 has left the game (0/6)']
+        expect(@chan2.messages).to be == []
+      end
+
+      it 'makes p2 leave channel 2 when p2 leaves in PM' do
+        @game.leave(pm_from('p2'))
+        expect(@chan.messages).to be == []
+        expect(@chan2.messages).to be == ['p2 has left the game (0/6)']
+      end
+
+      it 'lets p1 leave channel 1 publicly' do
+        @game.leave(message_from('p1', @chan))
+        expect(@chan.messages).to be == ['p1 has left the game (0/6)']
+        expect(@chan2.messages).to be == []
+      end
+
+      it 'does nothing when p1 tries to leave channel 2 publicly' do
+        @game.leave(message_from('p1', @chan2))
+        expect(@chan.messages).to be == []
+        expect(@chan2.messages).to be == []
+      end
+    end
+  end
+
   context 'when p1..3 are playing a game' do
     NUM_PLAYERS = 3
     before :each do
