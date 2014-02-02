@@ -36,7 +36,7 @@ module Cinch
       end
 
       # start 
-      match /join/i,                 :method => :join
+      match /join(?:\s*(##?\w+))?/i, :method => :join
       match /leave/i,                :method => :leave
       match /start/i,                :method => :start_game
     
@@ -117,28 +117,46 @@ module Cinch
       # Main IRC Interface Methods
       #--------------------------------------------------------------------------------
 
-      def join(m)
+      def join(m, channel_name = nil)
+        channel = channel_name ? Channel(channel_name) : m.channel
+
+        unless channel
+          m.reply('To join a game via PM you must specify the channel: ' +
+                  '!join #channel')
+          return
+        end
+
         # self.reset_timer(m)
-        game = @games[@channel_name]
-        if Channel(@channel_name).has_user?(m.user)
+        game = @games[channel.name]
+        unless game
+          m.reply(channel.name + ' is not a valid channel to join', true)
+          return
+        end
+
+        if channel.has_user?(m.user)
+          if (game2 = @user_games[m.user])
+            m.reply("You are already in the #{game2.channel_name} game", true)
+            return
+          end
+
           if game.accepting_players? 
             added = game.add_player(m.user)
             unless added.nil?
-              Channel(@channel_name).send "#{m.user.nick} has joined the game (#{game.players.count}/#{Game::MAX_PLAYERS})"
-              Channel(@channel_name).voice(m.user)
+              channel.send "#{m.user.nick} has joined the game (#{game.players.count}/#{Game::MAX_PLAYERS})"
+              channel.voice(m.user)
               @user_games[m.user] = game
             end
           else
             if game.started?
-              Channel(@channel_name).send "#{m.user.nick}: Game has already started."
+              m.reply('Game has already started.', true)
             elsif game.at_max_players?
-              Channel(@channel_name).send "#{m.user.nick}: Game is at max players."
+              m.reply('Game is at max players.', true)
             else
-              Channel(@channel_name).send "#{m.user.nick}: You cannot join."
+              m.reply('You cannot join.', true)
             end
           end
         else
-          User(m.user).send "You need to be in #{@channel_name} to join the game."
+          User(m.user).send "You need to be in #{channel.name} to join the game."
         end
       end
 
