@@ -30,7 +30,9 @@ module Cinch
         @games = { @channel_name => Game.new(@channel_name) }
         @user_games = {}
 
-        @idle_timer   = self.start_idle_timer
+        @idle_timers = {
+          @channel_name => self.start_idle_timer(@channel_name)
+        }
       end
 
       # start 
@@ -97,14 +99,14 @@ module Cinch
         end
       end
 
-      def start_idle_timer
-        game = @games[@channel_name]
+      def start_idle_timer(channel_name)
+        game = @games[channel_name]
         Timer(300) do
           game.players.map{|p| p.user }.each do |user|
             user.refresh
             if user.idle > @idle_timer_length
               self.remove_user_from_game(user, game) if game.not_started?
-              user.send "You have been removed from the #{@channel_name} game due to inactivity."
+              user.send "You have been removed from the #{channel_name} game due to inactivity."
             end
           end
         end
@@ -156,7 +158,7 @@ module Cinch
         unless game.started?
           if game.at_min_players?
             if game.has_player?(m.user)
-              @idle_timer.stop
+              @idle_timers[@channel_name].stop
               game.start_game!
 
               Channel(@channel_name).send "The game has started."
@@ -685,7 +687,7 @@ module Cinch
           @user_games.delete(p)
         end
         @games[@channel_name] = Game.new(@channel_name)
-        @idle_timer.start
+        @idle_timers[@channel_name].start
       end
 
 
@@ -739,7 +741,7 @@ module Cinch
           @games[@channel_name] = Game.new(@channel_name)
           self.devoice_channel
           Channel(@channel_name).send "The game has been reset."
-          @idle_timer.start
+          @idle_timers[@channel_name].start
         end
       end
 
