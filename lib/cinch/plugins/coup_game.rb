@@ -28,6 +28,7 @@ module Cinch
         @invite_timer_length  = config[:invite_reset]
 
         @games = { @channel_name => Game.new(@channel_name) }
+        @user_games = {}
 
         @idle_timer   = self.start_idle_timer
       end
@@ -123,6 +124,7 @@ module Cinch
             unless added.nil?
               Channel(@channel_name).send "#{m.user.nick} has joined the game (#{game.players.count}/#{Game::MAX_PLAYERS})"
               Channel(@channel_name).voice(m.user)
+              @user_games[m.user] = game
             end
           else
             if game.started?
@@ -680,6 +682,7 @@ module Cinch
         Channel(@channel_name).moderated = false
         game.players.each do |p|
           Channel(@channel_name).devoice(p.user)
+          @user_games.delete(p)
         end
         @games[@channel_name] = Game.new(@channel_name)
         @idle_timer.start
@@ -707,6 +710,7 @@ module Cinch
         unless left.nil?
           Channel(@channel_name).send "#{user.nick} has left the game (#{game.players.count}/#{Game::MAX_PLAYERS})"
           Channel(@channel_name).devoice(user)
+          @user_games.delete(user)
         end
       end
 
@@ -765,6 +769,9 @@ module Cinch
           # devoice/voice the players
           Channel(@channel_name).devoice(user1)
           Channel(@channel_name).voice(user2)
+
+          @user_games.delete(user1)
+          @user_games[user2] = game
 
           # inform channel
           Channel(@channel_name).send "#{user1.nick} has been replaced with #{user2.nick}"
