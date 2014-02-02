@@ -17,8 +17,6 @@ module Cinch
 
       def initialize(*args)
         super
-        @game = Game.new
- 
         @changelog     = self.load_changelog
 
         @mods          = config[:mods]
@@ -28,6 +26,8 @@ module Cinch
 
         @idle_timer_length    = config[:allowed_idle]
         @invite_timer_length  = config[:invite_reset]
+
+        @game = Game.new(@channel_name)
 
         @idle_timer   = self.start_idle_timer
       end

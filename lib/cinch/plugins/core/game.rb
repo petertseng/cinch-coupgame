@@ -68,8 +68,10 @@ class Game
   }
 
   attr_accessor :started, :players, :deck, :discard_pile, :turns, :invitation_sent
+  attr_reader :channel_name
   
-  def initialize
+  def initialize(channel_name)
+    @channel_name = channel_name
     self.started         = false
     self.players         = []
     self.deck            = self.build_starting_deck
