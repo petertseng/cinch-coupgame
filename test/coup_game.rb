@@ -204,6 +204,8 @@ describe Cinch::Plugins::CoupGame do
       expect(@players['p1'].messages).to be == [
         'To join a game via PM you must specify the channel: !join #channel',
       ]
+      expect(@chan.messages).to be == []
+      expect(@chan2.messages).to be == []
     end
 
     it 'lets a player join via PM with arg' do
