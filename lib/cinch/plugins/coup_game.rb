@@ -141,11 +141,7 @@ module Cinch
       def leave(m)
         game = @games[@channel_name]
         if game.accepting_players?
-          left = game.remove_player(m.user)
-          unless left.nil?
-            Channel(@channel_name).send "#{m.user.nick} has left the game (#{game.players.count}/#{Game::MAX_PLAYERS})"
-            Channel(@channel_name).devoice(m.user)
-          end
+          self.remove_user_from_game(m.user, game)
         else
           if game.started?
             m.reply "Game is in progress.", true
@@ -748,11 +744,7 @@ module Cinch
         if self.is_mod? m.user.nick
           if game.not_started?
             user = User(nick)
-            left = game.remove_player(user)
-            unless left.nil?
-              Channel(@channel_name).send "#{user.nick} has left the game (#{game.players.count}/#{Game::MAX_PLAYERS})"
-              Channel(@channel_name).devoice(user)
-            end
+            self.remove_user_from_game(user, game)
           else
             User(m.user).send "You can't kick someone while a game is in progress."
           end
