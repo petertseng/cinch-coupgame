@@ -5,6 +5,7 @@ TURN_ORDER_REGEX6 = /^Turn order is: (p[1-6]) (p[1-6]) (p[1-6]) (p[1-6]) (p[1-6]
 CHOICE_REGEX = /^Choose a character to turn face up: 1 - \([A-Z]+\) or 2 - \([A-Z]+\); "!lose 1" or "!lose 2"$/
 
 CHANNAME = '#playcoup'
+CHANNAME2 = '#otherchannel'
 
 CHALLENGE_PROMPT = 'All other players: Would you like to challenge ("!challenge") or not ("!pass")?'
 
@@ -88,6 +89,7 @@ describe Cinch::Plugins::CoupGame do
         c.plugins.options[Cinch::Plugins::CoupGame] = {
           :channels => [
             CHANNAME,
+            CHANNAME2,
           ],
         }
       end
@@ -101,11 +103,15 @@ describe Cinch::Plugins::CoupGame do
     }
 
     @chan = MyChannel.new(CHANNAME, @players)
+    @chan2 = MyChannel.new(CHANNAME2, @players)
+
     @game = Cinch::Plugins::CoupGame.new(b)
     @game.stub('sleep') { |x| puts "Slept for #{x} seconds" }
     @game.stub('Channel') { |x|
       if x == CHANNAME
         @chan
+      elsif x == CHANNAME2
+        @chan2
       else
         raise 'Asked for channel ' + x
       end
