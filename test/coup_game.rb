@@ -85,7 +85,7 @@ describe Cinch::Plugins::CoupGame do
     b = Cinch::Bot.new do
       configure do |c|
         c.plugins.options[Cinch::Plugins::CoupGame] = {
-          :channel => '#playcoup',
+          :channels => ['#playcoup'],
         }
       end
     end
