@@ -281,11 +281,9 @@ module Cinch
               if game.current_turn.action.character_required?
                 game.current_turn.wait_for_action_challenge
                 self.prompt_challengers(game)
-                puts '==== Waiting for action challenge'
               elsif game.current_turn.action.blockable?
                 game.current_turn.wait_for_block
                 self.prompt_blocker(game)
-                puts '==== Waiting for block'
               else 
                 self.process_turn(game)
               end
@@ -495,7 +493,6 @@ module Cinch
             if turn.target_player.has_influence?
               turn.wait_for_block
               self.prompt_blocker(game)
-              puts '==== Waiting for block'
             else
               self.process_turn(game)
             end
@@ -560,10 +557,7 @@ module Cinch
         User(target.user).send "You drew #{card_names} from the Court Deck."
 
         if target.influence == 2 || target.influence == 1
-          puts "="*80
           game.ambassador_options = get_switch_options(target, game.ambassador_cards)
-          puts game.ambassador_options.inspect
-          puts "="*80
           User(target.user).send "Choose an option for a new hand; \"!switch #\""
           game.ambassador_options.each_with_index do |option, i|
             User(target.user).send "#{i+1} - " + option.map{ |o| "[#{o}]" }.join(" ")
@@ -596,9 +590,6 @@ module Cinch
                 card_index = cards_to_return.index(c)
                 cards_to_return.delete_at(card_index)
               }
-
-              puts "New hand is #{new_hand.to_a}"
-              puts "Returning #{cards_to_return.to_a}"
 
               facedown_indices.each_with_index { |i, j|
                 # If they have two facedowns, this will switch both.
