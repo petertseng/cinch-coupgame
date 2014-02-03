@@ -918,7 +918,7 @@ module Cinch
           if game.player_count.zero?
             status = "No game in progress."
           else
-            status = "Game being started. #{player_count} players have joined: #{self.players.map(&:user).join(", ")}"
+            status = "Game being started. #{game.player_count} players have joined: #{game.players.map(&:user).join(", ")}"
           end
         end
         m.reply status
