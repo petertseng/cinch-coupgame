@@ -418,6 +418,15 @@ describe Cinch::Plugins::CoupGame do
       end
     end
 
+    it 'allows foreign aid instead of foreign_aid' do
+      @game.do_action(message_from(@order[1]), 'foreign aid')
+      @game.do_action(message_from(@order[2]), 'foreign aid')
+      (2..NUM_PLAYERS).each { |i|
+        @game.react_pass(message_from(@order[i]))
+      }
+      expect(@game.coins(@order[1])).to be == 4
+    end
+
     # ===== Coup =====
 
     it 'does not let a player with 6 coins use coup' do
