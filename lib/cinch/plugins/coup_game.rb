@@ -214,8 +214,8 @@ module Cinch
       # for use in tests
       def force_characters(p, c1, c2)
         game = @user_games[User(p)]
-        game.find_player(p).switch_character(Character.new(c1), 0)
-        game.find_player(p).switch_character(Character.new(c2), 1)
+        game.find_player(p).switch_character(Character.new(c1), 0) if c1
+        game.find_player(p).switch_character(Character.new(c2), 1) if c2
       end
 
       def pass_out_characters(game)
