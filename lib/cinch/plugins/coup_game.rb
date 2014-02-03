@@ -768,11 +768,7 @@ module Cinch
           channel = channel_name ? Channel(channel_name) : m.channel
           game = @games[channel.name]
 
-          if game.started?
-            spies, resistance = get_loyalty_info
-            channel.send "The spies were: #{spies.join(", ")}"
-            channel.send "The resistance were: #{resistance.join(", ")}"
-          end
+          # TODO: Show everyone's cards
 
           game.players.each do |p|
             @user_games.delete(p.user)
