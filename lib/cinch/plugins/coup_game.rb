@@ -67,6 +67,7 @@ module Cinch
       match /me$/i,                  :method => :whoami
       match /table$/i,               :method => :show_table
       match /who$/i,                 :method => :list_players
+      match /status$/i,              :method => :status
 
       # other
       match /invite/i,               :method => :invite
