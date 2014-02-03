@@ -1560,5 +1560,56 @@ describe Cinch::Plugins::CoupGame do
         expect(@game.coins(@order[1])).to be == 2
       end
     end
+
+    describe 'ending the game' do
+      before :each do
+        # Have each player take income to bump them up to 7 coins
+        5.times do
+          (1..NUM_PLAYERS).each { |i|
+            @game.do_action(message_from(@order[i]), 'income')
+          }
+        end
+
+        # 1 uses coup on 3
+        @game.do_action(message_from(@order[1]), 'coup', @order[3])
+        # 3 flips card 1
+        @game.flip_card(message_from(@order[3]), '1')
+
+        # 2 uses coup on 3
+        @game.do_action(message_from(@order[2]), 'coup', @order[3])
+        # 3 flips card 2
+        @game.flip_card(message_from(@order[3]), '2')
+
+        # Get back up to 7 coins!
+        7.times do
+          (1..NUM_PLAYERS-1).each { |i|
+            @game.do_action(message_from(@order[i]), 'income')
+          }
+        end
+
+        # 1 uses coup on 2
+        @game.do_action(message_from(@order[1]), 'coup', @order[2])
+        # 2 flips card 1
+        @game.flip_card(message_from(@order[2]), '1')
+
+        @chan.messages.clear
+      end
+
+      it 'ends the game if player with 1 influence gets challenged on an action' do
+        @game.force_characters(@order[2], nil, :assassin)
+        @game.do_action(message_from(@order[2]), 'ambassador')
+        @game.react_challenge(message_from(@order[1]))
+        @chan.messages.clear
+
+        @game.flip_card(message_from(@order[2]), '2')
+
+        expect(@chan.messages).to be == [
+          "#{@order[2]} turns a ASSASSIN face up, losing an influence.",
+          "#{@order[2]} has no more influence, and is out of the game.",
+          "Game is over! #{@order[1]} wins!",
+        ]
+      end
+    end
+
   end
 end
