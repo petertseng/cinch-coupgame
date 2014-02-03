@@ -773,6 +773,11 @@ module Cinch
             channel.send "The spies were: #{spies.join(", ")}"
             channel.send "The resistance were: #{resistance.join(", ")}"
           end
+
+          game.players.each do |p|
+            @user_games.delete(p.user)
+          end
+
           @games[channel.name] = Game.new(channel.name)
           self.devoice_channel(channel)
           channel.send "The game has been reset."
