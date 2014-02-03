@@ -1484,6 +1484,31 @@ describe Cinch::Plugins::CoupGame do
       expect(@game.coins(@players[@order[3]])).to be == 3
     end
 
+    it 'steals coins from a player who dies due to a challenge' do
+      5.times do
+        (1..NUM_PLAYERS).each { |i|
+          @game.do_action(message_from(@order[i]), 'income')
+        }
+      end
+
+      # 1 coups 3
+      @game.do_action(message_from(@order[1]), 'coup', @order[3])
+      @game.flip_card(message_from(@order[3]), '1')
+
+      expect(@game.coins(@players[@order[2]])).to be == 7
+      expect(@game.coins(@players[@order[3]])).to be == 7
+
+      @game.force_characters(@order[2], :captain, :captain)
+      @game.do_action(message_from(@order[2]), 'captain', @order[3])
+      @game.react_challenge(message_from(@order[3]))
+      @game.flip_card(message_from(@order[2]), '1')
+      @game.flip_card(message_from(@order[3]), '2')
+
+      expect(@game.coins(@players[@order[2]])).to be == 9
+
+      # We don't care what third player's coins are. He's dead.
+    end
+
     # ===== Duke =====
 
     it 'gives 3 coins if player uses duke unchallenged' do
