@@ -14,6 +14,12 @@ module Cinch
 
     ACTION_ALIASES = {
       'foreign aid' => 'foreign_aid',
+      'tax' => 'duke',
+      'assassinate' => 'assassin',
+      'kill' => 'assassin',
+      'steal' => 'captain',
+      'extort' => 'captain',
+      'exchange' => 'ambassador',
     }
 
     class CoupGame
@@ -47,8 +53,8 @@ module Cinch
       match /start/i,                :method => :start_game
     
       # game    
-      match /action (duke|ambassador|income|foreign(?: |_)aid)/i,   :method => :do_action
-      match /action (assassin|captain|coup) (.+)/i,           :method => :do_action
+      match /action (duke|tax|ambassador|exchange|income|foreign(?: |_)aid)/i, :method => :do_action
+      match /action (assassin(?:ate)?|kill|captain|steal|extort|coup) (.+)/i,  :method => :do_action
       match /block (duke|contessa|captain|ambassador)/i,      :method => :do_block
       match /pass/i,                 :method => :react_pass
       match /challenge/i,            :method => :react_challenge
