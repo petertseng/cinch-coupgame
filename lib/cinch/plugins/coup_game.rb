@@ -13,6 +13,7 @@ module Cinch
     CHANGELOG_FILE = File.expand_path(File.dirname(__FILE__)) + "/changelog.yml"
 
     ACTION_ALIASES = {
+      'foreign aid' => 'foreign_aid',
     }
 
     class CoupGame
@@ -46,7 +47,7 @@ module Cinch
       match /start/i,                :method => :start_game
     
       # game    
-      match /action (duke|ambassador|income|foreign_aid)/i,   :method => :do_action
+      match /action (duke|ambassador|income|foreign(?: |_)aid)/i,   :method => :do_action
       match /action (assassin|captain|coup) (.+)/i,           :method => :do_action
       match /block (duke|contessa|captain|ambassador)/i,      :method => :do_block
       match /pass/i,                 :method => :react_pass
