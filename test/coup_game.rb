@@ -95,6 +95,7 @@ describe Cinch::Plugins::CoupGame do
         }
       end
     end
+    b.loggers.stub('debug') { nil }
 
     @player_names = ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'npc']
     @players = Hash.new { |h, x| raise 'Nonexistent player ' + x }
