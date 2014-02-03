@@ -449,10 +449,9 @@ module Cinch
             end
 
             Channel(game.channel_name).send "#{m.user.nick} turns a #{character} face up."
-            old_game = game
             self.check_player_status(game, player)
             # If I haven't started a new game, start a new turn
-            self.start_new_turn(game) if @games[game.channel_name] == old_game
+            self.start_new_turn(game) unless game.is_over?
           elsif turn.waiting_for_action_challenge_reply? && turn.active_player == player
             self.respond_to_challenge(m, game, player, position, turn.action, turn.action_challenger)
           elsif turn.waiting_for_block_challenge_reply? && turn.counteracting_player == player
