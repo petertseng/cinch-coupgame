@@ -416,7 +416,10 @@ module Cinch
 
             if chall_action.character_required?
               Channel(game.channel_name).send "#{m.user.nick} challenges #{chall_player} on #{chall_action.to_s.upcase}!"
-              self.prompt_challenge_defendant(chall_player, chall_action)
+
+              # Prompt player if he has a choice
+              self.prompt_challenge_defendant(chall_player, chall_action) if chall_player.influence == 2
+
               if game.current_turn.waiting_for_action_challenge?
                 game.current_turn.wait_for_action_challenge_reply
                 game.current_turn.action_challenger = player
@@ -424,6 +427,14 @@ module Cinch
                 game.current_turn.wait_for_block_challenge_reply
                 game.current_turn.block_challenger = player
               end
+
+              # If he doesn't have a choice, just sleep 3 seconds and make the choice for him.
+              if chall_player.influence == 1
+                sleep(3)
+                i = chall_player.characters.index { |c| c.face_down? }
+                self.respond_to_challenge(m, game, chall_player, i + 1, chall_action, player)
+              end
+
             else
               User(m.user).send "#{chall_action.action.upcase} cannot be challenged."
             end
