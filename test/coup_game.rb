@@ -147,6 +147,11 @@ describe Cinch::Plugins::CoupGame do
       @game.start_game(message_from('p1'))
       expect(@chan.messages).to be == ['p1: Need at least 3 to start a game.']
     end
+
+    it 'reports that game is empty in status' do
+      @game.status(message_from('p1'))
+      expect(@chan.messages).to be == ['No game in progress.']
+    end
   end
 
   context 'when p1 has joined the game' do
@@ -169,6 +174,11 @@ describe Cinch::Plugins::CoupGame do
     it 'does not let p1 start' do
       @game.start_game(message_from('p1'))
       expect(@chan.messages).to be == ['p1: Need at least 3 to start a game.']
+    end
+
+    it 'reports that p1 is in game in status' do
+      @game.status(message_from('p1'))
+      expect(@chan.messages).to be == ['Game being started. 1 players have joined: p1']
     end
   end
 
@@ -295,6 +305,11 @@ describe Cinch::Plugins::CoupGame do
     it 'does nothing if p1 starts again' do
       @game.start_game(message_from('p1'))
       expect(@chan.messages).to be == []
+    end
+
+    it 'reports waiting on action in status' do
+      @game.status(message_from('p1'))
+      expect(@chan.messages).to be == ["Waiting on #{@order[1]} to take an action"]
     end
 
     # ===== Income =====
@@ -1593,6 +1608,104 @@ describe Cinch::Plugins::CoupGame do
           "#{@order[2]}: It is your turn. Please choose an action.",
         ]
         expect(@game.coins(@order[1])).to be == 2
+      end
+    end
+
+    describe 'status' do
+      it 'reports waiting on action challenge' do
+        @game.do_action(message_from(@order[1]), 'ambassador')
+        @chan.messages.clear
+        @game.status(message_from(@order[1]))
+        # Hmm, I'm relying on this to be in turn order, but is that always correct?
+        expect(@chan.messages).to be == ["Waiting on players to PASS or CHALLENGE action: #{@order[2]}, #{@order[3]}"]
+      end
+
+      it 'reports waiting on action challenge response' do
+        @game.do_action(message_from(@order[1]), 'ambassador')
+        @game.react_challenge(message_from(@order[2]))
+        @chan.messages.clear
+        @game.status(message_from(@order[1]))
+        # Hmm, I'm relying on this to be in turn order, but is that always correct?
+        expect(@chan.messages).to be == ["Waiting on #{@order[1]} to respond to action challenge"]
+      end
+
+      it 'reports waiting on action challenge loser' do
+        @game.do_action(message_from(@order[1]), 'ambassador')
+        @game.react_challenge(message_from(@order[2]))
+        @game.force_characters(@order[1], :ambassador, :ambassador)
+        @game.flip_card(message_from(@order[1]), '1')
+        @chan.messages.clear
+        @game.status(message_from(@order[1]))
+        expect(@chan.messages).to be == ["Waiting on #{@order[2]} to pick character to lose"]
+      end
+
+      it 'reports waiting on single block' do
+        @game.do_action(message_from(@order[1]), 'captain', @order[2])
+        @game.react_pass(message_from(@order[2]))
+        @game.react_pass(message_from(@order[3]))
+        @chan.messages.clear
+        @game.status(message_from(@order[1]))
+        expect(@chan.messages).to be == ["Waiting on players to PASS or BLOCK action: #{@order[2]}"]
+      end
+
+      it 'reports waiting on multi block' do
+        @game.do_action(message_from(@order[1]), 'foreign_aid')
+        @chan.messages.clear
+        @game.status(message_from(@order[1]))
+        # Hmm, I'm relying on this to be in turn order, but is that always correct?
+        expect(@chan.messages).to be == ["Waiting on players to PASS or BLOCK action: #{@order[2]}, #{@order[3]}"]
+      end
+
+      it 'reports waiting on block challenge' do
+        @game.do_action(message_from(@order[1]), 'foreign_aid')
+        @game.do_block(message_from(@order[2]), 'duke')
+        @chan.messages.clear
+        @game.status(message_from(@order[1]))
+        # Hmm, I'm relying on this to be in turn order, but is that always correct?
+        expect(@chan.messages).to be == ["Waiting on players to PASS or CHALLENGE block: #{@order[1]}, #{@order[3]}"]
+      end
+
+      it 'reports waiting on block challenge response' do
+        @game.do_action(message_from(@order[1]), 'foreign_aid')
+        @game.do_block(message_from(@order[2]), 'duke')
+        @game.react_challenge(message_from(@order[3]))
+        @chan.messages.clear
+        @game.status(message_from(@order[1]))
+        # Hmm, I'm relying on this to be in turn order, but is that always correct?
+        expect(@chan.messages).to be == ["Waiting on #{@order[2]} to respond to block challenge"]
+      end
+
+      it 'reports waiting on block challenge loser' do
+        @game.do_action(message_from(@order[1]), 'foreign_aid')
+        @game.do_block(message_from(@order[2]), 'duke')
+        @game.react_challenge(message_from(@order[3]))
+        @game.force_characters(@order[2], :duke, :duke)
+        @game.flip_card(message_from(@order[2]), '1')
+        @chan.messages.clear
+        @game.status(message_from(@order[1]))
+        # Hmm, I'm relying on this to be in turn order, but is that always correct?
+        expect(@chan.messages).to be == ["Waiting on #{@order[3]} to pick character to lose"]
+      end
+
+      it 'reports waiting on ambassador decision' do
+        @game.do_action(message_from(@order[1]), 'ambassador')
+        @game.react_pass(message_from(@order[2]))
+        @game.react_pass(message_from(@order[3]))
+        @chan.messages.clear
+        @game.status(message_from(@order[1]))
+        expect(@chan.messages).to be == ["Waiting on #{@order[1]} to make decision on AMBASSADOR"]
+      end
+
+      it 'reports waiting on coup decision' do
+        5.times do
+          (1..NUM_PLAYERS).each { |i|
+            @game.do_action(message_from(@order[i]), 'income')
+          }
+        end
+        @game.do_action(message_from(@order[1]), 'coup', @order[2])
+        @chan.messages.clear
+        @game.status(message_from(@order[1]))
+        expect(@chan.messages).to be == ["Waiting on #{@order[2]} to make decision on COUP"]
       end
     end
 
