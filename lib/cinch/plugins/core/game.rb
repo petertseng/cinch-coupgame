@@ -188,13 +188,10 @@ class Game
     self.deck.shuffle!
 
     # assign loyalties
-    puts "="*80
     self.players.each do |player|
       player.receive_characters( self.draw_cards(2) )
       player.give_coins(2)
-      puts "#{player} #{player.characters.inspect} - #{player.coins}"      
     end
-    puts "="*80
   end
 
   # Draw # of cards from the deck
@@ -278,13 +275,8 @@ class Game
   # turns
 
   def next_turn
-    puts "="*80
-    puts "END TURN: State #{self.current_turn.state}; Player #{self.current_turn.active_player}; Action #{self.current_turn.action.action}; Target #{self.current_turn.target_player};\nReactions Action #{self.current_turn.reactions.inspect}" unless current_turn.nil?
     self.current_turn.end_turn unless current_turn.nil?
     self.turns << Turn.new(self.players.rotate!.first)
-    puts "-"*80
-    puts "NEW TURN: State #{self.current_turn.state}; Player #{self.current_turn.active_player};"
-    puts "="*80
   end
 
   def current_turn
