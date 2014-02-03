@@ -1645,6 +1645,26 @@ describe Cinch::Plugins::CoupGame do
           "Game is over! #{@order[1]} wins!",
         ]
       end
+
+      it 'ends the game if player with 1 influence wrongly challenges a block' do
+        @game.force_characters(@order[1], :ambassador, :ambassador)
+        @game.force_characters(@order[2], nil, :assassin)
+        @game.do_action(message_from(@order[2]), 'captain', @order[1])
+        @game.react_pass(message_from(@order[1]))
+        @game.do_block(message_from(@order[1]), 'ambassador')
+        @game.react_challenge(message_from(@order[2]))
+        @game.flip_card(message_from(@order[1]), '1')
+        @chan.messages.clear
+
+        @game.flip_card(message_from(@order[2]), '2')
+
+        expect(@chan.messages).to be == [
+          "#{@order[2]} turns a ASSASSIN face up.",
+          "#{@order[2]} has no more influence, and is out of the game.",
+          "Game is over! #{@order[1]} wins!",
+        ]
+      end
+
     end
 
   end
