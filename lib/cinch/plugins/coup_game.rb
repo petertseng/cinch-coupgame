@@ -53,8 +53,8 @@ module Cinch
       match /start/i,                :method => :start_game
     
       # game    
-      match /action (duke|tax|ambassador|exchange|income|foreign(?: |_)aid)/i, :method => :do_action
-      match /action (assassin(?:ate)?|kill|captain|steal|extort|coup) (.+)/i,  :method => :do_action
+      match /(?:action )?(duke|tax|ambassador|exchange|income|foreign(?: |_)aid)/i, :method => :do_action
+      match /(?:action )?(assassin(?:ate)?|kill|captain|steal|extort|coup) (.+)/i,  :method => :do_action
       match /block (duke|contessa|captain|ambassador)/i,      :method => :do_block
       match /pass/i,                 :method => :react_pass
       match /challenge/i,            :method => :react_challenge
