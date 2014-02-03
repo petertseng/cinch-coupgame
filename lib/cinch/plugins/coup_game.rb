@@ -47,45 +47,54 @@ module Cinch
         @user_games = {}
       end
 
+      def self.xmatch(regex, args)
+        match(regex, args)
+        args[:prefix] = lambda { |m| m.bot.nick + ': ' }
+        match(regex, args)
+        args[:react_on] = :private
+        args[:prefix] = /^/
+        match(regex, args)
+      end
+
       # start 
-      match /join(?:\s*(##?\w+))?/i, :method => :join
-      match /leave/i,                :method => :leave
-      match /start/i,                :method => :start_game
+      xmatch /join(?:\s*(##?\w+))?/i, :method => :join
+      xmatch /leave/i,                :method => :leave
+      xmatch /start/i,                :method => :start_game
     
       # game    
-      match /(?:action )?(duke|tax|ambassador|exchange|income|foreign(?: |_)aid)/i, :method => :do_action
-      match /(?:action )?(assassin(?:ate)?|kill|captain|steal|extort|coup) (.+)/i,  :method => :do_action
-      match /block (duke|contessa|captain|ambassador)/i,      :method => :do_block
-      match /pass/i,                 :method => :react_pass
-      match /challenge/i,            :method => :react_challenge
-      match /bs/i,                   :method => :react_challenge
+      xmatch /(?:action )?(duke|tax|ambassador|exchange|income|foreign(?: |_)aid)/i, :method => :do_action
+      xmatch /(?:action )?(assassin(?:ate)?|kill|captain|steal|extort|coup) (.+)/i,  :method => :do_action
+      xmatch /block (duke|contessa|captain|ambassador)/i,      :method => :do_block
+      xmatch /pass/i,                 :method => :react_pass
+      xmatch /challenge/i,            :method => :react_challenge
+      xmatch /bs/i,                   :method => :react_challenge
 
-      match /flip (1|2)/i,           :method => :flip_card
-      match /lose (1|2)/i,           :method => :flip_card  
-      match /switch (([1-6]))/i,     :method => :switch_cards
+      xmatch /flip (1|2)/i,           :method => :flip_card
+      xmatch /lose (1|2)/i,           :method => :flip_card
+      xmatch /switch (([1-6]))/i,     :method => :switch_cards
 
-      match /me$/i,                  :method => :whoami
-      match /table$/i,               :method => :show_table
-      match /who$/i,                 :method => :list_players
-      match /status$/i,              :method => :status
+      xmatch /me$/i,                  :method => :whoami
+      xmatch /table$/i,               :method => :show_table
+      xmatch /who$/i,                 :method => :list_players
+      xmatch /status$/i,              :method => :status
 
       # other
-      match /invite/i,               :method => :invite
-      match /subscribe/i,            :method => :subscribe
-      match /unsubscribe/i,          :method => :unsubscribe
-      match /help ?(.+)?/i,          :method => :help
-      match /intro/i,                :method => :intro
-      match /rules ?(.+)?/i,         :method => :rules
-      match /changelog$/i,           :method => :changelog_dir
-      match /changelog (\d+)/i,      :method => :changelog
-      # match /about/i,              :method => :about
+      xmatch /invite/i,               :method => :invite
+      xmatch /subscribe/i,            :method => :subscribe
+      xmatch /unsubscribe/i,          :method => :unsubscribe
+      xmatch /help ?(.+)?/i,          :method => :help
+      xmatch /intro/i,                :method => :intro
+      xmatch /rules ?(.+)?/i,         :method => :rules
+      xmatch /changelog$/i,           :method => :changelog_dir
+      xmatch /changelog (\d+)/i,      :method => :changelog
+      # xmatch /about/i,              :method => :about
    
       # mod only commands
-      match /reset(?:\s+(##?\w+))?/i,        :method => :reset_game
-      match /replace (.+?) (.+)/i,           :method => :replace_user
-      match /kick(?:\s+(##?\w+))?\s+(.+)/i,  :method => :kick_user
-      match /room(?:\s+(##?\w+))?\s+(.+)/i,  :method => :room_mode
-      # match /chars/i,              :method => :who_chars
+      xmatch /reset(?:\s+(##?\w+))?/i,        :method => :reset_game
+      xmatch /replace (.+?) (.+)/i,           :method => :replace_user
+      xmatch /kick(?:\s+(##?\w+))?\s+(.+)/i,  :method => :kick_user
+      xmatch /room(?:\s+(##?\w+))?\s+(.+)/i,  :method => :room_mode
+      # xmatch /chars/i,              :method => :who_chars
 
       listen_to :join,               :method => :voice_if_in_game
       listen_to :leaving,            :method => :remove_if_not_started
