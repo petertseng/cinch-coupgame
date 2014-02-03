@@ -702,7 +702,7 @@ module Cinch
         Channel(game.channel_name).moderated = false
         game.players.each do |p|
           Channel(game.channel_name).devoice(p.user)
-          @user_games.delete(p)
+          @user_games.delete(p.user)
         end
         @games[game.channel_name] = Game.new(game.channel_name)
         @idle_timers[game.channel_name].start
