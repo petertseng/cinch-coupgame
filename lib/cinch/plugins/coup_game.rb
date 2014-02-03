@@ -649,6 +649,8 @@ module Cinch
       end
 
       def process_turn(game)
+        return if game.is_over?
+
         turn = game.current_turn
         if turn.counteracted? && !turn.block_challenge_successful
           game.pay_for_current_turn
