@@ -48,12 +48,12 @@ module Cinch
       end
 
       def self.xmatch(regex, args)
-        match(regex, args)
+        match(regex, args.dup)
         args[:prefix] = lambda { |m| m.bot.nick + ': ' }
-        match(regex, args)
+        match(regex, args.dup)
         args[:react_on] = :private
         args[:prefix] = /^/
-        match(regex, args)
+        match(regex, args.dup)
       end
 
       # start 
