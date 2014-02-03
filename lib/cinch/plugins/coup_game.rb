@@ -913,7 +913,35 @@ module Cinch
         return unless game
 
         if game.started?
-            # status = "Waiting on players to PASS or CHALLENGE: #{self.not_back_from_mission.map(&:user).join(", ")}"
+          turn = game.current_turn
+          if turn.waiting_for_action?
+            status = "Waiting on #{turn.active_player} to take an action"
+          elsif turn.waiting_for_action_challenge?
+            players = game.not_reacted.map(&:user).join(", ")
+            status = 'Waiting on players to PASS or CHALLENGE action: ' + players
+          elsif turn.waiting_for_action_challenge_reply?
+            status = "Waiting on #{turn.active_player} to respond to action challenge"
+          elsif turn.waiting_for_action_challenge_loser?
+            status = "Waiting on #{turn.action_challenger} to pick character to lose"
+          elsif turn.waiting_for_block?
+            if turn.action.needs_target
+              players = turn.target_player.to_s
+            else
+              players = game.not_reacted.map(&:user).join(", ")
+            end
+            status = 'Waiting on players to PASS or BLOCK action: ' + players
+          elsif turn.waiting_for_block_challenge?
+            players = game.not_reacted.map(&:user).join(", ")
+            status = 'Waiting on players to PASS or CHALLENGE block: ' + players
+          elsif turn.waiting_for_block_challenge_reply?
+            status = "Waiting on #{turn.counteracting_player} to respond to block challenge"
+          elsif turn.waiting_for_block_challenge_loser?
+            status = "Waiting on #{turn.block_challenger} to pick character to lose"
+          elsif turn.waiting_for_decision?
+            status = "Waiting on #{turn.decider} to make decision on #{turn.action.to_s.upcase}"
+          else
+            status = "Unknown status #{turn.state}"
+          end
         else
           if game.player_count.zero?
             status = "No game in progress."
