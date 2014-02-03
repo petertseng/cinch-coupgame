@@ -35,6 +35,7 @@ class MyUser
   end
 
   alias :nick :name
+  alias :to_s :name
 
   def ==(that)
     return false if that.nil?
