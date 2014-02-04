@@ -475,16 +475,7 @@ module Cinch
           turn = game.current_turn
 
           if turn.waiting_for_decision? && turn.decider == player && turn.action.action != :ambassador
-            character = player.flip_character_card(position.to_i)
-            if character.nil?
-              m.user.send "You have already flipped that card."
-              return
-            end
-
-            Channel(game.channel_name).send "#{m.user.nick} turns a #{character} face up."
-            self.check_player_status(game, player)
-            # If I haven't started a new game, start a new turn
-            self.start_new_turn(game) unless game.is_over?
+            self.couped(game, player, position)
           elsif turn.waiting_for_action_challenge_reply? && turn.active_player == player
             self.respond_to_challenge(game, player, position, turn.action, turn.action_challenger)
           elsif turn.waiting_for_block_challenge_reply? && turn.counteracting_player == player
@@ -495,6 +486,20 @@ module Cinch
             self.lose_challenge(game, player, position)
           end
         end
+      end
+
+      # Couped, or assassinated
+      def couped(game, player, position)
+        character = player.flip_character_card(position.to_i)
+        if character.nil?
+          player.user.send "You have already flipped that card."
+          return
+        end
+
+        Channel(game.channel_name).send "#{player.user} turns a #{character} face up."
+        self.check_player_status(game, player)
+        # If I haven't started a new game, start a new turn
+        self.start_new_turn(game) unless game.is_over?
       end
 
       def lose_challenge(game, player, position)
