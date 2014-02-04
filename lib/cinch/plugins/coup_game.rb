@@ -283,6 +283,13 @@ module Cinch
               target_msg = ""
             else
               target_player = game.find_player(target)
+
+              # No self-targeting!
+              if target_player == game.current_player
+                m.user.send("You may not target yourself with #{action.upcase}.")
+                return
+              end
+
               if target_player.nil?
                 User(m.user).send "\"#{target}\" is an invalid target."
               else
