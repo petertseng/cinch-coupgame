@@ -84,6 +84,7 @@ class Game
   attr_accessor :inquisitor_shown_card
   attr_reader :channel_name
   attr_accessor :settings
+  attr_reader :bank
   
   def initialize(channel_name)
     @channel_name = channel_name
@@ -96,6 +97,7 @@ class Game
     @ambassador_cards = []
     @ambassador_options = []
     @inquisitor_shown_card = nil
+    @bank = 0
   end
 
   #----------------------------------------------
