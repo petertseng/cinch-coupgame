@@ -1029,16 +1029,16 @@ describe Cinch::Plugins::CoupGame do
 
         # Target claims contessa
         @game.do_block(message_from(@order[3]), 'contessa')
-        # Assassin challenges
-        @game.react_challenge(message_from(@order[2]))
 
         @chan.messages.clear
 
-        @game.flip_card(message_from(@order[3]), '2')
+        # Assassin challenges
+        @game.react_challenge(message_from(@order[2]))
       end
 
       it 'moves on to the next turn after flip' do
         expect(@chan.messages).to be == [
+          "#{@order[2]} challenges #{@order[3]} on CONTESSA!",
           "#{@order[3]} turns a ASSASSIN face up, losing an influence.",
           "#{@order[3]} has no more influence, and is out of the game.",
           "#{@order[2]} proceeds with ASSASSIN. Pay 3 coins, choose player to lose influence: #{@order[3]}.",
@@ -1747,12 +1747,12 @@ describe Cinch::Plugins::CoupGame do
       it 'ends the game if player with 1 influence gets challenged on an action' do
         @game.force_characters(@order[2], nil, :assassin)
         @game.do_action(message_from(@order[2]), 'ambassador')
-        @game.react_challenge(message_from(@order[1]))
         @chan.messages.clear
 
-        @game.flip_card(message_from(@order[2]), '2')
+        @game.react_challenge(message_from(@order[1]))
 
         expect(@chan.messages).to be == [
+          "#{@order[1]} challenges #{@order[2]} on AMBASSADOR!",
           "#{@order[2]} turns a ASSASSIN face up, losing an influence.",
           "#{@order[2]} has no more influence, and is out of the game.",
           "Game is over! #{@order[1]} wins!",
@@ -1765,12 +1765,12 @@ describe Cinch::Plugins::CoupGame do
         @game.do_action(message_from(@order[1]), 'captain', @order[2])
         @game.react_pass(message_from(@order[2]))
         @game.do_block(message_from(@order[2]), 'ambassador')
-        @game.react_challenge(message_from(@order[1]))
         @chan.messages.clear
 
-        @game.flip_card(message_from(@order[2]), '2')
+        @game.react_challenge(message_from(@order[1]))
 
         expect(@chan.messages).to be == [
+          "#{@order[1]} challenges #{@order[2]} on AMBASSADOR!",
           "#{@order[2]} turns a ASSASSIN face up, losing an influence.",
           "#{@order[2]} has no more influence, and is out of the game.",
           "Game is over! #{@order[1]} wins!",
