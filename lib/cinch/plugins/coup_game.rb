@@ -684,10 +684,7 @@ module Cinch
         unless player.has_influence?
           Channel(game.channel_name).send "#{player} has no more influence, and is out of the game."
           game.discard_characters_for(player)
-          left = game.remove_player(player.user)
-          unless left.nil?
-            Channel(game.channel_name).devoice(player.user)
-          end
+          remove_user_from_game(player.user, game, announce: false)
           self.check_game_state(game)
         end
       end
