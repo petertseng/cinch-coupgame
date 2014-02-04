@@ -1,4 +1,5 @@
 require 'cinch'
+require 'set'
 require 'yaml'
 
 require File.expand_path(File.dirname(__FILE__)) + '/core/action'
@@ -6,6 +7,30 @@ require File.expand_path(File.dirname(__FILE__)) + '/core/game'
 require File.expand_path(File.dirname(__FILE__)) + '/core/turn'
 require File.expand_path(File.dirname(__FILE__)) + '/core/player'
 require File.expand_path(File.dirname(__FILE__)) + '/core/character'
+
+$pm_users = Set.new
+
+module Cinch
+  class Message
+    old_reply = instance_method(:reply)
+
+    define_method(:reply) do |*args|
+      if self.channel.nil? && !$pm_users.include?(self.user)
+        self.user.send(args[0], true)
+      else
+        old_reply.bind(self).(*args)
+      end
+    end
+  end
+
+  class User
+    old_send = instance_method(:send)
+
+    define_method(:send) do |*args|
+      old_send.bind(self).(args[0], !$pm_users.include?(self))
+    end
+  end
+end
 
 module Cinch
   module Plugins
@@ -119,6 +144,8 @@ module Cinch
       listen_to :join,               :method => :voice_if_in_game
       listen_to :leaving,            :method => :remove_if_not_started
       listen_to :op,                 :method => :devoice_everyone_on_start
+
+      xmatch /notice(?:\s+(on|off))?/i,       :method => :noticeme
 
 
       #--------------------------------------------------------------------------------
@@ -1195,6 +1222,16 @@ module Cinch
         m.reply("To #{warn_user[0]} via PM you must specify the channel: #{warn_user[1]} #channel") if game.nil? && !warn_user.nil?
 
         game
+      end
+
+      def noticeme(m, toggle)
+        if toggle && toggle.downcase == 'on'
+          $pm_users.delete(m.user)
+        elsif toggle && toggle.downcase == 'off'
+          $pm_users.add(m.user)
+        end
+
+        m.reply("Private communications to you will occur in #{$pm_users.include?(m.user) ? 'PRIVMSG' : 'NOTICE'}")
       end
 
       def help(m, page)
