@@ -31,8 +31,7 @@ class Player
   end
 
   def character_position(character)
-    char = self.characters.select{ |c| c.face_down? }.find{ |c| c.name == character }
-    self.characters.index(char)
+    self.characters.index { |c| c.face_down? && c.name == character }
   end
 
   def switch_character(character, position)
