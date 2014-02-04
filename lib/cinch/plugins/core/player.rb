@@ -45,7 +45,7 @@ class Player
   end
 
   def influence
-    self.characters.select{ |c| c.face_down? }.size
+    self.characters.count { |c| c.face_down? }
   end
 
   def give_coins(amount)
