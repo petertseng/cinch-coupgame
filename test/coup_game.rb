@@ -1107,6 +1107,7 @@ describe Cinch::Plugins::CoupGame do
         end
 
         @game.force_characters(@order[2], :assassin, :assassin)
+        @game.force_characters(@order[3], :duke, :duke)
 
         # 1st uses coup on 3rd
         @game.do_action(message_from(@order[1]), 'coup', @order[3])
@@ -1118,18 +1119,17 @@ describe Cinch::Plugins::CoupGame do
         # 1st challenges
         @game.react_challenge(message_from(@order[3]))
 
-        # assassin wins challenge
-        @game.flip_card(message_from(@order[2]), '1')
-
         @chan.messages.clear
 
-        # target dies from challenge
-        @game.flip_card(message_from(@order[3]), '2')
+        # assassin wins challenge
+        @game.flip_card(message_from(@order[2]), '1')
       end
 
       it 'moves on to the next turn after flip' do
-        expect(@chan.messages.shift).to be =~ /^#{@order[3]} turns a [A-Z]+ face up\.$/
         expect(@chan.messages).to be == [
+          "#{@order[2]} reveals a [ASSASSIN]. #{@order[3]} loses an influence.",
+          "#{@order[2]} switches the character card with one from the deck.",
+          "#{@order[3]} turns a DUKE face up.",
           "#{@order[3]} has no more influence, and is out of the game.",
           "#{@order[2]} proceeds with ASSASSIN. Pay 3 coins, choose player to lose influence: #{@order[3]}.",
           "#{@order[1]}: It is your turn. Please choose an action.",
@@ -1155,16 +1155,18 @@ describe Cinch::Plugins::CoupGame do
       @game.flip_card(message_from(@order[1]), '1')
 
       @game.force_characters(@order[3], :assassin, :assassin)
+      @game.force_characters(@order[2], nil, :duke)
       @game.do_action(message_from(@order[3]), 'assassin', @order[1])
       @game.react_challenge(message_from(@order[2]))
-      @game.flip_card(message_from(@order[3]), '1')
 
       @chan.messages.clear
 
-      @game.flip_card(message_from(@order[2]), '2')
+      @game.flip_card(message_from(@order[3]), '1')
 
-      expect(@chan.messages.shift).to be =~ /^#{@order[2]} turns a [A-Z]+ face up\.$/
       expect(@chan.messages).to be == [
+        "#{@order[3]} reveals a [ASSASSIN]. #{@order[2]} loses an influence.",
+        "#{@order[3]} switches the character card with one from the deck.",
+        "#{@order[2]} turns a DUKE face up.",
         "#{@order[2]} has no more influence, and is out of the game.",
         "#{@order[1]}: Would you like to block the ASSASSIN (\"!block contessa\") or not (\"!pass\")?",
       ]
@@ -1783,12 +1785,13 @@ describe Cinch::Plugins::CoupGame do
         @game.do_action(message_from(@order[2]), 'income')
         @game.do_action(message_from(@order[1]), 'ambassador')
         @game.react_challenge(message_from(@order[2]))
-        @game.flip_card(message_from(@order[1]), '1')
         @chan.messages.clear
 
-        @game.flip_card(message_from(@order[2]), '2')
+        @game.flip_card(message_from(@order[1]), '1')
 
         expect(@chan.messages).to be == [
+          "#{@order[1]} reveals a [AMBASSADOR]. #{@order[2]} loses an influence.",
+          "#{@order[1]} switches the character card with one from the deck.",
           "#{@order[2]} turns a ASSASSIN face up.",
           "#{@order[2]} has no more influence, and is out of the game.",
           "Game is over! #{@order[1]} wins!",
@@ -1802,12 +1805,13 @@ describe Cinch::Plugins::CoupGame do
         @game.react_pass(message_from(@order[1]))
         @game.do_block(message_from(@order[1]), 'ambassador')
         @game.react_challenge(message_from(@order[2]))
-        @game.flip_card(message_from(@order[1]), '1')
         @chan.messages.clear
 
-        @game.flip_card(message_from(@order[2]), '2')
+        @game.flip_card(message_from(@order[1]), '1')
 
         expect(@chan.messages).to be == [
+          "#{@order[1]} reveals a [AMBASSADOR]. #{@order[2]} loses an influence.",
+          "#{@order[1]} switches the character card with one from the deck.",
           "#{@order[2]} turns a ASSASSIN face up.",
           "#{@order[2]} has no more influence, and is out of the game.",
           "Game is over! #{@order[1]} wins!",
