@@ -973,13 +973,17 @@ module Cinch
 
         if game.started?
           turn = game.current_turn
+
+          action = "#{dehighlight_nick(turn.active_player.user.nick)}'s #{turn.action.to_s.upcase}" if turn.action
+          block = "#{dehighlight_nick(turn.counteracting_player.user.nick)}'s #{turn.counteraction.to_s.upcase} blocking #{action}" if turn.counteraction
+
           if turn.waiting_for_action?
             status = "Waiting on #{turn.active_player} to take an action"
           elsif turn.waiting_for_action_challenge?
             players = game.not_reacted.map(&:user).join(", ")
-            status = 'Waiting on players to PASS or CHALLENGE action: ' + players
+            status = "Waiting on players to PASS or CHALLENGE #{action}: #{players}"
           elsif turn.waiting_for_action_challenge_reply?
-            status = "Waiting on #{turn.active_player} to respond to action challenge"
+            status = "Waiting on #{turn.active_player} to respond to challenge against #{action}"
           elsif turn.waiting_for_action_challenge_loser?
             status = "Waiting on #{turn.action_challenger} to pick character to lose"
           elsif turn.waiting_for_block?
@@ -988,12 +992,12 @@ module Cinch
             else
               players = game.not_reacted.map(&:user).join(", ")
             end
-            status = 'Waiting on players to PASS or BLOCK action: ' + players
+            status = "Waiting on players to PASS or BLOCK #{action}: #{players}"
           elsif turn.waiting_for_block_challenge?
             players = game.not_reacted.map(&:user).join(", ")
-            status = 'Waiting on players to PASS or CHALLENGE block: ' + players
+            status = "Waiting on players to PASS or CHALLENGE #{block}: #{players}"
           elsif turn.waiting_for_block_challenge_reply?
-            status = "Waiting on #{turn.counteracting_player} to respond to block challenge"
+            status = "Waiting on #{turn.counteracting_player} to respond to challenge against #{block}"
           elsif turn.waiting_for_block_challenge_loser?
             status = "Waiting on #{turn.block_challenger} to pick character to lose"
           elsif turn.waiting_for_decision?
