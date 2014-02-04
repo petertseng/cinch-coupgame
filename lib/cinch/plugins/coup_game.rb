@@ -490,27 +490,27 @@ module Cinch
           elsif turn.waiting_for_block_challenge_reply? && turn.counteracting_player == player
             self.respond_to_challenge(m, game, player, position, turn.counteraction, turn.block_challenger)
           elsif turn.waiting_for_action_challenge_loser? && turn.action_challenger == player
-            self.lose_challenge(m, game, player, position)
+            self.lose_challenge(game, player, position)
           elsif turn.waiting_for_block_challenge_loser? && turn.block_challenger == player
-            self.lose_challenge(m, game, player, position)
+            self.lose_challenge(game, player, position)
           end
         end
       end
 
-      def lose_challenge(m, game, player, position)
+      def lose_challenge(game, player, position)
         pos = position.to_i
         unless pos == 1 || pos == 2
-          m.user.send("#{pos} is not a valid option to reveal.")
+          player.user.send("#{pos} is not a valid option to reveal.")
           return
         end
 
         character = player.flip_character_card(pos)
         if character.nil?
-          m.user.send "You have already flipped that card."
+          player.user.send "You have already flipped that card."
           return
         end
 
-        Channel(game.channel_name).send "#{m.user.nick} turns a #{character} face up."
+        Channel(game.channel_name).send "#{player.user} turns a #{character} face up."
 
         self.check_player_status(game, player)
 
