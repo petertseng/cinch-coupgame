@@ -658,6 +658,8 @@ module Cinch
 
               game.shuffle_into_deck(*cards_to_return)
               Channel(game.channel_name).send "#{m.user.nick} shuffles two cards into the Court Deck."
+              returned_names = cards_to_return.collect { |c| "[#{c}]" }.join(' and ')
+              m.user.send("You returned #{returned_names} to the Court Deck.")
 
               self.start_new_turn(game)
             else
