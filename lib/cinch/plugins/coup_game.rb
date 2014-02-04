@@ -348,7 +348,7 @@ module Cinch
                   return
                 end
                 game.current_turn.add_counteraction(action, player)
-                Channel(game.channel_name).send "#{m.user.nick} uses #{action.upcase}"
+                Channel(game.channel_name).send "#{m.user.nick} uses #{action.upcase} to block #{game.current_turn.action.action.upcase}"
                 self.prompt_challengers(game)
                 game.current_turn.wait_for_block_challenge
               else

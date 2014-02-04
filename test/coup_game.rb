@@ -364,7 +364,7 @@ describe Cinch::Plugins::CoupGame do
       it 'blocks aid if a player blocks with duke unchallenged' do
         @game.do_block(message_from(@order[2]), 'duke')
         expect(@chan.messages).to be == [
-          "#{@order[2]} uses DUKE",
+          "#{@order[2]} uses DUKE to block FOREIGN_AID",
           CHALLENGE_PROMPT,
         ].compact
         @chan.messages.clear
@@ -391,7 +391,7 @@ describe Cinch::Plugins::CoupGame do
 
           @game.do_block(message_from(@order[2]), 'duke')
           expect(@chan.messages).to be == [
-            "#{@order[2]} uses DUKE",
+            "#{@order[2]} uses DUKE to block FOREIGN_AID",
             CHALLENGE_PROMPT,
           ].compact
           @chan.messages.clear
@@ -794,7 +794,7 @@ describe Cinch::Plugins::CoupGame do
       it 'blocks assassination if target blocks with contessa unchallenged' do
         @game.do_block(message_from(@order[2]), 'contessa')
         expect(@chan.messages).to be == [
-          "#{@order[2]} uses CONTESSA",
+          "#{@order[2]} uses CONTESSA to block ASSASSIN",
           CHALLENGE_PROMPT,
         ].compact
         @chan.messages.clear
@@ -822,7 +822,7 @@ describe Cinch::Plugins::CoupGame do
 
           @game.do_block(message_from(@order[2]), 'contessa')
           expect(@chan.messages).to be == [
-            "#{@order[2]} uses CONTESSA",
+            "#{@order[2]} uses CONTESSA to block ASSASSIN",
             CHALLENGE_PROMPT,
           ].compact
           @chan.messages.clear
@@ -1219,7 +1219,7 @@ describe Cinch::Plugins::CoupGame do
       it 'blocks steal if target blocks with ambassador' do
         @game.do_block(message_from(@order[2]), 'ambassador')
         expect(@chan.messages).to be == [
-          "#{@order[2]} uses AMBASSADOR",
+          "#{@order[2]} uses AMBASSADOR to block CAPTAIN",
           CHALLENGE_PROMPT,
         ].compact
         @chan.messages.clear
@@ -1247,7 +1247,7 @@ describe Cinch::Plugins::CoupGame do
 
           @game.do_block(message_from(@order[2]), 'ambassador')
           expect(@chan.messages).to be == [
-            "#{@order[2]} uses AMBASSADOR",
+            "#{@order[2]} uses AMBASSADOR to block CAPTAIN",
             CHALLENGE_PROMPT,
           ].compact
           @chan.messages.clear
@@ -1296,7 +1296,7 @@ describe Cinch::Plugins::CoupGame do
       it 'blocks steal if target blocks with captain unchallenged' do
         @game.do_block(message_from(@order[2]), 'captain')
         expect(@chan.messages).to be == [
-          "#{@order[2]} uses CAPTAIN",
+          "#{@order[2]} uses CAPTAIN to block CAPTAIN",
           CHALLENGE_PROMPT,
         ].compact
         @chan.messages.clear
@@ -1324,7 +1324,7 @@ describe Cinch::Plugins::CoupGame do
 
           @game.do_block(message_from(@order[2]), 'captain')
           expect(@chan.messages).to be == [
-            "#{@order[2]} uses CAPTAIN",
+            "#{@order[2]} uses CAPTAIN to block CAPTAIN",
             CHALLENGE_PROMPT,
           ].compact
           @chan.messages.clear
