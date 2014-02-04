@@ -562,9 +562,9 @@ module Cinch
         turn = game.current_turn
 
         if revealed.to_s == action.character_required.to_s.upcase
-          Channel(game.channel_name).send "#{player} reveals a [#{action.character_required.to_s.upcase}]. #{challenger} loses an influence."
+          Channel(game.channel_name).send "#{player} reveals a [#{action.character_required.to_s.upcase}] and replaces it with a new card from the Court Deck."
           game.replace_character_with_new(player, action.character_required)
-          Channel(game.channel_name).send "#{player} switches the character card with one from the deck."
+          Channel(game.channel_name).send "#{challenger} loses influence for losing the challenge!"
           self.tell_characters_to(player, false)
           turn.wait_for_challenge_loser
           if challenger.influence == 2

@@ -79,8 +79,8 @@ end
 
 def challenged_win(player, char, challenger)
   [
-    "#{player} reveals a [#{char.to_s.upcase}]. #{challenger} loses an influence.",
-    "#{player} switches the character card with one from the deck.",
+    "#{player} reveals a [#{char.to_s.upcase}] and replaces it with a new card from the Court Deck.",
+    "#{challenger} loses influence for losing the challenge!",
   ]
 end
 def challenged_loss(player, expected_char, char)
