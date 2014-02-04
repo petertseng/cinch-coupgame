@@ -97,6 +97,10 @@ def lose_card(player, char = nil)
   end
 end
 
+def dehighlight(nickname)
+  nickname.chars.to_a.join(8203.chr('UTF-8'))
+end
+
 describe Cinch::Plugins::CoupGame do
   def message_from(username, channel = nil)
     Message.new(@players[username], channel || @chan)
@@ -1671,7 +1675,9 @@ describe Cinch::Plugins::CoupGame do
         @chan.messages.clear
         @game.status(message_from(@order[1]))
         # Hmm, I'm relying on this to be in turn order, but is that always correct?
-        expect(@chan.messages).to be == ["Waiting on players to PASS or CHALLENGE action: #{@order[2]}, #{@order[3]}"]
+        expect(@chan.messages).to be == [
+          "Waiting on players to PASS or CHALLENGE #{dehighlight(@order[1])}'s AMBASSADOR: #{@order[2]}, #{@order[3]}"
+        ]
       end
 
       it 'reports waiting on action challenge response' do
@@ -1680,7 +1686,9 @@ describe Cinch::Plugins::CoupGame do
         @chan.messages.clear
         @game.status(message_from(@order[1]))
         # Hmm, I'm relying on this to be in turn order, but is that always correct?
-        expect(@chan.messages).to be == ["Waiting on #{@order[1]} to respond to action challenge"]
+        expect(@chan.messages).to be == [
+          "Waiting on #{@order[1]} to respond to challenge against #{dehighlight(@order[1])}'s AMBASSADOR"
+        ]
       end
 
       it 'reports waiting on action challenge loser' do
@@ -1699,7 +1707,9 @@ describe Cinch::Plugins::CoupGame do
         @game.react_pass(message_from(@order[3]))
         @chan.messages.clear
         @game.status(message_from(@order[1]))
-        expect(@chan.messages).to be == ["Waiting on players to PASS or BLOCK action: #{@order[2]}"]
+        expect(@chan.messages).to be == [
+          "Waiting on players to PASS or BLOCK #{dehighlight(@order[1])}'s CAPTAIN: #{@order[2]}"
+        ]
       end
 
       it 'reports waiting on multi block' do
@@ -1707,7 +1717,9 @@ describe Cinch::Plugins::CoupGame do
         @chan.messages.clear
         @game.status(message_from(@order[1]))
         # Hmm, I'm relying on this to be in turn order, but is that always correct?
-        expect(@chan.messages).to be == ["Waiting on players to PASS or BLOCK action: #{@order[2]}, #{@order[3]}"]
+        expect(@chan.messages).to be == [
+          "Waiting on players to PASS or BLOCK #{dehighlight(@order[1])}'s FOREIGN_AID: #{@order[2]}, #{@order[3]}"
+        ]
       end
 
       it 'reports waiting on block challenge' do
@@ -1716,7 +1728,10 @@ describe Cinch::Plugins::CoupGame do
         @chan.messages.clear
         @game.status(message_from(@order[1]))
         # Hmm, I'm relying on this to be in turn order, but is that always correct?
-        expect(@chan.messages).to be == ["Waiting on players to PASS or CHALLENGE block: #{@order[1]}, #{@order[3]}"]
+        block = "#{dehighlight(@order[2])}'s DUKE blocking #{dehighlight(@order[1])}'s FOREIGN_AID"
+        expect(@chan.messages).to be == [
+          "Waiting on players to PASS or CHALLENGE #{block}: #{@order[1]}, #{@order[3]}"
+        ]
       end
 
       it 'reports waiting on block challenge response' do
@@ -1725,8 +1740,11 @@ describe Cinch::Plugins::CoupGame do
         @game.react_challenge(message_from(@order[3]))
         @chan.messages.clear
         @game.status(message_from(@order[1]))
+        block = "#{dehighlight(@order[2])}'s DUKE blocking #{dehighlight(@order[1])}'s FOREIGN_AID"
         # Hmm, I'm relying on this to be in turn order, but is that always correct?
-        expect(@chan.messages).to be == ["Waiting on #{@order[2]} to respond to block challenge"]
+        expect(@chan.messages).to be == [
+          "Waiting on #{@order[2]} to respond to challenge against #{block}"
+        ]
       end
 
       it 'reports waiting on block challenge loser' do
