@@ -4,9 +4,11 @@
 
 class Character
 
+  attr_reader :id
   attr_accessor :name, :face_down
 
-  def initialize(name)
+  def initialize(id, name)
+    @id = id
     self.name = name
     self.face_down = true
   end 
@@ -25,7 +27,7 @@ class Character
 
   def eql?(character)  
     self.class.equal?(character.class) &&  
-      self.name == character.name
+      @id == character.id
   end 
 
   alias == eql?  

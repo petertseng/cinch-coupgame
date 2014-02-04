@@ -174,9 +174,11 @@ class Game
   #
   def build_starting_deck
     deck = []
+    id = 1
     [:duke, :assassin, :contessa, :captain, :ambassador].each do |char|
       3.times.each do 
-        deck << Character.new(char)
+        deck << Character.new(id, char)
+        id += 1
       end
     end
     deck

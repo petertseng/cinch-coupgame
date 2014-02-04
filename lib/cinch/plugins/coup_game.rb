@@ -45,6 +45,8 @@ module Cinch
         }
 
         @user_games = {}
+
+        @forced_id = 16
       end
 
       def self.xmatch(regex, args)
@@ -234,8 +236,14 @@ module Cinch
       # for use in tests
       def force_characters(p, c1, c2)
         game = @user_games[User(p)]
-        game.find_player(p).switch_character(Character.new(c1), 0) if c1
-        game.find_player(p).switch_character(Character.new(c2), 1) if c2
+        if c1
+          game.find_player(p).switch_character(Character.new(@forced_id, c1), 0)
+          @forced_id += 1
+        end
+        if c2
+          game.find_player(p).switch_character(Character.new(@forced_id, c2), 1)
+          @forced_id += 1
+        end
       end
 
       def pass_out_characters(game)
