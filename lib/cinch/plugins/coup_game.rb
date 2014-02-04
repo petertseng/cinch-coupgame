@@ -122,8 +122,8 @@ module Cinch
       end
 
       def start_idle_timer(channel_name)
-        game = @games[channel_name]
         Timer(300) do
+          game = @games[channel_name]
           game.players.map{|p| p.user }.each do |user|
             user.refresh
             if user.idle > @idle_timer_length
