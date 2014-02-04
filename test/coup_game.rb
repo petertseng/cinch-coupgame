@@ -560,6 +560,49 @@ describe Cinch::Plugins::CoupGame do
       end
     end
 
+    context 'when a player with duplicates and 1 influence is falsely challenged' do
+      before :each do
+        @game.force_characters(@order[2], :duke, :duke)
+
+        5.times do
+          (1..NUM_PLAYERS).each { |i|
+            @game.do_action(message_from(@order[i]), 'income')
+          }
+        end
+
+        # 1 coups 2 and 2 flips card 1 (a duke)
+        @game.do_action(message_from(@order[1]), 'coup', @order[2])
+        @game.flip_card(message_from(@order[2]), '1')
+
+        # 2 uses duke, and 1 challenges. 2 should auto-flip card 2.
+        @game.do_action(message_from(@order[2]), 'duke')
+        @game.react_challenge(message_from(@order[1]))
+        @game.flip_card(message_from(@order[1]), '1')
+        @chan.messages.clear
+
+        # So if 3 coups 2 now, 2 should die!
+        @game.do_action(message_from(@order[3]), 'coup', @order[2])
+        expect(@chan.messages.shift(2)).to be == [
+          "#{@order[3]} uses COUP on #{@order[2]}",
+          "#{@order[3]} proceeds with COUP. Pay 7 coins, choose player to lose influence: #{@order[2]}.",
+        ]
+      end
+
+      it 'knocks out the player' do
+        expect(@chan.messages.shift).to be =~ lose_card(@order[2])
+        expect(@chan.messages).to be == [
+          "#{@order[2]} has no more influence, and is out of the game.",
+          "#{@order[1]}: It is your turn. Please choose an action.",
+        ]
+      end
+
+      it 'does not let the player flip card 1 again' do
+        @chan.messages.clear
+        @game.flip_card(message_from(@order[2]), '1')
+        expect(@chan.messages).to be == []
+      end
+    end
+
     # ===== Ambassador =====
 
     context 'when player with 2 influence uses ambassador unchallenged' do
