@@ -14,6 +14,13 @@ class Game
   MIN_PLAYERS = 2
   MAX_PLAYERS = 6
   COINS = 50
+
+  BANK_NAME = 'Almshouse'
+  FACTIONS = [
+    'Protestant',
+    'Catholic',
+  ]
+
   ACTIONS = {
     :income      => Action.new( :action       => :income,
                                 :name         => "Income",      
@@ -30,6 +37,24 @@ class Game
                                 :has_decision => true,
                                 :needs_target => true,
                                 :cost         => 7 ),
+
+    :embezzle    => Action.new( :action              => :embezzle,
+                                :character_forbidden => :duke,
+                                :name                => "Embezzle",
+                                :effect              => "Take all coins from the #{BANK_NAME}",
+                                :mode_required       => :reformation),
+
+    :apostatize  => Action.new( :action              => :apostatize,
+                                :name                => "Apostatize",
+                                :cost                => 1,
+                                :effect              => "Pay 1 coin to #{BANK_NAME}, change own faction",
+                                :mode_required       => :reformation),
+
+    :convert     => Action.new( :action              => :convert,
+                                :name                => "Convert",
+                                :cost                => 2,
+                                :effect              => "Pay 2 coins to #{BANK_NAME}, choose player to change faction",
+                                :mode_required       => :reformation),
 
     :duke        => Action.new( :action             => :duke,      
                                 :character_required => :duke, 
@@ -264,6 +289,12 @@ class Game
       self.current_player.take_coins 7
     when :assassin
       self.current_player.take_coins 3
+    when :apostatize
+      self.current_player.take_coins 1
+      @bank += 1
+    when :convert
+      self.current_player.take_coins 2
+      @bank += 2
     end
   end
 
@@ -290,6 +321,13 @@ class Game
     when :captain
       taken = self.target_player.take_coins 2
       self.current_player.give_coins taken
+    when :embezzle
+      self.current_player.give_coins @bank
+      @bank = 0
+    when :apostatize
+      self.current_player.change_faction
+    when :convert
+      self.target_player.change_faction
     end
   end
 
