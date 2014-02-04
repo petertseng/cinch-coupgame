@@ -709,8 +709,11 @@ module Cinch
             if turn.action.action == :coup || turn.action.action == :assassin
               # In a double-kill situation, the target may already be out.
               # If target is already out, just move on to next turn.
-              if turn.target_player.has_influence?
+              if turn.target_player.influence == 2
                 self.prompt_to_flip(turn.target_player)
+              elsif turn.target_player.influence == 1
+                i = turn.target_player.characters.index { |c| c.face_down? }
+                self.couped(game, turn.target_player, i + 1)
               else
                 self.start_new_turn(game)
               end
