@@ -213,6 +213,9 @@ class Game
   def replace_character_with_new(player, character)
     position = player.character_position(character)
     old_character = player.characters[position]
+
+    raise "Replaced #{player}'s face-up #{character}" unless old_character.face_down?
+
     self.deck << old_character
     self.deck.shuffle!
     player.characters[position] = self.deck.shift

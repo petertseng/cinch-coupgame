@@ -35,6 +35,8 @@ class Player
   end
 
   def switch_character(character, position)
+    old = self.characters[position]
+    raise "Replaced #{self.user}'s face-up #{old}" unless old.face_down?
     self.characters[position] = character
   end
 
