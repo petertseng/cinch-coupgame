@@ -567,7 +567,12 @@ module Cinch
           Channel(game.channel_name).send "#{player} switches the character card with one from the deck."
           self.tell_characters_to(player, false)
           turn.wait_for_challenge_loser
-          self.prompt_to_flip(challenger)
+          if challenger.influence == 2
+            self.prompt_to_flip(challenger)
+          else
+            i = challenger.characters.index { |c| c.face_down? }
+            self.lose_challenge(game, challenger, i + 1)
+          end
         else
           Channel(game.channel_name).send "#{player} turns a #{revealed} face up, losing an influence."
           revealed.flip_up
