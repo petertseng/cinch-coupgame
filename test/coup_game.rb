@@ -109,7 +109,7 @@ describe Cinch::Plugins::CoupGame do
     @chan2 = MyChannel.new(CHANNAME2, @players)
 
     @game = Cinch::Plugins::CoupGame.new(b)
-    @game.stub('sleep') { |x| puts "Slept for #{x} seconds" }
+    @game.stub('sleep') { |x| nil }
     @game.stub('Channel') { |x|
       if x == CHANNAME
         @chan
