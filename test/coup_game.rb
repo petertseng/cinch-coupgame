@@ -328,6 +328,11 @@ describe Cinch::Plugins::CoupGame do
       expect(@chan.messages).to be == []
     end
 
+    it 'forbids p4 from joining' do
+      @game.join(message_from('p4'))
+      expect(@chan.messages).to be == ["p4: Game has already started."]
+    end
+
     it 'reports waiting on action in status' do
       @game.status(message_from('p1'))
       expect(@chan.messages).to be == ["Waiting on #{@order[1]} to take an action"]
