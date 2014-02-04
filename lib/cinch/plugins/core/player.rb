@@ -6,6 +6,7 @@ class Player
 
   attr_accessor :user, :characters, :coins
   attr_reader :side_cards
+  attr_accessor :faction
 
   def initialize(user)
     self.user = user
@@ -14,6 +15,8 @@ class Player
 
     # The four cards set aside in a 2p game.
     @side_cards = []
+
+    @faction = 0
   end 
 
   def receive_characters(characters)
@@ -78,6 +81,10 @@ class Player
 
   def to_s
     self.user.nick
+  end
+
+  def change_faction
+    @faction = 1 - @faction
   end
 
 end
