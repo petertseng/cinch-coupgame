@@ -27,7 +27,7 @@ class Player
   end
 
   def has_character?(character)
-    self.characters.select{ |c| c.face_down? }.any?{ |c| c.name == character }
+    self.characters.any? { |c| c.face_down? && c.name == character}
   end
 
   def character_position(character)
