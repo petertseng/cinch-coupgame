@@ -1779,6 +1779,37 @@ describe Cinch::Plugins::CoupGame do
         ].flatten
       end
 
+      context 'after game ends' do
+        before :each do
+          # 2 uses coup on 1
+          @game.do_action(message_from(@order[2]), 'coup', @order[1])
+          # 1 flips card 1
+          @game.flip_card(message_from(@order[1]), '1')
+
+          # Get back up to 7 coins!
+          7.times do
+            (1..NUM_PLAYERS-1).each { |i|
+              @game.do_action(message_from(@order[i]), 'income')
+            }
+          end
+
+          # 1 uses coup on 2, winning the game!!!
+          @game.do_action(message_from(@order[1]), 'coup', @order[2])
+
+          @chan.messages.clear
+        end
+
+        it 'lets the winner join the next game' do
+          @game.join(message_from(@order[1]))
+          expect(@chan.messages).to be == ["#{@order[1]} has joined the game (1/6)"]
+        end
+
+        it 'lets a non-winner join the next game' do
+          @game.join(message_from(@order[2]))
+          expect(@chan.messages).to be == ["#{@order[2]} has joined the game (1/6)"]
+        end
+      end
+
     end
 
   end
