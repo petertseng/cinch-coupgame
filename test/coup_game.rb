@@ -538,33 +538,6 @@ describe Cinch::Plugins::CoupGame do
       end
     end
 
-    it 'does not let player flip an already-flipped card' do
-      # Have each player take income to bump them up to 7 coins
-      5.times do
-        (1..NUM_PLAYERS).each { |i|
-          @game.do_action(message_from(@order[i]), 'income')
-        }
-      end
-
-      # 1 uses coup on 3
-      @game.do_action(message_from(@order[1]), 'coup', @order[3])
-
-      # 3 flips card 1
-      @game.flip_card(message_from(@order[3]), '1')
-
-      # 2 uses coup on 3
-      @game.do_action(message_from(@order[2]), 'coup', @order[3])
-
-      @chan.messages.clear
-      p = @players[@order[3]]
-      p.messages.clear
-
-      # 3 flips card 1 again
-      @game.flip_card(message_from(@order[3]), '1')
-      expect(@chan.messages).to be == []
-      expect(p.messages).to be == ['You have already flipped that card.']
-    end
-
     # ===== Ambassador =====
 
     context 'when player with 2 influence uses ambassador unchallenged' do
