@@ -77,6 +77,12 @@ class MyChannel
   alias :moderated= :voice
 end
 
+def challenged_loss(player, expected_char, char)
+  [
+    "#{player} turns a #{char.to_s.upcase} face up, losing an influence.",
+  ]
+end
+
 describe Cinch::Plugins::CoupGame do
   def message_from(username, channel = nil)
     Message.new(@players[username], channel || @chan)
@@ -426,10 +432,10 @@ describe Cinch::Plugins::CoupGame do
         it 'no longer blocks if player does not show duke' do
           @game.flip_card(message_from(@order[2]), '2')
           expect(@chan.messages).to be == [
-            "#{@order[2]} turns a ASSASSIN face up, losing an influence.",
+            challenged_loss(@order[2], :duke, :assassin),
             "#{@order[1]} proceeds with FOREIGN_AID. Take 2 coins.",
             "#{@order[2]}: It is your turn. Please choose an action.",
-          ]
+          ].flatten
           expect(@game.coins(@order[1])).to be == 4
         end
       end
@@ -698,9 +704,9 @@ describe Cinch::Plugins::CoupGame do
       it 'no longer switches if player does not show ambassador' do
         @game.flip_card(message_from(@order[1]), '2')
         expect(@chan.messages).to be == [
-          "#{@order[1]} turns a DUKE face up, losing an influence.",
+          challenged_loss(@order[1], :ambassador, :duke),
           "#{@order[2]}: It is your turn. Please choose an action.",
-        ]
+        ].flatten
       end
     end
 
@@ -858,12 +864,12 @@ describe Cinch::Plugins::CoupGame do
         it 'no longer blocks if player does not show contessa' do
           @game.flip_card(message_from(@order[2]), '2')
           expect(@chan.messages).to be == [
-            "#{@order[2]} turns a CAPTAIN face up, losing an influence.",
+            challenged_loss(@order[2], :contessa, :captain),
             "#{@order[1]} proceeds with ASSASSIN. Pay 3 coins, choose player to lose influence: #{@order[2]}.",
             "#{@order[2]} turns a CONTESSA face up.",
             "#{@order[2]} has no more influence, and is out of the game.",
             "#{@order[3]}: It is your turn. Please choose an action.",
-          ]
+          ].flatten
 
           # And assassin still pays
           expect(@game.coins(@order[1])).to be == 0
@@ -924,9 +930,9 @@ describe Cinch::Plugins::CoupGame do
 
         it 'does not kill' do
           expect(@chan.messages).to be == [
-            "#{@order[1]} turns a CONTESSA face up, losing an influence.",
+            challenged_loss(@order[1], :assassin, :contessa),
             "#{@order[2]}: It is your turn. Please choose an action.",
-          ]
+          ].flatten
         end
 
         it 'refunds the cost' do
@@ -964,12 +970,12 @@ describe Cinch::Plugins::CoupGame do
 
       it 'moves on to the next turn after flip' do
         expect(@chan.messages).to be == [
-          "#{@order[2]} turns a ASSASSIN face up, losing an influence.",
+          challenged_loss(@order[2], :contessa, :assassin),
           "#{@order[1]} proceeds with ASSASSIN. Pay 3 coins, choose player to lose influence: #{@order[2]}.",
           "#{@order[2]} turns a ASSASSIN face up.",
           "#{@order[2]} has no more influence, and is out of the game.",
           "#{@order[3]}: It is your turn. Please choose an action.",
-        ]
+        ].flatten
       end
 
       it 'deducts money from assassin' do
@@ -1010,11 +1016,11 @@ describe Cinch::Plugins::CoupGame do
       it 'moves on to the next turn after flip' do
         expect(@chan.messages).to be == [
           "#{@order[2]} challenges #{@order[3]} on CONTESSA!",
-          "#{@order[3]} turns a ASSASSIN face up, losing an influence.",
+          challenged_loss(@order[3], :contessa, :assassin),
           "#{@order[3]} has no more influence, and is out of the game.",
           "#{@order[2]} proceeds with ASSASSIN. Pay 3 coins, choose player to lose influence: #{@order[3]}.",
           "#{@order[1]}: It is your turn. Please choose an action.",
-        ]
+        ].flatten
       end
 
       it 'deducts money from assassin' do
@@ -1283,10 +1289,10 @@ describe Cinch::Plugins::CoupGame do
         it 'no longer blocks if player does not show ambassador' do
           @game.flip_card(message_from(@order[2]), '2')
           expect(@chan.messages).to be == [
-            "#{@order[2]} turns a DUKE face up, losing an influence.",
+            challenged_loss(@order[2], :ambassador, :duke),
             "#{@order[1]} proceeds with CAPTAIN. Take 2 coins from another player: #{@order[2]}.",
             "#{@order[2]}: It is your turn. Please choose an action.",
-          ]
+          ].flatten
 
           expect(@game.coins(@order[1])).to be == 4
           expect(@game.coins(@order[2])).to be == 0
@@ -1360,10 +1366,10 @@ describe Cinch::Plugins::CoupGame do
         it 'no longer blocks if player does not show captain' do
           @game.flip_card(message_from(@order[2]), '2')
           expect(@chan.messages).to be == [
-            "#{@order[2]} turns a AMBASSADOR face up, losing an influence.",
+            challenged_loss(@order[2], :captain, :ambassador),
             "#{@order[1]} proceeds with CAPTAIN. Take 2 coins from another player: #{@order[2]}.",
             "#{@order[2]}: It is your turn. Please choose an action.",
-          ]
+          ].flatten
 
           expect(@game.coins(@order[1])).to be == 4
           expect(@game.coins(@order[2])).to be == 0
@@ -1410,9 +1416,9 @@ describe Cinch::Plugins::CoupGame do
       it 'no longer steals if player does not show captain' do
         @game.flip_card(message_from(@order[1]), '2')
         expect(@chan.messages).to be == [
-          "#{@order[1]} turns a AMBASSADOR face up, losing an influence.",
+          challenged_loss(@order[1], :captain, :ambassador),
           "#{@order[2]}: It is your turn. Please choose an action.",
-        ]
+        ].flatten
         expect(@game.coins(@order[1])).to be == 2
         expect(@game.coins(@order[2])).to be == 2
       end
@@ -1576,9 +1582,9 @@ describe Cinch::Plugins::CoupGame do
       it 'no longer taxes if player does not show duke' do
         @game.flip_card(message_from(@order[1]), '2')
         expect(@chan.messages).to be == [
-          "#{@order[1]} turns a ASSASSIN face up, losing an influence.",
+          challenged_loss(@order[1], :duke, :assassin),
           "#{@order[2]}: It is your turn. Please choose an action.",
-        ]
+        ].flatten
         expect(@game.coins(@order[1])).to be == 2
       end
     end
@@ -1724,10 +1730,10 @@ describe Cinch::Plugins::CoupGame do
 
         expect(@chan.messages).to be == [
           "#{@order[1]} challenges #{@order[2]} on AMBASSADOR!",
-          "#{@order[2]} turns a ASSASSIN face up, losing an influence.",
+          challenged_loss(@order[2], :ambassador, :assassin),
           "#{@order[2]} has no more influence, and is out of the game.",
           "Game is over! #{@order[1]} wins!",
-        ]
+        ].flatten
       end
 
       it 'ends the game if player with 1 influence gets challenged on a block' do
@@ -1742,10 +1748,10 @@ describe Cinch::Plugins::CoupGame do
 
         expect(@chan.messages).to be == [
           "#{@order[1]} challenges #{@order[2]} on AMBASSADOR!",
-          "#{@order[2]} turns a ASSASSIN face up, losing an influence.",
+          challenged_loss(@order[2], :ambassador, :assassin),
           "#{@order[2]} has no more influence, and is out of the game.",
           "Game is over! #{@order[1]} wins!",
-        ]
+        ].flatten
       end
 
       it 'ends the game if player with 1 influence wrongly challenges an action' do
