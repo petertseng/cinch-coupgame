@@ -642,12 +642,23 @@ module Cinch
 
             choice = choice.to_i
             if 1 <= choice && choice <= game.ambassador_options.size
+              card_ids = Hash.new(0)
               new_hand = game.ambassador_options[choice - 1]
               # Remove the new hand from cards_to_return
               new_hand.each { |c|
                 card_index = cards_to_return.index(c)
                 cards_to_return.delete_at(card_index)
+                card_ids[c.id] += 1
               }
+
+              # Sanity check to make sure all cards are unique (no shared references)
+              cards_to_return.each { |c| card_ids[c.id] += 1 }
+
+              all_unique = card_ids.to_a.all? { |c| c[1] == 1 }
+              unless all_unique
+                Channel(game.channel_name).send("WARNING!!! Card IDs not unique. Game will probably be bugged. See console output.")
+                puts card_ids
+              end
 
               facedown_indices.each_with_index { |i, j|
                 # If they have two facedowns, this will switch both.
