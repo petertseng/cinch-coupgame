@@ -468,6 +468,22 @@ describe Cinch::Plugins::CoupGame do
 
     # ===== Coup =====
 
+    it 'forbids self-targeting coup' do
+      p = @players[@order[1]]
+      p.messages.clear
+
+      5.times do
+        (1..NUM_PLAYERS).each { |i|
+          @game.do_action(message_from(@order[i]), 'income')
+        }
+      end
+      @chan.messages.clear
+
+      @game.do_action(message_from(@order[1]), 'coup', @order[1])
+      expect(@chan.messages).to be == []
+      expect(p.messages).to be == ['You may not target yourself with COUP.']
+    end
+
     it 'does not let a player with 6 coins use coup' do
       4.times do
         (1..NUM_PLAYERS).each { |i|
@@ -776,6 +792,21 @@ describe Cinch::Plugins::CoupGame do
       @game.do_action(message_from(@order[1]), 'assassin', @order[2])
       expect(@chan.messages).to be == []
       expect(p.messages).to be == ['You need 3 coins to use ASSASSIN, but you only have 2 coins.']
+    end
+
+    it 'forbids self-targeting assassin' do
+      p = @players[@order[1]]
+      p.messages.clear
+
+      # Have each player take income to bump them up to 3 coins
+      (1..NUM_PLAYERS).each { |i|
+        @game.do_action(message_from(@order[i]), 'income')
+      }
+      @chan.messages.clear
+
+      @game.do_action(message_from(@order[1]), 'assassin', @order[1])
+      expect(@chan.messages).to be == []
+      expect(p.messages).to be == ['You may not target yourself with ASSASSIN.']
     end
 
     context 'when player uses assassin unchallenged' do
@@ -1209,6 +1240,17 @@ describe Cinch::Plugins::CoupGame do
     end
 
     # ===== Captain =====
+
+    it 'forbids self-targeting captain' do
+      p = @players[@order[1]]
+      p.messages.clear
+
+      @chan.messages.clear
+
+      @game.do_action(message_from(@order[1]), 'captain', @order[1])
+      expect(@chan.messages).to be == []
+      expect(p.messages).to be == ['You may not target yourself with CAPTAIN.']
+    end
 
     context 'when player uses captain unchallenged' do
       before :each do
