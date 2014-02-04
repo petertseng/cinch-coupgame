@@ -496,7 +496,7 @@ module Cinch
           return
         end
 
-        Channel(game.channel_name).send "#{player.user} loses influence over the [#{character}]."
+        Channel(game.channel_name).send "#{player.user} loses influence over a [#{character}]."
         self.check_player_status(game, player)
         # If I haven't started a new game, start a new turn
         self.start_new_turn(game) unless game.is_over?
@@ -515,7 +515,7 @@ module Cinch
           return
         end
 
-        Channel(game.channel_name).send "#{player.user} loses influence over the [#{character}]."
+        Channel(game.channel_name).send "#{player.user} loses influence over a [#{character}]."
 
         self.check_player_status(game, player)
 

@@ -91,9 +91,9 @@ def challenged_loss(player, expected_char, char)
 end
 def lose_card(player, char = nil)
   if char
-    "#{player} loses influence over the [#{char.to_s.upcase}]."
+    "#{player} loses influence over a [#{char.to_s.upcase}]."
   else
-    /#{player} loses influence over the \[[A-Z]+\]\./
+    /#{player} loses influence over a \[[A-Z]+\]\./
   end
 end
 
