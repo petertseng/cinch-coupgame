@@ -77,6 +77,12 @@ class MyChannel
   alias :moderated= :voice
 end
 
+def challenged_win(player, char, challenger)
+  [
+    "#{player} reveals a [#{char.to_s.upcase}]. #{challenger} loses an influence.",
+    "#{player} switches the character card with one from the deck.",
+  ]
+end
 def challenged_loss(player, expected_char, char)
   [
     "#{player} turns a #{char.to_s.upcase} face up, losing an influence.",
@@ -412,10 +418,7 @@ describe Cinch::Plugins::CoupGame do
         it 'continues to block if player shows duke' do
           @game.flip_card(message_from(@order[2]), '1')
 
-          expect(@chan.messages).to be == [
-            "#{@order[2]} reveals a [DUKE]. #{@order[1]} loses an influence.",
-            "#{@order[2]} switches the character card with one from the deck.",
-          ]
+          expect(@chan.messages).to be == challenged_win(@order[2], :duke, @order[1])
           @chan.messages.clear
 
           @game.flip_card(message_from(@order[1]), '1')
@@ -687,10 +690,7 @@ describe Cinch::Plugins::CoupGame do
       it 'continues to switch if player shows ambassador' do
         @game.flip_card(message_from(@order[1]), '1')
 
-        expect(@chan.messages).to be == [
-          "#{@order[1]} reveals a [AMBASSADOR]. #{@order[2]} loses an influence.",
-          "#{@order[1]} switches the character card with one from the deck.",
-        ]
+        expect(@chan.messages).to be == challenged_win(@order[1], :ambassador, @order[2])
         @chan.messages.clear
 
         @game.flip_card(message_from(@order[2]), '1')
@@ -843,10 +843,7 @@ describe Cinch::Plugins::CoupGame do
         it 'continues to block if player shows contessa' do
           @game.flip_card(message_from(@order[2]), '1')
 
-          expect(@chan.messages).to be == [
-            "#{@order[2]} reveals a [CONTESSA]. #{@order[1]} loses an influence.",
-            "#{@order[2]} switches the character card with one from the deck.",
-          ]
+          expect(@chan.messages).to be == challenged_win(@order[2], :contessa, @order[1])
           @chan.messages.clear
 
           @game.flip_card(message_from(@order[1]), '1')
@@ -905,10 +902,7 @@ describe Cinch::Plugins::CoupGame do
       it 'continues to kill if player shows assassin' do
         @game.flip_card(message_from(@order[1]), '1')
 
-        expect(@chan.messages).to be == [
-          "#{@order[1]} reveals a [ASSASSIN]. #{@order[2]} loses an influence.",
-          "#{@order[1]} switches the character card with one from the deck.",
-        ]
+        expect(@chan.messages).to be == challenged_win(@order[1], :assassin, @order[2])
         @chan.messages.clear
 
         @game.flip_card(message_from(@order[2]), '1')
@@ -1106,13 +1100,12 @@ describe Cinch::Plugins::CoupGame do
 
       it 'moves on to the next turn after flip' do
         expect(@chan.messages).to be == [
-          "#{@order[2]} reveals a [ASSASSIN]. #{@order[3]} loses an influence.",
-          "#{@order[2]} switches the character card with one from the deck.",
+          challenged_win(@order[2], :assassin, @order[3]),
           "#{@order[3]} turns a DUKE face up.",
           "#{@order[3]} has no more influence, and is out of the game.",
           "#{@order[2]} proceeds with ASSASSIN. Pay 3 coins, choose player to lose influence: #{@order[3]}.",
           "#{@order[1]}: It is your turn. Please choose an action.",
-        ]
+        ].flatten
       end
 
       it 'deducts money from assassin' do
@@ -1144,12 +1137,11 @@ describe Cinch::Plugins::CoupGame do
       @game.flip_card(message_from(@order[3]), '1')
 
       expect(@chan.messages).to be == [
-        "#{@order[3]} reveals a [ASSASSIN]. #{@order[2]} loses an influence.",
-        "#{@order[3]} switches the character card with one from the deck.",
+        challenged_win(@order[3], :assassin, @order[2]),
         "#{@order[2]} turns a DUKE face up.",
         "#{@order[2]} has no more influence, and is out of the game.",
         "#{@order[1]}: Would you like to block the ASSASSIN (\"!block contessa\") or not (\"!pass\")?",
-      ]
+      ].flatten
       @chan.messages.clear
 
       @game.react_pass(message_from(@order[1]))
@@ -1268,10 +1260,7 @@ describe Cinch::Plugins::CoupGame do
         it 'continues to block if player shows ambassador' do
           @game.flip_card(message_from(@order[2]), '1')
 
-          expect(@chan.messages).to be == [
-            "#{@order[2]} reveals a [AMBASSADOR]. #{@order[1]} loses an influence.",
-            "#{@order[2]} switches the character card with one from the deck.",
-          ]
+          expect(@chan.messages).to be == challenged_win(@order[2], :ambassador, @order[1])
           @chan.messages.clear
 
           @game.flip_card(message_from(@order[1]), '1')
@@ -1345,10 +1334,7 @@ describe Cinch::Plugins::CoupGame do
         it 'continues to block if player shows captain' do
           @game.flip_card(message_from(@order[2]), '1')
 
-          expect(@chan.messages).to be == [
-            "#{@order[2]} reveals a [CAPTAIN]. #{@order[1]} loses an influence.",
-            "#{@order[2]} switches the character card with one from the deck.",
-          ]
+          expect(@chan.messages).to be == challenged_win(@order[2], :captain, @order[1])
           @chan.messages.clear
 
           @game.flip_card(message_from(@order[1]), '1')
@@ -1399,10 +1385,7 @@ describe Cinch::Plugins::CoupGame do
       it 'continues to steal if player shows captain' do
         @game.flip_card(message_from(@order[1]), '1')
 
-        expect(@chan.messages).to be == [
-          "#{@order[1]} reveals a [CAPTAIN]. #{@order[2]} loses an influence.",
-          "#{@order[1]} switches the character card with one from the deck.",
-        ]
+        expect(@chan.messages).to be == challenged_win(@order[1], :captain, @order[2])
         @chan.messages.clear
 
         @game.flip_card(message_from(@order[2]), '1')
@@ -1562,10 +1545,7 @@ describe Cinch::Plugins::CoupGame do
       it 'continues to tax if player shows duke' do
         @game.flip_card(message_from(@order[1]), '1')
 
-        expect(@chan.messages).to be == [
-          "#{@order[1]} reveals a [DUKE]. #{@order[2]} loses an influence.",
-          "#{@order[1]} switches the character card with one from the deck.",
-        ]
+        expect(@chan.messages).to be == challenged_win(@order[1], :duke, @order[2])
         @chan.messages.clear
 
         @game.flip_card(message_from(@order[2]), '1')
@@ -1765,12 +1745,11 @@ describe Cinch::Plugins::CoupGame do
         @game.flip_card(message_from(@order[1]), '1')
 
         expect(@chan.messages).to be == [
-          "#{@order[1]} reveals a [AMBASSADOR]. #{@order[2]} loses an influence.",
-          "#{@order[1]} switches the character card with one from the deck.",
+          challenged_win(@order[1], :ambassador, @order[2]),
           "#{@order[2]} turns a ASSASSIN face up.",
           "#{@order[2]} has no more influence, and is out of the game.",
           "Game is over! #{@order[1]} wins!",
-        ]
+        ].flatten
       end
 
       it 'ends the game if player with 1 influence wrongly challenges a block' do
@@ -1785,12 +1764,11 @@ describe Cinch::Plugins::CoupGame do
         @game.flip_card(message_from(@order[1]), '1')
 
         expect(@chan.messages).to be == [
-          "#{@order[1]} reveals a [AMBASSADOR]. #{@order[2]} loses an influence.",
-          "#{@order[1]} switches the character card with one from the deck.",
+          challenged_win(@order[1], :ambassador, @order[2]),
           "#{@order[2]} turns a ASSASSIN face up.",
           "#{@order[2]} has no more influence, and is out of the game.",
           "Game is over! #{@order[1]} wins!",
-        ]
+        ].flatten
       end
 
     end
