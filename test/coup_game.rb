@@ -85,7 +85,8 @@ def challenged_win(player, char, challenger)
 end
 def challenged_loss(player, expected_char, char)
   [
-    "#{player} turns a #{char.to_s.upcase} face up, losing an influence.",
+    "#{player} reveals a [#{char.to_s.upcase}]. That's not a #{expected_char.to_s.upcase}! #{player} loses the challenge!",
+    "#{player} loses influence over the [#{char.to_s.upcase}] and cannot use the #{expected_char.to_s.upcase}.",
   ]
 end
 def lose_card(player, char = nil)

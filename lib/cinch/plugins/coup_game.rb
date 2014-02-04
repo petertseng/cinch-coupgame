@@ -574,7 +574,8 @@ module Cinch
             self.lose_challenge(game, challenger, i + 1)
           end
         else
-          Channel(game.channel_name).send "#{player} turns a #{revealed} face up, losing an influence."
+          Channel(game.channel_name).send "#{player} reveals a [#{revealed}]. That's not a #{action.character_required.to_s.upcase}! #{player} loses the challenge!"
+          Channel(game.channel_name).send "#{player} loses influence over the [#{revealed}] and cannot use the #{action.character_required.to_s.upcase}."
           revealed.flip_up
           self.check_player_status(game, player)
           if turn.waiting_for_action_challenge_reply?
