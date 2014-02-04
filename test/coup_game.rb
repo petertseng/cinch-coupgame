@@ -783,7 +783,6 @@ describe Cinch::Plugins::CoupGame do
         # Have each player take income to bump them up to 3 coins
         (1..NUM_PLAYERS).each { |i|
           @game.do_action(message_from(@order[i]), 'income')
-          expect(@chan.messages.size).to be == 3 * i
         }
         @chan.messages.clear
 
@@ -937,7 +936,6 @@ describe Cinch::Plugins::CoupGame do
         # Have each player take income to bump them up to 3 coins
         (1..NUM_PLAYERS).each { |i|
           @game.do_action(message_from(@order[i]), 'income')
-          expect(@chan.messages.size).to be == 3 * i
         }
         @chan.messages.clear
 
