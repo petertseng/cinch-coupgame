@@ -432,7 +432,7 @@ module Cinch
               if chall_player.influence == 1
                 sleep(3)
                 i = chall_player.characters.index { |c| c.face_down? }
-                self.respond_to_challenge(m, game, chall_player, i + 1, chall_action, player)
+                self.respond_to_challenge(game, chall_player, i + 1, chall_action, player)
               end
 
             else
@@ -486,9 +486,9 @@ module Cinch
             # If I haven't started a new game, start a new turn
             self.start_new_turn(game) unless game.is_over?
           elsif turn.waiting_for_action_challenge_reply? && turn.active_player == player
-            self.respond_to_challenge(m, game, player, position, turn.action, turn.action_challenger)
+            self.respond_to_challenge(game, player, position, turn.action, turn.action_challenger)
           elsif turn.waiting_for_block_challenge_reply? && turn.counteracting_player == player
-            self.respond_to_challenge(m, game, player, position, turn.counteraction, turn.block_challenger)
+            self.respond_to_challenge(game, player, position, turn.counteraction, turn.block_challenger)
           elsif turn.waiting_for_action_challenge_loser? && turn.action_challenger == player
             self.lose_challenge(game, player, position)
           elsif turn.waiting_for_block_challenge_loser? && turn.block_challenger == player
@@ -541,16 +541,16 @@ module Cinch
       end
 
 
-      def respond_to_challenge(m, game, player, position, action, challenger)
+      def respond_to_challenge(game, player, position, action, challenger)
         pos = position.to_i
         unless pos == 1 || pos == 2
-          m.user.send("#{pos} is not a valid option to reveal.")
+          player.user.send("#{pos} is not a valid option to reveal.")
           return
         end
 
         revealed = player.characters[pos - 1]
         unless revealed.face_down?
-          m.user.send('You have already flipped that card.')
+          player.user.send('You have already flipped that card.')
           return
         end
 
