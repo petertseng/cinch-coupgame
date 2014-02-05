@@ -257,7 +257,7 @@ module Cinch
       def pass_out_characters(game)
         game.players.each do |p|
           User(p.user).send "="*40
-          self.tell_characters_to(p, tell_side: false)
+          self.tell_characters_to(p, true, false)
         end
 
         if game.players.size == 2
@@ -281,7 +281,7 @@ module Cinch
         end
       end
       
-      def tell_characters_to(player, tell_coins = true, tell_side: true)
+      def tell_characters_to(player, tell_coins = true, tell_side = true)
         character_1, character_2 = player.characters
 
         char1_str = character_1.face_down? ? "(#{character_1})" : "[#{character_1}]"
@@ -764,7 +764,7 @@ module Cinch
         m.reply(table_info(game).join("\n"))
       end
 
-      def table_info(game, cheating: false)
+      def table_info(game, cheating = false)
         info = game.players.collect { |p|
           character_1, character_2 = p.characters
 
@@ -795,7 +795,7 @@ module Cinch
         unless player.has_influence?
           Channel(game.channel_name).send "#{player} has no more influence, and is out of the game."
           game.discard_characters_for(player)
-          remove_user_from_game(player.user, game, announce: false)
+          remove_user_from_game(player.user, game, false)
           self.check_game_state(game)
         end
       end
@@ -883,7 +883,7 @@ module Cinch
         end
       end
 
-      def remove_user_from_game(user, game, announce: true)
+      def remove_user_from_game(user, game, announce = true)
         left = game.remove_player(user)
         unless left.nil?
           Channel(game.channel_name).send "#{user.nick} has left the game (#{game.players.count}/#{Game::MAX_PLAYERS})" if announce
@@ -912,7 +912,7 @@ module Cinch
           game = @games[channel.name]
 
           # Show everyone's cards.
-          channel.send(table_info(game, cheating: true).join("\n"))
+          channel.send(table_info(game, true).join("\n"))
 
           game.players.each do |p|
             @user_games.delete(p.user)
@@ -991,7 +991,7 @@ module Cinch
           if game.has_player?(m.user)
             m.user.send('Cheater!!!')
           else
-            m.user.send(table_info(game, cheating: true).join("\n"))
+            m.user.send(table_info(game, true).join("\n"))
           end
         else
           m.user.send('There is no game going on.')
