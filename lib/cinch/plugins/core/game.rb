@@ -242,9 +242,9 @@ class Game
   end
 
   # Shuffles these two cards into the deck
-  def shuffle_into_deck(c1, c2)
+  def shuffle_into_deck(c1, c2 = nil)
     self.deck << c1
-    self.deck << c2
+    self.deck << c2 if c2
     self.deck.shuffle!
   end
 
