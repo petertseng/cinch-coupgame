@@ -76,7 +76,7 @@ module Cinch
       xmatch /switch (([1-6]))/i,     :method => :switch_cards
 
       xmatch /me$/i,                  :method => :whoami
-      xmatch /table$/i,               :method => :show_table
+      xmatch /table(?:\s*(##?\w+))?/i,:method => :show_table
       xmatch /who$/i,                 :method => :list_players
       xmatch /status$/i,              :method => :status
 
@@ -696,8 +696,21 @@ module Cinch
         end
       end
 
-      def show_table(m)
-        game = self.game_of(m)
+      def show_table(m, channel_name = nil)
+        if m.channel
+          # If in a channel, must be for that channel.
+          game = @games[m.channel.name]
+        elsif channel_name
+          # If in private and channel specified, show that channel.
+          game = @games[channel_name]
+        else
+          # If in private and channel not specified, show the game the player is in.
+          game = @user_games[m.user]
+          # and advise them if they aren't in any
+          m.reply('To see a game via PM you must specify the channel: ' +
+                  '!table #channel') unless game
+        end
+
         return unless game
 
         game.players.each do |p|
