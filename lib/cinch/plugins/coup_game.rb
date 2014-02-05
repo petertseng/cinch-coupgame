@@ -65,7 +65,7 @@ module Cinch
     
       # game    
       xmatch /(?:action )?(duke|tax|ambassador|exchange|income|foreign(?: |_)aid)/i, :method => :do_action
-      xmatch /(?:action )?(assassin(?:ate)?|kill|captain|steal|extort|coup) (.+)/i,  :method => :do_action
+      xmatch /(?:action )?(assassin(?:ate)?|kill|captain|steal|extort|coup)(?: (.+))?/i, :method => :do_action
       xmatch /block (duke|contessa|captain|ambassador)/i,      :method => :do_block
       xmatch /pass/i,                 :method => :react_pass
       xmatch /challenge/i,            :method => :react_challenge
@@ -289,6 +289,11 @@ module Cinch
 
             if target.empty?
               target_msg = ""
+
+              if Game::ACTIONS[action.to_sym].needs_target
+                m.user.send("You must specify a target for #{action.upcase}: !action #{action} <playername>")
+                return
+              end
             else
               target_player = game.find_player(target)
 
