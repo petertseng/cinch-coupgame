@@ -287,7 +287,7 @@ module Cinch
               return
             end
 
-            if target.empty?
+            if target.nil? || target.empty?
               target_msg = ""
 
               if Game::ACTIONS[action.to_sym].needs_target
