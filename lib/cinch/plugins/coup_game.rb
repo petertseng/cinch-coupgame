@@ -802,6 +802,17 @@ module Cinch
         turn.decision_type = :keep_or_discard
       end
 
+      def inquisitor_keep(m)
+        game = self.game_of(m)
+        return unless game && game.started? && game.has_player?(m.user)
+        player = game.find_player(m.user)
+        turn = game.current_turn
+        return unless turn.waiting_for_decision? && turn.decider == player && turn.decision_type == :keep_or_discard
+
+        Channel(game.channel_name).send("The card is returned to #{turn.target_player}.")
+        self.start_new_turn(game)
+      end
+
       def pick_card(m, choice)
         game = self.game_of(m)
         return unless game && game.started? && game.has_player?(m.user)
