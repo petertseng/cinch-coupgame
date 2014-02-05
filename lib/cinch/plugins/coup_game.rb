@@ -737,7 +737,14 @@ module Cinch
             char2_str = ''
           end
 
-          "#{dehighlight_nick(p.to_s)}: #{char1_str}#{char2_str} - Coins: #{p.coins}"
+          if cheating && game.players.size == 2
+            chars = p.side_cards.collect { |c| "[#{c.to_s}]" }.join(' ')
+            side_str = ' - Set aside: ' + chars
+          else
+            side_str = ''
+          end
+
+          "#{dehighlight_nick(p.to_s)}: #{char1_str}#{char2_str} - Coins: #{p.coins}#{side_str}"
         }
         unless game.discard_pile.empty?
           discards = game.discard_pile.map{ |c| "[#{c}]" }.join(" ")
