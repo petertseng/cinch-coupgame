@@ -249,7 +249,7 @@ module Cinch
       def pass_out_characters(game)
         game.players.each do |p|
           User(p.user).send "="*40
-          self.tell_characters_to(p)
+          self.tell_characters_to(p, tell_side: false)
         end
       end
 
@@ -263,7 +263,7 @@ module Cinch
         end
       end
       
-      def tell_characters_to(player, tell_coins = true)
+      def tell_characters_to(player, tell_coins = true, tell_side: true)
         character_1, character_2 = player.characters
 
         char1_str = character_1.face_down? ? "(#{character_1})" : "[#{character_1}]"
@@ -274,7 +274,13 @@ module Cinch
         end
 
         coins_str = tell_coins ? " - Coins: #{player.coins}" : ""
-        User(player.user).send "#{char1_str}#{char2_str}#{coins_str}"
+        if tell_side && !player.side_cards.empty?
+          chars = player.side_cards.collect { |c| "[#{c.to_s}]" }.join(' ')
+          side_str = ' - Set aside: ' + chars
+        else
+          side_str = ''
+        end
+        User(player.user).send "#{char1_str}#{char2_str}#{coins_str}#{side_str}"
       end
 
 
