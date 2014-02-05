@@ -96,7 +96,7 @@ module Cinch
       xmatch /replace (.+?) (.+)/i,           :method => :replace_user
       xmatch /kick(?:\s+(##?\w+))?\s+(.+)/i,  :method => :kick_user
       xmatch /room(?:\s+(##?\w+))?\s+(.+)/i,  :method => :room_mode
-      # xmatch /chars/i,              :method => :who_chars
+      xmatch /chars(?:\s+(##?\w+))?/i,        :method => :who_chars
 
       listen_to :join,               :method => :voice_if_in_game
       listen_to :leaving,            :method => :remove_if_not_started
@@ -916,6 +916,24 @@ module Cinch
           when "vocal"
             Channel(channel.name).moderated = false
           end
+        end
+      end
+
+      def who_chars(m, channel_name)
+        return unless self.is_mod? m.user.nick
+        channel = channel_name ? Channel(channel_name) : m.channel
+        game = @games[channel.name]
+
+        return unless game
+
+        if game.started?
+          if game.has_player?(m.user)
+            m.user.send('Cheater!!!')
+          else
+            m.user.send(table_info(game, cheating: true).join("\n"))
+          end
+        else
+          m.user.send('There is no game going on.')
         end
       end
 
