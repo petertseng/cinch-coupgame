@@ -373,6 +373,14 @@ describe Cinch::Plugins::CoupGame do
         expect(@players[@order[2]].messages[-1]).to be == 'CAPTAIN does not block that FOREIGN_AID.'
       end
 
+      it 'only lets each player pass once' do
+        @game.react_pass(message_from(@order[2]))
+        expect(@chan.messages).to be == ["#{@order[2]} passes."]
+        @chan.messages.clear
+        @game.react_pass(message_from(@order[2]))
+        expect(@chan.messages).to be == []
+      end
+
       it 'gives player two coins if nobody blocks' do
         (2...NUM_PLAYERS).each { |i|
           @game.react_pass(message_from(@order[i]))
