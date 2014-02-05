@@ -48,7 +48,7 @@ class MyUser
   end
 
   def send(msg)
-    @messages << msg
+    msg.split("\n").each { |line| @messages << line }
   end
 end
 
@@ -67,7 +67,7 @@ class MyChannel
   end
 
   def send(msg)
-    @messages << msg
+    msg.split("\n").each { |line| @messages << line }
   end
 
   def voice(_)
