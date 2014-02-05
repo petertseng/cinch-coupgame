@@ -234,6 +234,83 @@ describe Cinch::Plugins::CoupGame do
     end
   end
 
+  describe 'settings' do
+    it 'reports settings publicly' do
+      @game.get_game_settings(message_from('p1'))
+      expect(@chan.messages).to be == ['Game settings: Base.']
+    end
+
+    it 'allows changing settings publicly' do
+      @game.set_game_settings(message_from('p1'), nil, 'inquisitor')
+      expect(@chan.messages).to be == ['The game has been changed to Inquisitor.']
+    end
+
+    it 'reports settings after they have been changed' do
+      @game.set_game_settings(message_from('p1'), nil, 'inquisitor')
+      @chan.messages.clear
+      @game.get_game_settings(message_from('p1'))
+      expect(@chan.messages).to be == ['Game settings: Inquisitor.']
+    end
+
+    it 'asks for channel if non-player asks for settings privately' do
+      p = @players['p1']
+      p.messages.clear
+      @game.get_game_settings(pm_from('p1'))
+      expect(@chan.messages).to be == []
+      expect(p.messages).to be == [
+        'To see settings via PM you must specify the channel: !settings #channel'
+      ]
+    end
+
+    it 'asks for channel if non-player changes settings privately' do
+      p = @players['p1']
+      p.messages.clear
+      @game.set_game_settings(pm_from('p1'), nil, 'inquisitor')
+      expect(@chan.messages).to be == []
+      expect(p.messages).to be == [
+        'To change settings via PM you must specify the channel: !settings #channel'
+      ]
+    end
+
+    it 'reports settings if non-player asks for settings privately specifying channel' do
+      p = @players['p1']
+      p.messages.clear
+      @game.get_game_settings(pm_from('p1'), CHANNAME)
+      expect(@chan.messages).to be == []
+      expect(p.messages).to be == ['Game settings: Base.']
+    end
+
+    it 'changes settings if non-player changes settings privately specifying channel' do
+      p = @players['p1']
+      p.messages.clear
+      @game.set_game_settings(pm_from('p1'), CHANNAME, 'inquisitor')
+      expect(@chan.messages).to be == ['p1 has changed the game to Inquisitor.']
+      expect(p.messages).to be == []
+    end
+
+    context 'when player has joined game' do
+      before :each do
+        @game.join(message_from('p1'))
+        @chan.messages.clear
+        @players['p1'].messages.clear
+      end
+
+      it 'reports settings to player privately without channel argument' do
+        p = @players['p1']
+        @game.get_game_settings(pm_from('p1'), nil)
+        expect(@chan.messages).to be == []
+        expect(p.messages).to be == ['Game settings: Base.']
+      end
+
+      it 'lets a player change settings privately without channel argument' do
+        p = @players['p1']
+        @game.set_game_settings(pm_from('p1'), nil, 'inquisitor')
+        expect(@chan.messages).to be == ['p1 has changed the game to Inquisitor.']
+        expect(p.messages).to be == []
+      end
+    end
+  end
+
   describe 'Multiple channels' do
     it 'prompts for a channel if a player joins via PM without arg' do
       @game.join(pm_from('p1'))
