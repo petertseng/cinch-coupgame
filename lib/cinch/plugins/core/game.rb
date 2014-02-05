@@ -89,7 +89,6 @@ class Game
     @settings = []
     self.started         = false
     self.players         = []
-    self.deck            = self.build_starting_deck
     self.discard_pile    = []
     self.turns           = []
     self.invitation_sent = false
@@ -177,6 +176,8 @@ class Game
   #
   def start_game!
     self.started = true
+    self.deck = build_starting_deck
+
     self.pass_out_characters_and_coins
   
     self.players.shuffle!.rotate!(rand(MAX_PLAYERS)) # shuffle seats
