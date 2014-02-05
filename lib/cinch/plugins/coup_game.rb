@@ -775,7 +775,7 @@ module Cinch
             char2_str = ''
           end
 
-          if cheating && game.players.size == 2
+          if cheating && !p.side_cards.empty?
             chars = p.side_cards.collect { |c| "[#{c.to_s}]" }.join(' ')
             side_str = ' - Set aside: ' + chars
           else
