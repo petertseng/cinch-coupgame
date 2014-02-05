@@ -5,17 +5,25 @@
 class Player
 
   attr_accessor :user, :characters, :coins
+  attr_reader :side_cards
 
   def initialize(user)
     self.user = user
     self.characters = []
     self.coins = 0
+
+    # The four cards set aside in a 2p game.
+    @side_cards = []
   end 
 
   def receive_characters(characters)
     characters.each do |c|
       self.characters << c
     end
+  end
+
+  def receive_side_characters(c1, c2, c3, c4, c5)
+    @side_cards = [c1, c2, c3, c4, c5]
   end
 
   def flip_character_card(position)
