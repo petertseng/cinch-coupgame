@@ -997,17 +997,6 @@ module Cinch
         User(m.user).send "The last player to still have influence - that is, a face-down character - wins the game!"
       end
 
-      def list_players(m)
-        game = self.game_of(m)
-        return unless game
-
-        if game.players.empty?
-          m.reply "No one has joined the game yet."
-        else
-          m.reply game.players.map{ |p| p == game.hammer ? "#{dehighlight_nick(p.user.nick)}*" : dehighlight_nick(p.user.nick) }.join(' ')
-        end
-      end
-
       def status(m)
         game = self.game_of(m)
         return unless game
