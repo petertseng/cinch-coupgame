@@ -387,7 +387,9 @@ module Cinch
 
       def prompt_blocker(game)
         action = game.current_turn.action
-        blockers = action.blockable_by.collect { |c|
+        blockers = action.blockable_by.select { |c|
+          game.action_usable?(Game::ACTIONS[c])
+        }.collect { |c|
           "\"!block #{c.to_s.downcase}\""
         }.join(' or ')
         if action.needs_target

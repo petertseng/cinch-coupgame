@@ -301,6 +301,12 @@ class Game
     self.players.all? { |p| p.characters.size == 2 }
   end
 
+  def action_usable?(action)
+    # Forbidden mode? Well then definitely false.
+    return false if action.mode_forbidden && self.settings.include?(action.mode_forbidden)
+    # Usable if action does not require a mode, or the settings include the required mode.
+    action.mode_required.nil? || self.settings.include?(action.mode_required)
+  end
 
   # turns
 
