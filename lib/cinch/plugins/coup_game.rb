@@ -22,6 +22,9 @@ module Cinch
       'exchange' => 'ambassador',
     }
 
+    # Length of the longest character's name (Ambassador / Inquisitor)
+    LONGEST_NAME = 10
+
     class CoupGame
       include Cinch::Plugin
 
@@ -648,11 +651,14 @@ module Cinch
         card_names = game.ambassador_cards.collect { |c| c.to_s }.join(' and ')
         User(target.user).send "You drew #{card_names} from the Court Deck."
 
+        fmt = "%#{LONGEST_NAME + 2}s"
         if target.influence == 2 || target.influence == 1
           game.ambassador_options = get_switch_options(target, game.ambassador_cards)
           User(target.user).send "Choose an option for a new hand; \"!switch #\""
           game.ambassador_options.each_with_index do |option, i|
-            User(target.user).send "#{i+1} - " + option.map{ |o| "(#{o})" }.join(" ")
+            User(target.user).send "#{i+1} - " + option.map{ |o|
+              fmt % ["(#{o})"]
+            }.join(" ")
           end
         else 
           raise "Invalid target influence #{target.influence}"
