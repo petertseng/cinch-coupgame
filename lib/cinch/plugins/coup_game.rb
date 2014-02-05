@@ -774,9 +774,11 @@ module Cinch
         info = game.players.collect { |p|
           character_1, character_2 = p.characters
 
-          char1_str = character_1.face_down? && !cheating ? "(########)" : "[#{character_1}]"
+          char1_str = character_1.face_down? && !cheating ? '########' : character_1.to_s
+          char1_str = character_1.face_down? ? "(#{char1_str})" : "[#{char1_str}]"
           if character_2
-            char2_str = character_2.face_down? && !cheating ? " (########)" : " [#{character_2}]"
+            char2_str = character_2.face_down? && !cheating ? '########' : character_2.to_s
+            char2_str = character_2.face_down? ? " (#{char2_str})" : " [#{char2_str}]"
           else
             char2_str = ''
           end
