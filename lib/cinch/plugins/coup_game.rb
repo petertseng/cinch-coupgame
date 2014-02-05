@@ -712,18 +712,22 @@ module Cinch
         end
 
         return unless game
+        m.reply(table_info(game).join("\n"))
+      end
 
-        game.players.each do |p|
+      def table_info(game)
+        info = game.players.collect { |p|
           character_1, character_2 = p.characters
 
           char1_str = character_1.face_down? ? "(########)" : "[#{character_1}]"
           char2_str = character_2.face_down? ? "(########)" : "[#{character_2}]"
-          m.reply "#{dehighlight_nick(p.to_s)}: #{char1_str} #{char2_str} - Coins: #{p.coins}"
-        end
+          "#{dehighlight_nick(p.to_s)}: #{char1_str} #{char2_str} - Coins: #{p.coins}"
+        }
         unless game.discard_pile.empty?
           discards = game.discard_pile.map{ |c| "[#{c}]" }.join(" ")
-          m.reply "Discard Pile: #{discards}"
+          info << "Discard Pile: #{discards}"
         end
+        info
       end
 
       def check_player_status(game, player)
