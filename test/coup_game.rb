@@ -488,6 +488,22 @@ describe Cinch::Plugins::CoupGame do
       expect(p.messages).to be == ['You may not target yourself with COUP.']
     end
 
+    it 'prompts coup for target if player forgets' do
+      p = @players[@order[1]]
+      p.messages.clear
+
+      5.times do
+        (1..NUM_PLAYERS).each { |i|
+          @game.do_action(message_from(@order[i]), 'income')
+        }
+      end
+      @chan.messages.clear
+
+      @game.do_action(message_from(@order[1]), 'coup')
+      expect(@chan.messages).to be == []
+      expect(p.messages).to be == ['You must specify a target for COUP: !action coup <playername>']
+    end
+
     it 'does not let a player with 6 coins use coup' do
       4.times do
         (1..NUM_PLAYERS).each { |i|
@@ -811,6 +827,21 @@ describe Cinch::Plugins::CoupGame do
       @game.do_action(message_from(@order[1]), 'assassin', @order[1])
       expect(@chan.messages).to be == []
       expect(p.messages).to be == ['You may not target yourself with ASSASSIN.']
+    end
+
+    it 'prompts assassin for target if player forgets' do
+      p = @players[@order[1]]
+      p.messages.clear
+
+      # Have each player take income to bump them up to 3 coins
+      (1..NUM_PLAYERS).each { |i|
+        @game.do_action(message_from(@order[i]), 'income')
+      }
+      @chan.messages.clear
+
+      @game.do_action(message_from(@order[1]), 'assassin')
+      expect(@chan.messages).to be == []
+      expect(p.messages).to be == ['You must specify a target for ASSASSIN: !action assassin <playername>']
     end
 
     context 'when player uses assassin unchallenged' do
@@ -1254,6 +1285,17 @@ describe Cinch::Plugins::CoupGame do
       @game.do_action(message_from(@order[1]), 'captain', @order[1])
       expect(@chan.messages).to be == []
       expect(p.messages).to be == ['You may not target yourself with CAPTAIN.']
+    end
+
+    it 'prompts captain for target if player forgets' do
+      p = @players[@order[1]]
+      p.messages.clear
+
+      @chan.messages.clear
+
+      @game.do_action(message_from(@order[1]), 'captain')
+      expect(@chan.messages).to be == []
+      expect(p.messages).to be == ['You must specify a target for CAPTAIN: !action captain <playername>']
     end
 
     context 'when player uses captain unchallenged' do
