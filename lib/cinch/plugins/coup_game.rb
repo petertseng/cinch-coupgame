@@ -735,6 +735,11 @@ module Cinch
         if 1 <= choice && choice <= player.side_cards.size
           player.select_side_character(choice)
           Channel(game.channel_name).send("#{player} has selected a character.")
+
+          if game.all_characters_selected?
+            Channel(game.channel_name).send "FIRST TURN. Player: #{game.current_player}. Please choose an action."
+            game.current_turn.wait_for_action
+          end
         else
           m.user.send("#{choice} is not a valid choice")
         end
