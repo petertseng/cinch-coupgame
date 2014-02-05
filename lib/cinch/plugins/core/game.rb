@@ -276,6 +276,14 @@ class Game
     self.not_reacted.size == 0
   end
 
+  def not_selected_initial_character
+    self.players.select { |p| p.characters.size < 2 }
+  end
+
+  def all_characters_selected?
+    self.players.all? { |p| p.characters.size == 2 }
+  end
+
 
   # turns
 
