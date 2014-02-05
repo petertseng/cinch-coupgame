@@ -75,6 +75,8 @@ module Cinch
       xmatch /lose (1|2)/i,           :method => :flip_card
       xmatch /switch (([1-6]))/i,     :method => :switch_cards
 
+      xmatch /pick (([1-5]))/i,       :method => :pick_card
+
       xmatch /me$/i,                  :method => :whoami
       xmatch /table(?:\s*(##?\w+))?/i,:method => :show_table
       xmatch /who$/i,                 :method => :list_players
@@ -212,7 +214,13 @@ module Cinch
               self.pass_out_characters(game)
 
               Channel(game.channel_name).send "Turn order is: #{game.players.map{ |p| p.user.nick }.join(' ')}"
-              Channel(game.channel_name).send "FIRST TURN. Player: #{game.current_player}. Please choose an action."
+
+              if game.players.size == 2
+                Channel(game.channel_name).send('This is a two-player game. Both players have received their first character card and must now pick their second.')
+                game.current_turn.wait_for_initial_characters
+              else
+                Channel(game.channel_name).send "FIRST TURN. Player: #{game.current_player}. Please choose an action."
+              end
               #User(@game.team_leader.user).send "You are team leader. Please choose a team of #{@game.current_team_size} to go on first mission. \"!team#{team_example(@game.current_team_size)}\""
             else
               m.reply "You are not in the game.", true
@@ -249,7 +257,17 @@ module Cinch
       def pass_out_characters(game)
         game.players.each do |p|
           User(p.user).send "="*40
-          self.tell_characters_to(p)
+          self.tell_characters_to(p, tell_side: false)
+        end
+
+        if game.players.size == 2
+          game.players.each do |p|
+            chars = p.side_cards.each_with_index.map { |char, i|
+              "#{i + 1} - [#{char.to_s}]"
+            }.join(' ')
+            p.user.send(chars)
+            p.user.send('Choose a second character card with "!pick #". The other four characters will not be used this game, and only you will know what they are.')
+          end
         end
       end
 
@@ -263,13 +281,24 @@ module Cinch
         end
       end
       
-      def tell_characters_to(player, tell_coins = true)
+      def tell_characters_to(player, tell_coins = true, tell_side: true)
         character_1, character_2 = player.characters
 
         char1_str = character_1.face_down? ? "(#{character_1})" : "[#{character_1}]"
-        char2_str = character_2.face_down? ? "(#{character_2})" : "[#{character_2}]"
+        if character_2
+          char2_str = character_2.face_down? ? " (#{character_2})" : " [#{character_2}]"
+        else
+          char2_str = ''
+        end
+
         coins_str = tell_coins ? " - Coins: #{player.coins}" : ""
-        User(player.user).send "#{char1_str} #{char2_str}#{coins_str}"
+        if tell_side && !player.side_cards.empty?
+          chars = player.side_cards.collect { |c| "[#{c.to_s}]" }.join(' ')
+          side_str = ' - Set aside: ' + chars
+        else
+          side_str = ''
+        end
+        User(player.user).send "#{char1_str}#{char2_str}#{coins_str}#{side_str}"
       end
 
 
@@ -696,6 +725,26 @@ module Cinch
         end
       end
 
+      def pick_card(m, choice)
+        game = self.game_of(m)
+        return unless game && game.started? && game.has_player?(m.user)
+        player = game.find_player(m.user)
+        return if player.characters.size == 2
+
+        choice = choice.to_i
+        if 1 <= choice && choice <= player.side_cards.size
+          player.select_side_character(choice)
+          Channel(game.channel_name).send("#{player} has selected a character.")
+
+          if game.all_characters_selected?
+            Channel(game.channel_name).send "FIRST TURN. Player: #{game.current_player}. Please choose an action."
+            game.current_turn.wait_for_action
+          end
+        else
+          m.user.send("#{choice} is not a valid choice")
+        end
+      end
+
       def show_table(m, channel_name = nil)
         if m.channel
           # If in a channel, must be for that channel.
@@ -720,8 +769,20 @@ module Cinch
           character_1, character_2 = p.characters
 
           char1_str = character_1.face_down? && !cheating ? "(########)" : "[#{character_1}]"
-          char2_str = character_2.face_down? && !cheating ? "(########)" : "[#{character_2}]"
-          "#{dehighlight_nick(p.to_s)}: #{char1_str} #{char2_str} - Coins: #{p.coins}"
+          if character_2
+            char2_str = character_2.face_down? && !cheating ? " (########)" : " [#{character_2}]"
+          else
+            char2_str = ''
+          end
+
+          if cheating && game.players.size == 2
+            chars = p.side_cards.collect { |c| "[#{c.to_s}]" }.join(' ')
+            side_str = ' - Set aside: ' + chars
+          else
+            side_str = ''
+          end
+
+          "#{dehighlight_nick(p.to_s)}: #{char1_str}#{char2_str} - Coins: #{p.coins}#{side_str}"
         }
         unless game.discard_pile.empty?
           discards = game.discard_pile.map{ |c| "[#{c}]" }.join(" ")
@@ -1032,6 +1093,9 @@ module Cinch
             status = "Waiting on #{turn.block_challenger} to pick character to lose"
           elsif turn.waiting_for_decision?
             status = "Waiting on #{turn.decider} to make decision on #{turn.action.to_s.upcase}"
+          elsif turn.waiting_for_initial_characters?
+            players = game.not_selected_initial_character.map(&:user).join(", ")
+            status = 'Waiting on players to pick character: ' + players
           else
             status = "Unknown status #{turn.state}"
           end

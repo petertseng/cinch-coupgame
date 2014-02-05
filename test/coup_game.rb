@@ -170,7 +170,7 @@ describe Cinch::Plugins::CoupGame do
 
     it 'does not let p1 start' do
       @game.start_game(message_from('p1'))
-      expect(@chan.messages).to be == ['p1: Need at least 3 to start a game.']
+      expect(@chan.messages).to be == ['p1: Need at least 2 to start a game.']
     end
 
     it 'reports that game is empty in status' do
@@ -198,7 +198,7 @@ describe Cinch::Plugins::CoupGame do
 
     it 'does not let p1 start' do
       @game.start_game(message_from('p1'))
-      expect(@chan.messages).to be == ['p1: Need at least 3 to start a game.']
+      expect(@chan.messages).to be == ['p1: Need at least 2 to start a game.']
     end
 
     it 'reports that p1 is in game in status' do
@@ -2015,4 +2015,122 @@ describe Cinch::Plugins::CoupGame do
     end
 
   end
+
+  context 'when p1..2 are playing a two-player game' do
+    TURN_ORDER_REGEX2 = /^Turn order is: (p[1-2]) (p[1-2])$/
+    INITIAL_CHAR = /^\((\w+)\) - Coins: 2$/
+    SIDE_CHARS = /^1 - \[(\w+)\] 2 - \[(\w+)\] 3 - \[(\w+)\] 4 - \[(\w+)\] 5 - \[(\w+)\]$/
+
+    before :each do
+      [1, 2].each { |i| @game.join(message_from("p#{i}")) }
+      @chan.messages.clear
+      @game.start_game(message_from('p1'))
+
+      expect(@chan.messages.size).to be == 3
+      expect(@chan.messages[-3]).to be == 'The game has started.'
+      match = (TURN_ORDER_REGEX2.match(@chan.messages[-2]))
+      @order = match
+      expect(@chan.messages[-1]).to be == "This is a two-player game. Both players have received their first character card and must now pick their second."
+      @chan.messages.clear
+
+      @initial_chars = Array.new(3)
+      @sides = Array.new(3)
+
+      [1, 2].each { |i|
+        p = @players[@order[i]]
+        expect(p.messages.size).to be == 4
+
+        match = (INITIAL_CHAR.match(p.messages[-3]))
+        expect(match).to_not be_nil
+        @initial_chars[i] = match[1]
+
+        match = (SIDE_CHARS.match(p.messages[-2]))
+        expect(match).to_not be_nil
+        @sides[i] = match
+
+        expect(p.messages[-1]).to be ==
+          'Choose a second character card with "!pick #". The other four characters will not be used this game, and only you will know what they are.'
+      }
+    end
+
+    it 'reports status if neither player has picked' do
+      @game.status(message_from('p1'))
+      expect(@chan.messages).to be == ["Waiting on players to pick character: #{@order[1]}, #{@order[2]}"]
+    end
+
+    it 'reports status if only first player has picked' do
+      @game.pick_card(message_from(@order[1]), '1')
+      expect(@chan.messages).to be == ["#{@order[1]} has selected a character."]
+      @chan.messages.clear
+      @game.status(message_from('p1'))
+      expect(@chan.messages).to be == ["Waiting on players to pick character: #{@order[2]}"]
+    end
+
+    it 'reports status if only second player has picked' do
+      @game.pick_card(message_from(@order[2]), '1')
+      expect(@chan.messages).to be == ["#{@order[2]} has selected a character."]
+      @chan.messages.clear
+      @game.status(message_from('p1'))
+      expect(@chan.messages).to be == ["Waiting on players to pick character: #{@order[1]}"]
+    end
+
+    it 'starts the game if first picks and then second picks' do
+      @game.pick_card(message_from(@order[1]), '1')
+      @game.pick_card(message_from(@order[2]), '1')
+      expect(@chan.messages).to be == [
+        "#{@order[1]} has selected a character.",
+        "#{@order[2]} has selected a character.",
+        "FIRST TURN. Player: #{@order[1]}. Please choose an action.",
+      ]
+    end
+
+    it 'starts the game if second picks and then first picks' do
+      @game.pick_card(message_from(@order[2]), '1')
+      @game.pick_card(message_from(@order[1]), '1')
+      expect(@chan.messages).to be == [
+        "#{@order[2]} has selected a character.",
+        "#{@order[1]} has selected a character.",
+        "FIRST TURN. Player: #{@order[1]}. Please choose an action.",
+      ]
+    end
+
+    it 'does not let the first player use income before both players pick' do
+      p = @players[@order[1]]
+      p.messages.clear
+      @game.do_action(message_from(@order[1]), 'income')
+      expect(@chan.messages).to be == []
+      expect(p.messages).to be == ['You are not the current player.']
+    end
+
+    it 'remembers the cards both players picked' do
+      [1, 2].each { |i|
+        @game.pick_card(message_from(@order[i]), '1')
+
+        p = @players[@order[i]]
+        p.messages.clear
+        @game.whoami(message_from(@order[i]))
+
+        set_aside = [2, 3, 4, 5].collect { |j|
+          "[#{@sides[i][j]}]"
+        }.join(' ')
+
+        expect(p.messages).to be == [
+          "(#{@initial_chars[i]}) (#{@sides[i][1]}) - Coins: 2 - Set aside: #{set_aside}"
+        ]
+      }
+    end
+
+    it 'does nothing the second time if a player picks twice' do
+      @game.pick_card(message_from(@order[1]), '1')
+
+      p = @players[@order[1]]
+      p.messages.clear
+      @chan.messages.clear
+
+      @game.pick_card(message_from(@order[1]), '1')
+      expect(@chan.messages).to be == []
+      expect(p.messages).to be == []
+    end
+  end
+
 end
