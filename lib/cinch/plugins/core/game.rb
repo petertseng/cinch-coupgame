@@ -268,12 +268,15 @@ class Game
       self.current_player.give_coins 2
     when :coup
       self.current_turn.make_decider self.target_player
+      self.current_turn.decision_type = :lose_influence
     when :duke
       self.current_player.give_coins 3
     when :assassin
       self.current_turn.make_decider self.target_player
+      self.current_turn.decision_type = :lose_influence
     when :ambassador
       self.current_turn.make_decider self.current_player
+      self.current_turn.decision_type = :switch_cards
     when :captain
       taken = self.target_player.take_coins 2
       self.current_player.give_coins taken

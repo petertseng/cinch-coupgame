@@ -549,7 +549,7 @@ module Cinch
           player = game.find_player(m.user)
           turn = game.current_turn
 
-          if turn.waiting_for_decision? && turn.decider == player && turn.action.action != :ambassador
+          if turn.waiting_for_decision? && turn.decider == player && turn.decision_type == :lose_influence
             self.couped(game, player, position)
           elsif turn.waiting_for_action_challenge_reply? && turn.active_player == player
             self.respond_to_challenge(game, player, position, turn.action, turn.action_challenger)
@@ -696,7 +696,7 @@ module Cinch
           player = game.find_player(m.user)
           turn = game.current_turn
 
-          if turn.waiting_for_decision? && turn.decider == player && turn.action.action == :ambassador
+          if turn.waiting_for_decision? && turn.decider == player && turn.decision_type == :switch_cards
             facedown_indices = [0, 1].select { |i|
               player.characters[i].face_down?
             }

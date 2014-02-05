@@ -12,6 +12,8 @@ class Turn
   attr_accessor :action_challenge_successful
   attr_accessor :block_challenge_successful
 
+  attr_accessor :decision_type
+
   def initialize(player)
     self.state                = :action # action, reactions, paused, decision, end
     self.active_player        = player
@@ -27,6 +29,8 @@ class Turn
 
     @action_challenge_successful = false
     @block_challenge_successful = false
+
+    @decision_type = nil # lose influence, switch cards, show to inquisitor, keep/discard
   end 
 
 
