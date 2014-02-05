@@ -11,7 +11,7 @@ $player_count = 0
 class Game
 
 
-  MIN_PLAYERS = 3
+  MIN_PLAYERS = 2
   MAX_PLAYERS = 6
   COINS = 50
   ACTIONS = {
@@ -191,7 +191,12 @@ class Game
 
     # assign loyalties
     self.players.each do |player|
-      player.receive_characters( self.draw_cards(2) )
+      if self.players.size == 2
+        player.receive_characters(self.draw_cards(1))
+        player.receive_side_characters(*self.draw_cards(5))
+      else
+        player.receive_characters(self.draw_cards(2))
+      end
       player.give_coins(2)
     end
   end
