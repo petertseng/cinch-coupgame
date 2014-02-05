@@ -280,7 +280,7 @@ module Cinch
         if game.started? && game.has_player?(m.user)
           if game.current_turn.waiting_for_action? && game.current_player.user == m.user
 
-            action = ACTION_ALIASES[action.downcase] || action
+            action = ACTION_ALIASES[action.downcase] || action.downcase
 
             if game.current_player.coins >= 10 && action.upcase != "COUP"
               m.user.send "Since you have 10 coins, you must use COUP. !action coup <target>"
