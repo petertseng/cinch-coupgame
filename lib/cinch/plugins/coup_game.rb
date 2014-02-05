@@ -267,9 +267,14 @@ module Cinch
         character_1, character_2 = player.characters
 
         char1_str = character_1.face_down? ? "(#{character_1})" : "[#{character_1}]"
-        char2_str = character_2.face_down? ? "(#{character_2})" : "[#{character_2}]"
+        if character_2
+          char2_str = character_2.face_down? ? " (#{character_2})" : " [#{character_2}]"
+        else
+          char2_str = ''
+        end
+
         coins_str = tell_coins ? " - Coins: #{player.coins}" : ""
-        User(player.user).send "#{char1_str} #{char2_str}#{coins_str}"
+        User(player.user).send "#{char1_str}#{char2_str}#{coins_str}"
       end
 
 
@@ -720,8 +725,13 @@ module Cinch
           character_1, character_2 = p.characters
 
           char1_str = character_1.face_down? && !cheating ? "(########)" : "[#{character_1}]"
-          char2_str = character_2.face_down? && !cheating ? "(########)" : "[#{character_2}]"
-          "#{dehighlight_nick(p.to_s)}: #{char1_str} #{char2_str} - Coins: #{p.coins}"
+          if character_2
+            char2_str = character_2.face_down? && !cheating ? " (########)" : " [#{character_2}]"
+          else
+            char2_str = ''
+          end
+
+          "#{dehighlight_nick(p.to_s)}: #{char1_str}#{char2_str} - Coins: #{p.coins}"
         }
         unless game.discard_pile.empty?
           discards = game.discard_pile.map{ |c| "[#{c}]" }.join(" ")
