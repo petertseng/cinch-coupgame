@@ -682,7 +682,7 @@ describe Cinch::Plugins::CoupGame do
         choices = Array.new(7)
         (1..6).each { |i|
           index = -7 + i
-          match = /^#{i} - \[(\w+)\] \[(\w+)\]$/.match(p.messages[index])
+          match = /^#{i} - \((\w+)\) \((\w+)\)$/.match(p.messages[index])
           expect(match).to_not be_nil
           choices[i] = match
         }
@@ -749,7 +749,7 @@ describe Cinch::Plugins::CoupGame do
         choices = Array.new(3)
         (1..3).each { |i|
           index = -4 + i
-          match = /^#{i} - \[(\w+)\]$/.match(p.messages[index])
+          match = /^#{i} - \((\w+)\)$/.match(p.messages[index])
           expect(match).to_not be_nil
           choices[i] = match
         }
@@ -2019,7 +2019,7 @@ describe Cinch::Plugins::CoupGame do
   context 'when p1..2 are playing a two-player game' do
     TURN_ORDER_REGEX2 = /^Turn order is: (p[1-2]) (p[1-2])$/
     INITIAL_CHAR = /^\((\w+)\) - Coins: 2$/
-    SIDE_CHARS = /^1 - \[(\w+)\] 2 - \[(\w+)\] 3 - \[(\w+)\] 4 - \[(\w+)\] 5 - \[(\w+)\]$/
+    SIDE_CHARS = /^1 - \((\w+)\) 2 - \((\w+)\) 3 - \((\w+)\) 4 - \((\w+)\) 5 - \((\w+)\)$/
 
     before :each do
       [1, 2].each { |i| @game.join(message_from("p#{i}")) }
@@ -2111,7 +2111,7 @@ describe Cinch::Plugins::CoupGame do
         @game.whoami(message_from(@order[i]))
 
         set_aside = [2, 3, 4, 5].collect { |j|
-          "[#{@sides[i][j]}]"
+          "(#{@sides[i][j]})"
         }.join(' ')
 
         expect(p.messages).to be == [
