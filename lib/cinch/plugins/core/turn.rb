@@ -134,6 +134,10 @@ class Turn
     self.state = :initial_characters
   end
 
+  def wait_for_action
+    self.state = :action
+  end
+
   def wait_for_action_challenge
     self.state = :action_challenge
   end
