@@ -212,7 +212,13 @@ module Cinch
               self.pass_out_characters(game)
 
               Channel(game.channel_name).send "Turn order is: #{game.players.map{ |p| p.user.nick }.join(' ')}"
-              Channel(game.channel_name).send "FIRST TURN. Player: #{game.current_player}. Please choose an action."
+
+              if game.players.size == 2
+                Channel(game.channel_name).send('This is a two-player game. Both players have received their first character card and must now pick their second.')
+                game.current_turn.wait_for_initial_characters
+              else
+                Channel(game.channel_name).send "FIRST TURN. Player: #{game.current_player}. Please choose an action."
+              end
               #User(@game.team_leader.user).send "You are team leader. Please choose a team of #{@game.current_team_size} to go on first mission. \"!team#{team_example(@game.current_team_size)}\""
             else
               m.reply "You are not in the game.", true
@@ -250,6 +256,16 @@ module Cinch
         game.players.each do |p|
           User(p.user).send "="*40
           self.tell_characters_to(p, tell_side: false)
+        end
+
+        if game.players.size == 2
+          game.players.each do |p|
+            chars = p.side_cards.each_with_index.map { |char, i|
+              "#{i + 1} - [#{char.to_s}]"
+            }.join(' ')
+            p.user.send(chars)
+            p.user.send('Choose a second character card with "!pick #". The other four characters will not be used this game, and only you will know what they are.')
+          end
         end
       end
 
