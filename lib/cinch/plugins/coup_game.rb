@@ -263,7 +263,7 @@ module Cinch
         if game.players.size == 2
           game.players.each do |p|
             chars = p.side_cards.each_with_index.map { |char, i|
-              "#{i + 1} - [#{char.to_s}]"
+              "#{i + 1} - (#{char.to_s})"
             }.join(' ')
             p.user.send(chars)
             p.user.send('Choose a second character card with "!pick #". The other four characters will not be used this game, and only you will know what they are.')
@@ -293,7 +293,7 @@ module Cinch
 
         coins_str = tell_coins ? " - Coins: #{player.coins}" : ""
         if tell_side && !player.side_cards.empty?
-          chars = player.side_cards.collect { |c| "[#{c.to_s}]" }.join(' ')
+          chars = player.side_cards.collect { |c| "(#{c.to_s})" }.join(' ')
           side_str = ' - Set aside: ' + chars
         else
           side_str = ''
@@ -652,7 +652,7 @@ module Cinch
           game.ambassador_options = get_switch_options(target, game.ambassador_cards)
           User(target.user).send "Choose an option for a new hand; \"!switch #\""
           game.ambassador_options.each_with_index do |option, i|
-            User(target.user).send "#{i+1} - " + option.map{ |o| "[#{o}]" }.join(" ")
+            User(target.user).send "#{i+1} - " + option.map{ |o| "(#{o})" }.join(" ")
           end
         else 
           raise "Invalid target influence #{target.influence}"
@@ -776,7 +776,7 @@ module Cinch
           end
 
           if cheating && !p.side_cards.empty?
-            chars = p.side_cards.collect { |c| "[#{c.to_s}]" }.join(' ')
+            chars = p.side_cards.collect { |c| "(#{c.to_s})" }.join(' ')
             side_str = ' - Set aside: ' + chars
           else
             side_str = ''
