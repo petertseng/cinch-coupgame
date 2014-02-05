@@ -60,6 +60,7 @@ class Game
                                 :effect             => "Exchange card with Court Deck, or examine opponent's card",
                                 :mode_required      => :inquisitor,
                                 :needs_target       => true,
+                                :self_targettable   => true,
                                 :has_decision       => true,
                                 :blocks             => :captain),
 

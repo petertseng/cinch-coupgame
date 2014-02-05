@@ -342,7 +342,7 @@ module Cinch
               target_player = game.find_player(target)
 
               # No self-targeting!
-              if target_player == game.current_player
+              if target_player == game.current_player && !Game::ACTIONS[action.to_sym].self_targettable
                 m.user.send("You may not target yourself with #{action.upcase}.")
                 return
               end
