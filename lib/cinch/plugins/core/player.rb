@@ -26,6 +26,12 @@ class Player
     @side_cards = [c1, c2, c3, c4, c5]
   end
 
+  def select_side_character(position)
+    # receives 1 to 5, translates to 0 to 4
+    char = @side_cards.delete_at(position - 1)
+    receive_characters([char])
+  end
+
   def flip_character_card(position)
     # receive 1 or 2, translate to 0 or 1
     return nil unless self.characters[position-1].face_down?
