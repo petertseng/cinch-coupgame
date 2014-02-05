@@ -54,13 +54,22 @@ class Game
                                 :has_decision       => true,
                                 :blocks             => :captain),
 
+    :inquisitor  => Action.new( :action             => :inquisitor,
+                                :character_required => :inquisitor,
+                                :name               => "Exchange",
+                                :effect             => "Exchange card with Court Deck, or examine opponent's card",
+                                :mode_required      => :inquisitor,
+                                :needs_target       => true,
+                                :has_decision       => true,
+                                :blocks             => :captain),
+
     :captain     => Action.new( :action             => :captain, 
                                 :character_required => :captain,  
                                 :name               => "Extort",    
                                 :effect             => "Take 2 coins from another player",  
                                 :needs_target       => true,
                                 :blocks             => :captain,
-                                :blockable_by       => [:captain, :ambassador]),
+                                :blockable_by       => [:captain, :ambassador, :inquisitor]),
 
     :contessa    => Action.new( :action             => :contessa,
                                 :character_required => :contessa,  
