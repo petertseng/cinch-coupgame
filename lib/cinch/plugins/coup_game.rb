@@ -95,6 +95,9 @@ module Cinch
       xmatch /changelog$/i,           :method => :changelog_dir
       xmatch /changelog (\d+)/i,      :method => :changelog
       # xmatch /about/i,              :method => :about
+
+      xmatch /settings(?:\s+(##?\w+))?$/i,     :method => :get_game_settings
+      xmatch /settings(?:\s+(##?\w+))? (.+)/i, :method => :set_game_settings
    
       # mod only commands
       xmatch /reset(?:\s+(##?\w+))?/i,        :method => :reset_game
@@ -1006,6 +1009,67 @@ module Cinch
         end
       end
 
+      #--------------------------------------------------------------------------------
+      # Game Settings
+      #--------------------------------------------------------------------------------
+
+      def get_game_settings(m, channel_name = nil)
+        if m.channel
+          # If in a channel, must be for that channel.
+          game = @games[m.channel.name]
+        elsif channel_name
+          # If in private and channel specified, show that channel.
+          game = @games[channel_name]
+        else
+          # If in private and channel not specified, show the game the player is in.
+          game = @user_games[m.user]
+          # and advise them if they aren't in any
+          m.reply('To see settings via PM you must specify the channel: ' +
+                  '!settings #channel') unless game
+        end
+
+        return unless game
+        m.reply("Game settings: #{game_settings(game)}.")
+      end
+
+      def set_game_settings(m, channel_name = nil, options = "")
+        if m.channel
+          # If in a channel, must be for that channel.
+          game = @games[m.channel.name]
+        elsif channel_name
+          # If in private and channel specified, show that channel.
+          game = @games[channel_name]
+        else
+          # If in private and channel not specified, show the game the player is in.
+          game = @user_games[m.user]
+          # and advise them if they aren't in any
+          m.reply('To change settings via PM you must specify the channel: ' +
+                  '!settings #channel') unless game
+        end
+
+        return unless game && !game.started?
+
+        unrecognized = []
+        settings = []
+        options.split.each { |opt|
+          case opt.downcase
+          when 'base'
+            settings.clear
+          when 'inquisitor'
+            settings << :inquisitor
+          end
+        }
+
+        game.settings = settings.uniq
+
+        change_prefix = m.channel ? "The game has been changed" :  "#{m.user.nick} has changed the game"
+
+        Channel(game.channel_name).send("#{change_prefix} to #{game_settings(game)}.")
+      end
+
+      def game_settings(game)
+        game.settings.empty? ? 'Base' : game.settings.collect { |s| s.to_s.capitalize }.join(', ')
+      end
 
       #--------------------------------------------------------------------------------
       # Helpers
