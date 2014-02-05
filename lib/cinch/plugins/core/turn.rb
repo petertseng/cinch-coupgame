@@ -45,7 +45,7 @@ class Turn
     if self.waiting_for_reactions?
       return false if self.reactions[player] == :pass
       self.reactions[player] = :pass
-      true
+      return true
     end
     false
   end
@@ -141,6 +141,7 @@ class Turn
 
   def wait_for_block_challenge
     self.state = :block_challenge
+    self.reactions = {}
   end
 
   def wait_for_block_challenge_reply

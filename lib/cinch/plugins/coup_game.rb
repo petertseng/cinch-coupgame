@@ -389,8 +389,8 @@ module Cinch
           player = game.find_player(m.user)
           turn = game.current_turn
           if turn.waiting_for_challenges? && game.reacting_players.include?(player)
-            game.current_turn.pass(player)
-            Channel(game.channel_name).send "#{m.user.nick} passes."
+            success = game.current_turn.pass(player)
+            Channel(game.channel_name).send "#{m.user.nick} passes." if success
 
             if game.all_reactions_in?
               if turn.waiting_for_action_challenge?
@@ -415,8 +415,8 @@ module Cinch
               self.process_turn(game)
             elsif !turn.action.needs_target
               # This blocker didn't want to block, but maybe someone else will
-              game.current_turn.pass(player)
-              Channel(game.channel_name).send "#{m.user.nick} passes."
+              success = game.current_turn.pass(player)
+              Channel(game.channel_name).send "#{m.user.nick} passes." if success
               # So we wait until all reactions are in.
               self.process_turn(game) if game.all_reactions_in?
             end
