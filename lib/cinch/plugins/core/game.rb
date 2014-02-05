@@ -190,7 +190,8 @@ class Game
   def build_starting_deck
     deck = []
     id = 1
-    [:duke, :assassin, :contessa, :captain, :ambassador].each do |char|
+    last_char = @settings.include?(:inquisitor) ? :inquisitor : :ambassador
+    [:duke, :assassin, :contessa, :captain, last_char].each do |char|
       3.times.each do 
         deck << Character.new(id, char)
         id += 1
