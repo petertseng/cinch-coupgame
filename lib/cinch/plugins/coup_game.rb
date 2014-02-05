@@ -68,8 +68,8 @@ module Cinch
     
       # game    
       xmatch /(?:action )?(duke|tax|ambassador|exchange|income|foreign(?: |_)aid)/i, :method => :do_action
-      xmatch /(?:action )?(assassin(?:ate)?|kill|captain|steal|extort|coup)(?: (.+))?/i, :method => :do_action
-      xmatch /block (duke|contessa|captain|ambassador)/i,      :method => :do_block
+      xmatch /(?:action )?(assassin(?:ate)?|kill|captain|steal|extort|coup|inquisitor)(?: (.+))?/i, :method => :do_action
+      xmatch /block (duke|contessa|captain|ambassador|inquisitor)/i, :method => :do_block
       xmatch /pass/i,                 :method => :react_pass
       xmatch /challenge/i,            :method => :react_challenge
       xmatch /bs/i,                   :method => :react_challenge
@@ -77,6 +77,10 @@ module Cinch
       xmatch /flip (1|2)/i,           :method => :flip_card
       xmatch /lose (1|2)/i,           :method => :flip_card
       xmatch /switch (([1-6]))/i,     :method => :switch_cards
+
+      xmatch /show (1|2)/i,           :method => :show_to_inquisitor
+      xmatch /keep/i,                 :method => :inquisitor_keep
+      xmatch /discard/i,              :method => :inquisitor_discard
 
       xmatch /pick (([1-5]))/i,       :method => :pick_card
 
@@ -95,6 +99,9 @@ module Cinch
       xmatch /changelog$/i,           :method => :changelog_dir
       xmatch /changelog (\d+)/i,      :method => :changelog
       # xmatch /about/i,              :method => :about
+
+      xmatch /settings(?:\s+(##?\w+))?$/i,     :method => :get_game_settings
+      xmatch /settings(?:\s+(##?\w+))? (.+)/i, :method => :set_game_settings
    
       # mod only commands
       xmatch /reset(?:\s+(##?\w+))?/i,        :method => :reset_game
@@ -319,6 +326,15 @@ module Cinch
               return
             end
 
+            if (mf = Game::ACTIONS[action.to_sym].mode_forbidden) && game.settings.include?(mf)
+              m.user.send("#{action.upcase} may not be used if the game type is #{mf.to_s.capitalize}.")
+              return
+            end
+            if (mr = Game::ACTIONS[action.to_sym].mode_required) && !game.settings.include?(mr)
+              m.user.send("#{action.upcase} may only be used if the game type is #{mr.to_s.capitalize}.")
+              return
+            end
+
             if target.nil? || target.empty?
               target_msg = ""
 
@@ -330,7 +346,7 @@ module Cinch
               target_player = game.find_player(target)
 
               # No self-targeting!
-              if target_player == game.current_player
+              if target_player == game.current_player && !Game::ACTIONS[action.to_sym].self_targettable
                 m.user.send("You may not target yourself with #{action.upcase}.")
                 return
               end
@@ -375,7 +391,9 @@ module Cinch
 
       def prompt_blocker(game)
         action = game.current_turn.action
-        blockers = action.blockable_by.collect { |c|
+        blockers = action.blockable_by.select { |c|
+          game.action_usable?(Game::ACTIONS[c])
+        }.collect { |c|
           "\"!block #{c.to_s.downcase}\""
         }.join(' or ')
         if action.needs_target
@@ -394,6 +412,15 @@ module Cinch
           player = game.find_player(m.user)
           if game.current_turn.waiting_for_block? && game.reacting_players.include?(player)
             if game.current_turn.action.blockable?
+              if (mf = Game::ACTIONS[action.to_sym].mode_forbidden) && game.settings.include?(mf)
+                m.user.send("#{action.upcase} may not be used if the game type is #{mf.to_s.capitalize}.")
+                return
+              end
+              if (mr = Game::ACTIONS[action.to_sym].mode_required) && !game.settings.include?(mr)
+                m.user.send("#{action.upcase} may only be used if the game type is #{mr.to_s.capitalize}.")
+                return
+              end
+
               if Game::ACTIONS[action.to_sym].blocks == game.current_turn.action.action
                 if game.current_turn.action.needs_target && m.user != game.current_turn.target_player.user
                   m.user.send "You can only block with #{action.upcase} if you are the target."
@@ -526,7 +553,7 @@ module Cinch
           player = game.find_player(m.user)
           turn = game.current_turn
 
-          if turn.waiting_for_decision? && turn.decider == player && turn.action.action != :ambassador
+          if turn.waiting_for_decision? && turn.decider == player && turn.decision_type == :lose_influence
             self.couped(game, player, position)
           elsif turn.waiting_for_action_challenge_reply? && turn.active_player == player
             self.respond_to_challenge(game, player, position, turn.action, turn.action_challenger)
@@ -646,8 +673,8 @@ module Cinch
         end
       end
 
-      def prompt_to_switch(game, target)
-        game.ambassador_cards = game.draw_cards(2)
+      def prompt_to_switch(game, target, cards = 2)
+        game.ambassador_cards = game.draw_cards(cards)
         card_names = game.ambassador_cards.collect { |c| c.to_s }.join(' and ')
         User(target.user).send "You drew #{card_names} from the Court Deck."
 
@@ -673,7 +700,7 @@ module Cinch
           player = game.find_player(m.user)
           turn = game.current_turn
 
-          if turn.waiting_for_decision? && turn.decider == player && turn.action.action == :ambassador
+          if turn.waiting_for_decision? && turn.decider == player && turn.decision_type == :switch_cards
             facedown_indices = [0, 1].select { |i|
               player.characters[i].face_down?
             }
@@ -708,7 +735,8 @@ module Cinch
               }
 
               game.shuffle_into_deck(*cards_to_return)
-              Channel(game.channel_name).send "#{m.user.nick} shuffles two cards into the Court Deck."
+              num_cards = cards_to_return.size == 1 ? 'a card' : 'two cards'
+              Channel(game.channel_name).send "#{m.user.nick} shuffles #{num_cards} into the Court Deck."
               returned_names = cards_to_return.collect { |c| "(#{c})" }.join(' and ')
               m.user.send("You returned #{returned_names} to the Court Deck.")
 
@@ -729,6 +757,77 @@ module Cinch
         else
           raise "Invalid target influence #{target.influence}"
         end
+      end
+
+      def prompt_to_show_inquisitor(target, inquisitor)
+        if target.influence == 2
+          character_1, character_2 = target.characters
+          User(target.user).send "Choose a character to show to #{inquisitor}: 1 - (#{character_1}) or 2 - (#{character_2}); \"!show 1\" or \"!show 2\""
+        else
+          character = target.characters.find { |c| c.face_down? }
+          i = target.characters.index(character)
+          User(target.user).send "You only have one character left. #{i+1} - (#{character}); \"!show #{i+1}\""
+        end
+      end
+
+      def show_to_inquisitor(m, position)
+        game = self.game_of(m)
+        return unless game && game.started? && game.has_player?(m.user)
+
+        pos = position.to_i
+        unless pos == 1 || pos == 2
+          player.user.send("#{pos} is not a valid option to reveal.")
+          return
+        end
+
+        player = game.find_player(m.user)
+
+        revealed = player.characters[pos - 1]
+        unless revealed.face_down?
+          player.user.send('You have already flipped that card.')
+          return
+        end
+
+        turn = game.current_turn
+
+        return unless turn.waiting_for_decision? && turn.decider == player && turn.decision_type == :show_to_inquisitor
+
+        _show_to_inquisitor(game, turn.decider, pos, turn.active_player)
+      end
+
+      def _show_to_inquisitor(game, target, position, inquisitor)
+        Channel(game.channel_name).send("#{target} passes a card to #{inquisitor}. Should #{target} be allowed to keep this card (\"!keep\") or not (\"!discard\")?")
+        revealed = target.characters[position - 1]
+        inquisitor.user.send("#{target} shows you a #{revealed}.")
+
+        game.inquisitor_shown_card = revealed
+        turn = game.current_turn
+        turn.make_decider(inquisitor)
+        turn.decision_type = :keep_or_discard
+      end
+
+      def inquisitor_keep(m)
+        game = self.game_of(m)
+        return unless game && game.started? && game.has_player?(m.user)
+        player = game.find_player(m.user)
+        turn = game.current_turn
+        return unless turn.waiting_for_decision? && turn.decider == player && turn.decision_type == :keep_or_discard
+
+        Channel(game.channel_name).send("The card is returned to #{turn.target_player}.")
+        self.start_new_turn(game)
+      end
+
+      def inquisitor_discard(m)
+        game = self.game_of(m)
+        return unless game && game.started? && game.has_player?(m.user)
+        player = game.find_player(m.user)
+        turn = game.current_turn
+        return unless turn.waiting_for_decision? && turn.decider == player && turn.decision_type == :keep_or_discard
+
+        Channel(game.channel_name).send("#{turn.target_player} is forced to discard that card and replace it with another from the Court Deck.")
+        game.replace_character_with_new(turn.target_player, game.inquisitor_shown_card.name)
+        self.tell_characters_to(turn.target_player, false)
+        self.start_new_turn(game)
       end
 
       def pick_card(m, choice)
@@ -836,6 +935,15 @@ module Cinch
               end
             elsif turn.action.action == :ambassador
               self.prompt_to_switch(game, turn.active_player)
+            elsif turn.action.action == :inquisitor
+              if turn.target_player == turn.active_player
+                self.prompt_to_switch(game, turn.active_player, 1)
+              elsif turn.target_player.influence == 2
+                self.prompt_to_show_inquisitor(turn.target_player, turn.active_player)
+              else
+                i = turn.target_player.characters.index { |c| c.face_down? }
+                self._show_to_inquisitor(game, turn.target_player, i + 1, turn.active_player)
+              end
             end
           else
             self.start_new_turn(game)
@@ -1006,6 +1114,67 @@ module Cinch
         end
       end
 
+      #--------------------------------------------------------------------------------
+      # Game Settings
+      #--------------------------------------------------------------------------------
+
+      def get_game_settings(m, channel_name = nil)
+        if m.channel
+          # If in a channel, must be for that channel.
+          game = @games[m.channel.name]
+        elsif channel_name
+          # If in private and channel specified, show that channel.
+          game = @games[channel_name]
+        else
+          # If in private and channel not specified, show the game the player is in.
+          game = @user_games[m.user]
+          # and advise them if they aren't in any
+          m.reply('To see settings via PM you must specify the channel: ' +
+                  '!settings #channel') unless game
+        end
+
+        return unless game
+        m.reply("Game settings: #{game_settings(game)}.")
+      end
+
+      def set_game_settings(m, channel_name = nil, options = "")
+        if m.channel
+          # If in a channel, must be for that channel.
+          game = @games[m.channel.name]
+        elsif channel_name
+          # If in private and channel specified, show that channel.
+          game = @games[channel_name]
+        else
+          # If in private and channel not specified, show the game the player is in.
+          game = @user_games[m.user]
+          # and advise them if they aren't in any
+          m.reply('To change settings via PM you must specify the channel: ' +
+                  '!settings #channel') unless game
+        end
+
+        return unless game && !game.started?
+
+        unrecognized = []
+        settings = []
+        options.split.each { |opt|
+          case opt.downcase
+          when 'base'
+            settings.clear
+          when 'inquisitor'
+            settings << :inquisitor
+          end
+        }
+
+        game.settings = settings.uniq
+
+        change_prefix = m.channel ? "The game has been changed" :  "#{m.user.nick} has changed the game"
+
+        Channel(game.channel_name).send("#{change_prefix} to #{game_settings(game)}.")
+      end
+
+      def game_settings(game)
+        game.settings.empty? ? 'Base' : game.settings.collect { |s| s.to_s.capitalize }.join(', ')
+      end
 
       #--------------------------------------------------------------------------------
       # Helpers

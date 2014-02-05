@@ -6,6 +6,9 @@
 class Action
 
   attr_accessor :action, :name, :character_required, :effect, :needs_target, :has_decision, :cost, :blocks, :blockable_by
+  attr_reader :mode_forbidden
+  attr_reader :mode_required
+  attr_reader :self_targettable
 
   def initialize(options)
     self.action              = options[:action]
@@ -17,6 +20,10 @@ class Action
     self.cost                = options[:cost] || 0
     self.blocks              = options[:blocks] || nil
     self.blockable_by        = options[:blockable_by] || []
+
+    @mode_forbidden = options[:mode_forbidden] || nil
+    @mode_required = options[:mode_required] || nil
+    @self_targettable = options[:self_targettable] || false
   end 
 
   # State methods

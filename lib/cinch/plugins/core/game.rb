@@ -50,6 +50,17 @@ class Game
                                 :character_required => :ambassador,
                                 :name               => "Exchange",
                                 :effect             => "Exchange cards with Court Deck",
+                                :mode_forbidden     => :inquisitor,
+                                :has_decision       => true,
+                                :blocks             => :captain),
+
+    :inquisitor  => Action.new( :action             => :inquisitor,
+                                :character_required => :inquisitor,
+                                :name               => "Exchange",
+                                :effect             => "Exchange card with Court Deck, or examine opponent's card",
+                                :mode_required      => :inquisitor,
+                                :needs_target       => true,
+                                :self_targettable   => true,
                                 :has_decision       => true,
                                 :blocks             => :captain),
 
@@ -59,7 +70,7 @@ class Game
                                 :effect             => "Take 2 coins from another player",  
                                 :needs_target       => true,
                                 :blocks             => :captain,
-                                :blockable_by       => [:captain, :ambassador]),
+                                :blockable_by       => [:captain, :ambassador, :inquisitor]),
 
     :contessa    => Action.new( :action             => :contessa,
                                 :character_required => :contessa,  
@@ -69,18 +80,21 @@ class Game
 
   attr_accessor :started, :players, :deck, :discard_pile, :turns, :invitation_sent
   attr_accessor :ambassador_cards, :ambassador_options
+  attr_accessor :inquisitor_shown_card
   attr_reader :channel_name
+  attr_accessor :settings
   
   def initialize(channel_name)
     @channel_name = channel_name
+    @settings = []
     self.started         = false
     self.players         = []
-    self.deck            = self.build_starting_deck
     self.discard_pile    = []
     self.turns           = []
     self.invitation_sent = false
     @ambassador_cards = []
     @ambassador_options = []
+    @inquisitor_shown_card = nil
   end
 
   #----------------------------------------------
@@ -162,6 +176,8 @@ class Game
   #
   def start_game!
     self.started = true
+    self.deck = build_starting_deck
+
     self.pass_out_characters_and_coins
   
     self.players.shuffle!.rotate!(rand(MAX_PLAYERS)) # shuffle seats
@@ -175,7 +191,8 @@ class Game
   def build_starting_deck
     deck = []
     id = 1
-    [:duke, :assassin, :contessa, :captain, :ambassador].each do |char|
+    last_char = @settings.include?(:inquisitor) ? :inquisitor : :ambassador
+    [:duke, :assassin, :contessa, :captain, last_char].each do |char|
       3.times.each do 
         deck << Character.new(id, char)
         id += 1
@@ -229,9 +246,9 @@ class Game
   end
 
   # Shuffles these two cards into the deck
-  def shuffle_into_deck(c1, c2)
+  def shuffle_into_deck(c1, c2 = nil)
     self.deck << c1
-    self.deck << c2
+    self.deck << c2 if c2
     self.deck.shuffle!
   end
 
@@ -255,12 +272,18 @@ class Game
       self.current_player.give_coins 2
     when :coup
       self.current_turn.make_decider self.target_player
+      self.current_turn.decision_type = :lose_influence
     when :duke
       self.current_player.give_coins 3
     when :assassin
       self.current_turn.make_decider self.target_player
+      self.current_turn.decision_type = :lose_influence
     when :ambassador
       self.current_turn.make_decider self.current_player
+      self.current_turn.decision_type = :switch_cards
+    when :inquisitor
+      self.current_turn.make_decider self.target_player
+      self.current_turn.decision_type = self.target_player == self.current_player ? :switch_cards : :show_to_inquisitor
     when :captain
       taken = self.target_player.take_coins 2
       self.current_player.give_coins taken
@@ -289,6 +312,12 @@ class Game
     self.players.all? { |p| p.characters.size == 2 }
   end
 
+  def action_usable?(action)
+    # Forbidden mode? Well then definitely false.
+    return false if action.mode_forbidden && self.settings.include?(action.mode_forbidden)
+    # Usable if action does not require a mode, or the settings include the required mode.
+    action.mode_required.nil? || self.settings.include?(action.mode_required)
+  end
 
   # turns
 
