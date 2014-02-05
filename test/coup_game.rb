@@ -2295,7 +2295,7 @@ describe Cinch::Plugins::CoupGame do
 
         expect(@chan.messages).to be == [
           "#{@order[NUM_PLAYERS]} passes.",
-          "#{@order[1]} proceeds with INQUISITOR. Exchange card with Court Deck, or examine opponent's card: #{@order[1]}.",
+          "#{@order[1]} proceeds with INQUISITOR. Exchange card with Court Deck.",
         ]
         @chan.messages.clear
 
@@ -2362,7 +2362,7 @@ describe Cinch::Plugins::CoupGame do
 
         expect(@chan.messages).to be == [
           "#{@order[1]} passes.",
-          "#{@order[2]} proceeds with INQUISITOR. Exchange card with Court Deck, or examine opponent's card: #{@order[2]}.",
+          "#{@order[2]} proceeds with INQUISITOR. Exchange card with Court Deck.",
         ]
         @chan.messages.clear
 
@@ -2474,7 +2474,7 @@ describe Cinch::Plugins::CoupGame do
 
         expect(@chan.messages).to be == [
           "#{@order[NUM_PLAYERS]} passes.",
-          "#{@order[1]} proceeds with INQUISITOR. Exchange card with Court Deck, or examine opponent's card: #{@order[2]}.",
+          "#{@order[1]} proceeds with INQUISITOR. Examine opponent's card: #{@order[2]}.",
         ]
         @chan.messages.clear
 
