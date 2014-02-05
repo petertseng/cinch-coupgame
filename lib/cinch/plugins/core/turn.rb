@@ -43,8 +43,11 @@ class Turn
 
   def pass(player)
     if self.waiting_for_reactions?
+      return false if self.reactions[player] == :pass
       self.reactions[player] = :pass
+      true
     end
+    false
   end
 
   def make_decider(player)
