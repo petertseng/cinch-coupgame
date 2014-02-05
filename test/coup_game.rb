@@ -1796,6 +1796,31 @@ describe Cinch::Plugins::CoupGame do
       end
     end
 
+    # ===== Inquisitor =====
+
+    it 'does not allow inquisitor action in a base game' do
+      p = @players[@order[1]]
+      p.messages.clear
+
+      @game.do_action(message_from(@order[1]), 'inquisitor', @order[2])
+      expect(@chan.messages).to be == []
+      expect(p.messages).to be == ['INQUISITOR may only be used if the game type is Inquisitor.']
+    end
+
+    it 'does not allow inquisitor block in a base game' do
+      @game.do_action(message_from(@order[1]), 'captain', @order[2])
+      @game.react_pass(message_from(@order[2]))
+      @game.react_pass(message_from(@order[3]))
+      @chan.messages.clear
+
+      p = @players[@order[2]]
+      p.messages.clear
+
+      @game.do_block(message_from(@order[2]), 'inquisitor')
+      expect(@chan.messages).to be == []
+      expect(p.messages).to be == ['INQUISITOR may only be used if the game type is Inquisitor.']
+    end
+
     describe 'status' do
       it 'reports waiting on action challenge' do
         @game.do_action(message_from(@order[1]), 'ambassador')
@@ -2208,6 +2233,310 @@ describe Cinch::Plugins::CoupGame do
       expect(@chan.messages).to be == []
       expect(p.messages).to be == []
     end
+  end
+
+  context 'when p1..3 are playing an inquisitor game' do
+    before :each do
+      (1..NUM_PLAYERS).each { |i| @game.join(message_from("p#{i}")) }
+      @game.set_game_settings(message_from('p1'), nil, 'inquisitor')
+      @chan.messages.clear
+      @game.start_game(message_from('p1'))
+
+      expect(@chan.messages.size).to be == 3
+      expect(@chan.messages[-3]).to be == 'The game has started.'
+      match = (TURN_ORDER_REGEX3.match(@chan.messages[-2]))
+      @order = match
+      expect(@chan.messages[-1]).to be == "FIRST TURN. Player: #{@order[1]}. Please choose an action."
+      @chan.messages.clear
+    end
+
+    it 'does not allow ambassador action' do
+      p = @players[@order[1]]
+      p.messages.clear
+
+      @game.do_action(message_from(@order[1]), 'ambassador', @order[2])
+      expect(@chan.messages).to be == []
+      expect(p.messages).to be == ['AMBASSADOR may not be used if the game type is Inquisitor.']
+    end
+
+    it 'does not allow ambassador block' do
+      @game.do_action(message_from(@order[1]), 'captain', @order[2])
+      @game.react_pass(message_from(@order[2]))
+      @game.react_pass(message_from(@order[3]))
+      @chan.messages.clear
+
+      p = @players[@order[2]]
+      p.messages.clear
+
+      @game.do_block(message_from(@order[2]), 'ambassador')
+      expect(@chan.messages).to be == []
+      expect(p.messages).to be == ['AMBASSADOR may not be used if the game type is Inquisitor.']
+    end
+
+    context 'when player with 2 influence uses self-inquisitor unchallenged' do
+      before :each do
+        @game.do_action(message_from(@order[1]), 'inquisitor', @order[1])
+        expect(@chan.messages).to be == [
+          "#{@order[1]} uses INQUISITOR on #{@order[1]}",
+          CHALLENGE_PROMPT,
+        ].compact
+        @chan.messages.clear
+
+        p = @players[@order[1]]
+        p.messages.clear
+
+        # Have everyone pass
+        (2...NUM_PLAYERS).each { |i|
+          @game.react_pass(message_from(@order[i]))
+          expect(@chan.messages).to be == ["#{@order[i]} passes."]
+          @chan.messages.clear
+        }
+        @game.react_pass(message_from(@order[NUM_PLAYERS]))
+
+        expect(@chan.messages).to be == [
+          "#{@order[NUM_PLAYERS]} passes.",
+          "#{@order[1]} proceeds with INQUISITOR. Exchange card with Court Deck, or examine opponent's card: #{@order[1]}.",
+        ]
+        @chan.messages.clear
+
+        expect(p.messages.size).to be == 5
+
+        expect(p.messages[-5]).to be =~ /You drew [A-Z]+ from the Court Deck./
+        expect(p.messages[-4]).to be == "Choose an option for a new hand; \"!switch #\""
+        choices = Array.new(4)
+        (1..3).each { |i|
+          index = -4 + i
+          match = /^#{i} -\s+\((\w+)\)\s+\((\w+)\)$/.match(p.messages[index])
+          expect(match).to_not be_nil
+          choices[i] = match
+        }
+      end
+
+      it 'lets player switch' do
+        @game.switch_cards(message_from(@order[1]), '1')
+        expect(@chan.messages).to be == [
+          "#{@order[1]} shuffles a card into the Court Deck.",
+          "#{@order[2]}: It is your turn. Please choose an action.",
+        ]
+      end
+
+      it 'does not let player flip card' do
+        @game.flip_card(message_from(@order[1]), '1')
+        expect(@chan.messages).to be == []
+      end
+    end
+
+    context 'when player with 1 influence uses self-inquisitor unchallenged' do
+      before :each do
+        # Have each player take income to bump them up to 7 coins
+        5.times do
+          (1..NUM_PLAYERS).each { |i|
+            @game.do_action(message_from(@order[i]), 'income')
+          }
+        end
+
+        # 1 uses coup on 2
+        @game.do_action(message_from(@order[1]), 'coup', @order[2])
+
+        # 2 flips card 1
+        @game.flip_card(message_from(@order[2]), '1')
+        @chan.messages.clear
+
+        @game.do_action(message_from(@order[2]), 'inquisitor', @order[2])
+        expect(@chan.messages).to be == [
+          "#{@order[2]} uses INQUISITOR on #{@order[2]}",
+          CHALLENGE_PROMPT,
+        ].compact
+        @chan.messages.clear
+
+        p = @players[@order[2]]
+        p.messages.clear
+
+        # Have everyone pass
+        (3..NUM_PLAYERS).each { |i|
+          @game.react_pass(message_from(@order[i]))
+          expect(@chan.messages).to be == ["#{@order[i]} passes."]
+          @chan.messages.clear
+        }
+        @game.react_pass(message_from(@order[1]))
+
+        expect(@chan.messages).to be == [
+          "#{@order[1]} passes.",
+          "#{@order[2]} proceeds with INQUISITOR. Exchange card with Court Deck, or examine opponent's card: #{@order[2]}.",
+        ]
+        @chan.messages.clear
+
+        expect(p.messages.size).to be == 4
+
+        expect(p.messages[-4]).to be =~ /You drew [A-Z]+ from the Court Deck./
+        expect(p.messages[-3]).to be == "Choose an option for a new hand; \"!switch #\""
+        choices = Array.new(3)
+        (1..2).each { |i|
+          index = -3 + i
+          match = /^#{i} -\s+\((\w+)\)$/.match(p.messages[index])
+          expect(match).to_not be_nil
+          choices[i] = match
+        }
+      end
+
+      it 'lets player switch' do
+        @game.switch_cards(message_from(@order[2]), '1')
+        expect(@chan.messages).to be == [
+          "#{@order[2]} shuffles a card into the Court Deck.",
+          "#{@order[3]}: It is your turn. Please choose an action.",
+        ]
+      end
+
+      it 'does not let player flip card' do
+        @game.flip_card(message_from(@order[2]), '1')
+        expect(@chan.messages).to be == []
+      end
+    end
+
+    context 'when player uses captain unchallenged' do
+      before :each do
+        @game.do_action(message_from(@order[1]), 'captain', @order[2])
+        expect(@chan.messages).to be == [
+          "#{@order[1]} uses CAPTAIN on #{@order[2]}",
+          CHALLENGE_PROMPT,
+        ].compact
+        @chan.messages.clear
+
+        # Have everyone pass
+        (2...NUM_PLAYERS).each { |i|
+          @game.react_pass(message_from(@order[i]))
+          expect(@chan.messages).to be == ["#{@order[i]} passes."]
+          @chan.messages.clear
+        }
+        @game.react_pass(message_from(@order[NUM_PLAYERS]))
+
+        expect(@chan.messages).to be == [
+          "#{@order[NUM_PLAYERS]} passes.",
+          "#{@order[2]}: Would you like to block the CAPTAIN (\"!block captain\" or \"!block inquisitor\") or not (\"!pass\")?",
+        ]
+        @chan.messages.clear
+      end
+
+      it 'does not let unrelated player block with inquisitor' do
+        p = @players[@order[3]]
+        p.messages.clear
+
+        @game.do_block(message_from(@order[3]), 'inquisitor')
+        expect(@chan.messages).to be == []
+        expect(p.messages).to be == ['You can only block with INQUISITOR if you are the target.']
+      end
+
+      it 'blocks steal if target blocks with inquisitor' do
+        @game.do_block(message_from(@order[2]), 'inquisitor')
+        expect(@chan.messages).to be == [
+          "#{@order[2]} uses INQUISITOR to block CAPTAIN",
+          CHALLENGE_PROMPT,
+        ].compact
+        @chan.messages.clear
+
+        (3..NUM_PLAYERS).each { |i|
+          @game.react_pass(message_from(@order[i]))
+          expect(@chan.messages).to be == ["#{@order[i]} passes."]
+          @chan.messages.clear
+        }
+
+        @game.react_pass(message_from(@order[1]))
+        expect(@chan.messages).to be == [
+          "#{@order[1]} passes.",
+          "#{@order[1]}'s CAPTAIN was blocked by #{@order[2]} with INQUISITOR.",
+          "#{@order[2]}: It is your turn. Please choose an action.",
+        ]
+
+        expect(@game.coins(@players[@order[1]])).to be == 2
+        expect(@game.coins(@players[@order[2]])).to be == 2
+      end
+    end
+
+    context 'when player with uses offensive inquisitor unchallenged' do
+      before :each do
+        @game.do_action(message_from(@order[1]), 'inquisitor', @order[2])
+        expect(@chan.messages).to be == [
+          "#{@order[1]} uses INQUISITOR on #{@order[2]}",
+          CHALLENGE_PROMPT,
+        ].compact
+        @chan.messages.clear
+
+        p = @players[@order[2]]
+        p.messages.clear
+
+        # Have everyone pass
+        (2...NUM_PLAYERS).each { |i|
+          @game.react_pass(message_from(@order[i]))
+          expect(@chan.messages).to be == ["#{@order[i]} passes."]
+          @chan.messages.clear
+        }
+        @game.react_pass(message_from(@order[NUM_PLAYERS]))
+
+        expect(@chan.messages).to be == [
+          "#{@order[NUM_PLAYERS]} passes.",
+          "#{@order[1]} proceeds with INQUISITOR. Exchange card with Court Deck, or examine opponent's card: #{@order[2]}.",
+        ]
+        @chan.messages.clear
+
+        @players[@order[1]].messages.clear
+
+        inq_regex = /^Choose a character to show to #{@order[1]}: 1 - \(([A-Z]+)\) or 2 - \(([A-Z]+)\); "!show 1" or "!show 2"$/
+        match = inq_regex.match(p.messages.shift)
+        expect(match).to_not be_nil
+        @targets_cards = match
+        expect(p.messages).to be == []
+      end
+
+
+      it 'does not lets the inquisitor give the card back before target has passed it' do
+        @game.inquisitor_keep(message_from(@order[1]))
+        expect(@chan.messages).to be == []
+      end
+
+      it 'does not lets the inquisitor discard the card before target has passed it' do
+        @game.inquisitor_discard(message_from(@order[1]))
+        expect(@chan.messages).to be == []
+      end
+
+
+      context 'after target has passed card to inquisitor' do
+        before :each do
+          @game.show_to_inquisitor(message_from(@order[2]), '1')
+          expect(@chan.messages).to be == [
+            "#{@order[2]} passes a card to #{@order[1]}. Should #{@order[2]} be allowed to keep this card (\"!keep\") or not (\"!discard\")?",
+          ]
+          @chan.messages.clear
+        end
+
+        it 'does nothing if target tries to pass another card' do
+          @game.show_to_inquisitor(message_from(@order[2]), '1')
+          expect(@chan.messages).to be == []
+        end
+
+        it 'shows inquisitor the card' do
+          expect(@players[@order[1]].messages.shift).to be =~ /#{@order[2]} shows you a #{@targets_cards[1]}\.$/
+        end
+
+        it 'lets the inquisitor give the card back' do
+          @game.inquisitor_keep(message_from(@order[1]))
+          expect(@chan.messages).to be == [
+            "The card is returned to #{@order[2]}.",
+            "#{@order[2]}: It is your turn. Please choose an action.",
+          ]
+        end
+
+        it 'lets the inquisitor discard the card' do
+          @game.inquisitor_discard(message_from(@order[1]))
+          expect(@chan.messages).to be == [
+            "#{@order[2]} is forced to discard that card and replace it with another from the Court Deck.",
+            "#{@order[2]}: It is your turn. Please choose an action.",
+          ]
+        end
+      end
+    end
+
+    # TODO: There could be tests of the inquisitor being blocked, but... meh.
+
   end
 
 end
