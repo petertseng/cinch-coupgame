@@ -68,8 +68,8 @@ module Cinch
     
       # game    
       xmatch /(?:action )?(duke|tax|ambassador|exchange|income|foreign(?: |_)aid)/i, :method => :do_action
-      xmatch /(?:action )?(assassin(?:ate)?|kill|captain|steal|extort|coup)(?: (.+))?/i, :method => :do_action
-      xmatch /block (duke|contessa|captain|ambassador)/i,      :method => :do_block
+      xmatch /(?:action )?(assassin(?:ate)?|kill|captain|steal|extort|coup|inquisitor)(?: (.+))?/i, :method => :do_action
+      xmatch /block (duke|contessa|captain|ambassador|inquisitor)/i, :method => :do_block
       xmatch /pass/i,                 :method => :react_pass
       xmatch /challenge/i,            :method => :react_challenge
       xmatch /bs/i,                   :method => :react_challenge
@@ -77,6 +77,10 @@ module Cinch
       xmatch /flip (1|2)/i,           :method => :flip_card
       xmatch /lose (1|2)/i,           :method => :flip_card
       xmatch /switch (([1-6]))/i,     :method => :switch_cards
+
+      xmatch /show (1|2)/i,           :method => :show_to_inquisitor
+      xmatch /keep/i,                 :method => :inquisitor_keep
+      xmatch /discard/i,              :method => :inquisitor_discard
 
       xmatch /pick (([1-5]))/i,       :method => :pick_card
 
