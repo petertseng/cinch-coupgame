@@ -715,12 +715,12 @@ module Cinch
         m.reply(table_info(game).join("\n"))
       end
 
-      def table_info(game)
+      def table_info(game, cheating: false)
         info = game.players.collect { |p|
           character_1, character_2 = p.characters
 
-          char1_str = character_1.face_down? ? "(########)" : "[#{character_1}]"
-          char2_str = character_2.face_down? ? "(########)" : "[#{character_2}]"
+          char1_str = character_1.face_down? && !cheating ? "(########)" : "[#{character_1}]"
+          char2_str = character_2.face_down? && !cheating ? "(########)" : "[#{character_2}]"
           "#{dehighlight_nick(p.to_s)}: #{char1_str} #{char2_str} - Coins: #{p.coins}"
         }
         unless game.discard_pile.empty?
