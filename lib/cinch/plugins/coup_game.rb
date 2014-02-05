@@ -669,8 +669,8 @@ module Cinch
         end
       end
 
-      def prompt_to_switch(game, target)
-        game.ambassador_cards = game.draw_cards(2)
+      def prompt_to_switch(game, target, cards = 2)
+        game.ambassador_cards = game.draw_cards(cards)
         card_names = game.ambassador_cards.collect { |c| c.to_s }.join(' and ')
         User(target.user).send "You drew #{card_names} from the Court Deck."
 
