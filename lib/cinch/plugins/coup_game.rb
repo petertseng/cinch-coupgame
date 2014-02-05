@@ -326,6 +326,10 @@ module Cinch
               m.user.send("#{action.upcase} may not be used if the game type is #{mf.to_s.capitalize}.")
               return
             end
+            if (mr = Game::ACTIONS[action.to_sym].mode_required) && !game.settings.include?(mr)
+              m.user.send("#{action.upcase} may only be used if the game type is #{mr.to_s.capitalize}.")
+              return
+            end
 
             if target.nil? || target.empty?
               target_msg = ""
@@ -404,6 +408,10 @@ module Cinch
             if game.current_turn.action.blockable?
               if (mf = Game::ACTIONS[action.to_sym].mode_forbidden) && game.settings.include?(mf)
                 m.user.send("#{action.upcase} may not be used if the game type is #{mf.to_s.capitalize}.")
+                return
+              end
+              if (mr = Game::ACTIONS[action.to_sym].mode_required) && !game.settings.include?(mr)
+                m.user.send("#{action.upcase} may only be used if the game type is #{mr.to_s.capitalize}.")
                 return
               end
 
