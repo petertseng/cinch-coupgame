@@ -322,6 +322,11 @@ module Cinch
               return
             end
 
+            if (mf = Game::ACTIONS[action.to_sym].mode_forbidden) && game.settings.include?(mf)
+              m.user.send("#{action.upcase} may not be used if the game type is #{mf.to_s.capitalize}.")
+              return
+            end
+
             if target.nil? || target.empty?
               target_msg = ""
 
@@ -397,6 +402,11 @@ module Cinch
           player = game.find_player(m.user)
           if game.current_turn.waiting_for_block? && game.reacting_players.include?(player)
             if game.current_turn.action.blockable?
+              if (mf = Game::ACTIONS[action.to_sym].mode_forbidden) && game.settings.include?(mf)
+                m.user.send("#{action.upcase} may not be used if the game type is #{mf.to_s.capitalize}.")
+                return
+              end
+
               if Game::ACTIONS[action.to_sym].blocks == game.current_turn.action.action
                 if game.current_turn.action.needs_target && m.user != game.current_turn.target_player.user
                   m.user.send "You can only block with #{action.upcase} if you are the target."

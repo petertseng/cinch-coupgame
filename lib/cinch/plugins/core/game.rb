@@ -50,6 +50,7 @@ class Game
                                 :character_required => :ambassador,
                                 :name               => "Exchange",
                                 :effect             => "Exchange cards with Court Deck",
+                                :mode_forbidden     => :inquisitor,
                                 :has_decision       => true,
                                 :blocks             => :captain),
 
