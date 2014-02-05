@@ -901,9 +901,9 @@ module Cinch
           # inform channel
           Channel(game.channel_name).send "#{user1.nick} has been replaced with #{user2.nick}"
 
-          # tell loyalty to new player
+          # tell characters to new player
           User(player.user).send "="*40
-          self.tell_loyalty_to(player)
+          self.tell_characters_to(player)
         end
       end
 
