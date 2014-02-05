@@ -170,7 +170,7 @@ describe Cinch::Plugins::CoupGame do
 
     it 'does not let p1 start' do
       @game.start_game(message_from('p1'))
-      expect(@chan.messages).to be == ['p1: Need at least 3 to start a game.']
+      expect(@chan.messages).to be == ['p1: Need at least 2 to start a game.']
     end
 
     it 'reports that game is empty in status' do
@@ -198,7 +198,7 @@ describe Cinch::Plugins::CoupGame do
 
     it 'does not let p1 start' do
       @game.start_game(message_from('p1'))
-      expect(@chan.messages).to be == ['p1: Need at least 3 to start a game.']
+      expect(@chan.messages).to be == ['p1: Need at least 2 to start a game.']
     end
 
     it 'reports that p1 is in game in status' do
