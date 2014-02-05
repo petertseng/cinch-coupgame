@@ -57,10 +57,11 @@ class Game
     :inquisitor  => Action.new( :action             => :inquisitor,
                                 :character_required => :inquisitor,
                                 :name               => "Exchange",
-                                :effect             => "Exchange card with Court Deck, or examine opponent's card",
+                                :effect             => "Examine opponent's card",
                                 :mode_required      => :inquisitor,
                                 :needs_target       => true,
                                 :self_targettable   => true,
+                                :self_effect        => "Exchange card with Court Deck",
                                 :has_decision       => true,
                                 :blocks             => :captain),
 

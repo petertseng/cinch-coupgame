@@ -9,6 +9,7 @@ class Action
   attr_reader :mode_forbidden
   attr_reader :mode_required
   attr_reader :self_targettable
+  attr_reader :self_effect
 
   def initialize(options)
     self.action              = options[:action]
@@ -24,6 +25,7 @@ class Action
     @mode_forbidden = options[:mode_forbidden] || nil
     @mode_required = options[:mode_required] || nil
     @self_targettable = options[:self_targettable] || false
+    @self_effect = options[:self_effect] || false
   end 
 
   # State methods

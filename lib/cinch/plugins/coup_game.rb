@@ -916,8 +916,10 @@ module Cinch
           Channel(game.channel_name).send "#{turn.active_player}'s #{turn.action.action.upcase} was blocked by #{turn.counteracting_player} with #{turn.counteraction.action.upcase}."
           self.start_new_turn(game)
         elsif !turn.action_challenge_successful
-          target_msg = turn.target_player.nil? ? "" : ": #{turn.target_player}"
-          Channel(game.channel_name).send "#{game.current_player} proceeds with #{turn.action.action.upcase}. #{turn.action.effect}#{target_msg}."
+          self_target = turn.active_player == turn.target_player
+          target_msg = self_target || turn.target_player.nil? ? "" : ": #{turn.target_player}"
+          effect = self_target ? turn.action.self_effect : turn.action.effect
+          Channel(game.channel_name).send "#{game.current_player} proceeds with #{turn.action.action.upcase}. #{effect}#{target_msg}."
           game.pay_for_current_turn
           game.process_current_turn
           if turn.action.needs_decision?
