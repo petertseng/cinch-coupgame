@@ -850,7 +850,8 @@ module Cinch
           channel = channel_name ? Channel(channel_name) : m.channel
           game = @games[channel.name]
 
-          # TODO: Show everyone's cards
+          # Show everyone's cards.
+          channel.send(table_info(game, cheating: true).join("\n"))
 
           game.players.each do |p|
             @user_games.delete(p.user)
