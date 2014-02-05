@@ -682,7 +682,7 @@ describe Cinch::Plugins::CoupGame do
         choices = Array.new(7)
         (1..6).each { |i|
           index = -7 + i
-          match = /^#{i} - \((\w+)\) \((\w+)\)$/.match(p.messages[index])
+          match = /^#{i} -\s+\((\w+)\)\s+\((\w+)\)$/.match(p.messages[index])
           expect(match).to_not be_nil
           choices[i] = match
         }
@@ -749,7 +749,7 @@ describe Cinch::Plugins::CoupGame do
         choices = Array.new(3)
         (1..3).each { |i|
           index = -4 + i
-          match = /^#{i} - \((\w+)\)$/.match(p.messages[index])
+          match = /^#{i} -\s+\((\w+)\)$/.match(p.messages[index])
           expect(match).to_not be_nil
           choices[i] = match
         }
