@@ -813,6 +813,19 @@ module Cinch
         self.start_new_turn(game)
       end
 
+      def inquisitor_discard(m)
+        game = self.game_of(m)
+        return unless game && game.started? && game.has_player?(m.user)
+        player = game.find_player(m.user)
+        turn = game.current_turn
+        return unless turn.waiting_for_decision? && turn.decider == player && turn.decision_type == :keep_or_discard
+
+        Channel(game.channel_name).send("#{turn.target_player} is forced to discard that card and replace it with another from the Court Deck.")
+        game.replace_character_with_new(turn.target_player, game.inquisitor_shown_card.name)
+        self.tell_characters_to(turn.target_player, false)
+        self.start_new_turn(game)
+      end
+
       def pick_card(m, choice)
         game = self.game_of(m)
         return unless game && game.started? && game.has_player?(m.user)
