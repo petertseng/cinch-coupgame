@@ -75,6 +75,8 @@ module Cinch
       xmatch /lose (1|2)/i,           :method => :flip_card
       xmatch /switch (([1-6]))/i,     :method => :switch_cards
 
+      xmatch /pick (([1-5]))/i,       :method => :pick_card
+
       xmatch /me$/i,                  :method => :whoami
       xmatch /table(?:\s*(##?\w+))?/i,:method => :show_table
       xmatch /who$/i,                 :method => :list_players
@@ -720,6 +722,21 @@ module Cinch
           (facedown + new_cards).collect { |c| [c] }
         else
           raise "Invalid target influence #{target.influence}"
+        end
+      end
+
+      def pick_card(m, choice)
+        game = self.game_of(m)
+        return unless game && game.started? && game.has_player?(m.user)
+        player = game.find_player(m.user)
+        return if player.characters.size == 2
+
+        choice = choice.to_i
+        if 1 <= choice && choice <= player.side_cards.size
+          player.select_side_character(choice)
+          Channel(game.channel_name).send("#{player} has selected a character.")
+        else
+          m.user.send("#{choice} is not a valid choice")
         end
       end
 
