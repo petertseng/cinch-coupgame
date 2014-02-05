@@ -1071,6 +1071,9 @@ module Cinch
             status = "Waiting on #{turn.block_challenger} to pick character to lose"
           elsif turn.waiting_for_decision?
             status = "Waiting on #{turn.decider} to make decision on #{turn.action.to_s.upcase}"
+          elsif turn.waiting_for_initial_characters?
+            players = game.not_selected_initial_character.map(&:user).join(", ")
+            status = 'Waiting on players to pick character: ' + players
           else
             status = "Unknown status #{turn.state}"
           end
