@@ -68,6 +68,10 @@ class Turn
 
   # State methods
 
+  def waiting_for_initial_characters?
+    self.state == :initial_characters
+  end
+
   def waiting_for_reactions?
     [:action_challenge, :block, :block_challenge].include?(self.state)
   end
@@ -124,6 +128,10 @@ class Turn
     else
       raise "wait_for_challenge_loser at state #{self.state}"
     end
+  end
+
+  def wait_for_initial_characters
+    self.state = :initial_characters
   end
 
   def wait_for_action_challenge
