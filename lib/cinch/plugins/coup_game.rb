@@ -731,7 +731,8 @@ module Cinch
               }
 
               game.shuffle_into_deck(*cards_to_return)
-              Channel(game.channel_name).send "#{m.user.nick} shuffles two cards into the Court Deck."
+              num_cards = cards_to_return.size == 1 ? 'a card' : 'two cards'
+              Channel(game.channel_name).send "#{m.user.nick} shuffles #{num_cards} into the Court Deck."
               returned_names = cards_to_return.collect { |c| "(#{c})" }.join(' and ')
               m.user.send("You returned #{returned_names} to the Court Deck.")
 
@@ -859,6 +860,11 @@ module Cinch
               end
             elsif turn.action.action == :ambassador
               self.prompt_to_switch(game, turn.active_player)
+            elsif turn.action.action == :inquisitor
+              if turn.target_player == turn.active_player
+                self.prompt_to_switch(game, turn.active_player, 1)
+              else
+              end
             end
           else
             self.start_new_turn(game)

@@ -277,6 +277,9 @@ class Game
     when :ambassador
       self.current_turn.make_decider self.current_player
       self.current_turn.decision_type = :switch_cards
+    when :inquisitor
+      self.current_turn.make_decider self.target_player
+      self.current_turn.decision_type = self.target_player == self.current_player ? :switch_cards : :show_to_inquisitor
     when :captain
       taken = self.target_player.take_coins 2
       self.current_player.give_coins taken
