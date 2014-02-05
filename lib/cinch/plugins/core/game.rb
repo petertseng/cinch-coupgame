@@ -80,6 +80,7 @@ class Game
 
   attr_accessor :started, :players, :deck, :discard_pile, :turns, :invitation_sent
   attr_accessor :ambassador_cards, :ambassador_options
+  attr_accessor :inquisitor_shown_card
   attr_reader :channel_name
   attr_accessor :settings
   
@@ -94,6 +95,7 @@ class Game
     self.invitation_sent = false
     @ambassador_cards = []
     @ambassador_options = []
+    @inquisitor_shown_card = nil
   end
 
   #----------------------------------------------

@@ -755,6 +755,53 @@ module Cinch
         end
       end
 
+      def prompt_to_show_inquisitor(target, inquisitor)
+        if target.influence == 2
+          character_1, character_2 = target.characters
+          User(target.user).send "Choose a character to show to #{inquisitor}: 1 - (#{character_1}) or 2 - (#{character_2}); \"!show 1\" or \"!show 2\""
+        else
+          character = target.characters.find { |c| c.face_down? }
+          i = target.characters.index(character)
+          User(target.user).send "You only have one character left. #{i+1} - (#{character}); \"!show #{i+1}\""
+        end
+      end
+
+      def show_to_inquisitor(m, position)
+        game = self.game_of(m)
+        return unless game && game.started? && game.has_player?(m.user)
+
+        pos = position.to_i
+        unless pos == 1 || pos == 2
+          player.user.send("#{pos} is not a valid option to reveal.")
+          return
+        end
+
+        player = game.find_player(m.user)
+
+        revealed = player.characters[pos - 1]
+        unless revealed.face_down?
+          player.user.send('You have already flipped that card.')
+          return
+        end
+
+        turn = game.current_turn
+
+        return unless turn.waiting_for_decision? && turn.decider == player && turn.decision_type == :show_to_inquisitor
+
+        _show_to_inquisitor(game, turn.decider, pos, turn.active_player)
+      end
+
+      def _show_to_inquisitor(game, target, position, inquisitor)
+        Channel(game.channel_name).send("#{target} passes a card to #{inquisitor}. Should #{target} be allowed to keep this card (\"!keep\") or not (\"!discard\")?")
+        revealed = target.characters[position - 1]
+        inquisitor.user.send("#{target} shows you a #{revealed}.")
+
+        game.inquisitor_shown_card = revealed
+        turn = game.current_turn
+        turn.make_decider(inquisitor)
+        turn.decision_type = :keep_or_discard
+      end
+
       def pick_card(m, choice)
         game = self.game_of(m)
         return unless game && game.started? && game.has_player?(m.user)
@@ -863,7 +910,11 @@ module Cinch
             elsif turn.action.action == :inquisitor
               if turn.target_player == turn.active_player
                 self.prompt_to_switch(game, turn.active_player, 1)
+              elsif turn.target_player.influence == 2
+                self.prompt_to_show_inquisitor(turn.target_player, turn.active_player)
               else
+                i = turn.target_player.characters.index { |c| c.face_down? }
+                self._show_to_inquisitor(game, turn.target_player, i + 1, turn.active_player)
               end
             end
           else
