@@ -20,6 +20,8 @@ module Cinch
       'steal' => 'captain',
       'extort' => 'captain',
       'exchange' => 'ambassador',
+      'recant' => 'apostatize',
+      'repent' => 'apostatize',
     }
 
     # Length of the longest character's name (Ambassador / Inquisitor)
@@ -68,7 +70,8 @@ module Cinch
     
       # game    
       xmatch /(?:action )?(duke|tax|ambassador|exchange|income|foreign(?: |_)aid)/i, :method => :do_action
-      xmatch /(?:action )?(assassin(?:ate)?|kill|captain|steal|extort|coup|inquisitor)(?: (.+))?/i, :method => :do_action
+      xmatch /(?:action )?(recant|repent|apostatize|convert|embezzle)/i, :method => :do_action
+      xmatch /(?:action )?(assassin(?:ate)?|kill|captain|steal|extort|coup|inquisitor|convert)(?: (.+))?/i, :method => :do_action
       xmatch /block (duke|contessa|captain|ambassador|inquisitor)/i, :method => :do_block
       xmatch /pass/i,                 :method => :react_pass
       xmatch /challenge/i,            :method => :react_challenge
