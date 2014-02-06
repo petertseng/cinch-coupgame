@@ -53,6 +53,7 @@ class Game
     :convert     => Action.new( :action              => :convert,
                                 :name                => "Convert",
                                 :cost                => 2,
+                                :needs_target        => true,
                                 :effect              => "Pay 2 coins to #{BANK_NAME}, choose player to change faction",
                                 :mode_required       => :reformation),
 
