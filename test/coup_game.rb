@@ -2347,6 +2347,35 @@ describe Cinch::Plugins::CoupGame do
       expect(@chan.messages).to be == []
       expect(p.messages).to be == []
     end
+
+    it 'shows table publicly to player' do
+      @game.show_table(message_from('p1'))
+      expect(@chan.messages).to be == [
+        "#{dehighlight(@order[1])}: (########) - Coins: 2",
+        "#{dehighlight(@order[2])}: (########) - Coins: 2",
+      ]
+    end
+
+    describe 'who_chars' do
+      def expected(i)
+        set_aside = [1, 2, 3, 4, 5].collect { |j|
+          "(#{@sides[i][j]})"
+        }.join(' ')
+        "#{dehighlight(@order[i])}: (#{@initial_chars[i]}) - Coins: 2 - Set aside: #{set_aside}"
+      end
+
+      it 'shows mods not in the game' do
+        p = @players['npmod']
+        p.messages.clear
+        @game.who_chars(message_from('npmod'), nil)
+        expect(@chan.messages).to be == []
+        (1..2).each { |i|
+          expect(p.messages.shift).to be == expected(i)
+        }
+        expect(p.messages).to be == []
+      end
+    end
+
   end
 
   context 'when p1..3 are playing an inquisitor game' do
