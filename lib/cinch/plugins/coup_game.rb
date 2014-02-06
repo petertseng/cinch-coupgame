@@ -909,6 +909,7 @@ module Cinch
 
           if game.is_over?
             Channel(game.channel_name).send "Game is over! #{game.winner} wins!"
+            Channel(game.channel_name).send "#{game.winner} was #{player_info(game, game.winner, show_secret: true)}."
             self.start_new_game(game)
           end
         end
