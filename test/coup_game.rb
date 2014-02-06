@@ -2640,12 +2640,24 @@ describe Cinch::Plugins::CoupGame do
           ]
         end
 
-        it 'lets the inquisitor discard the card' do
-          @game.inquisitor_discard(message_from(@order[1]))
-          expect(@chan.messages).to be == [
-            "#{@order[2]} is forced to discard that card and replace it with another from the Court Deck.",
-            "#{@order[2]}: It is your turn. Please choose an action.",
-          ]
+        context 'when inquisitor discards card' do
+          before :each do
+            @players[@order[2]].messages.clear
+            @game.inquisitor_discard(message_from(@order[1]))
+          end
+
+          it 'announces to the channel' do
+            expect(@chan.messages).to be == [
+              "#{@order[2]} is forced to discard that card and replace it with another from the Court Deck.",
+              "#{@order[2]}: It is your turn. Please choose an action.",
+            ]
+          end
+
+          it 'tells player his new card' do
+            p = @players[@order[2]]
+            expect(p.messages.shift).to be =~ /^\(\w+\) \(\w+\)$/
+            expect(p.messages).to be == []
+          end
         end
       end
     end
