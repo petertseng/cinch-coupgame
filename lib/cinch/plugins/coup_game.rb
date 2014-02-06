@@ -1024,6 +1024,7 @@ module Cinch
         game = self.game_of(m, channel_name, ['reset a game', '!reset'])
 
         return unless game
+        channel = Channel(game.channel_name)
 
         # Show everyone's cards.
         channel.send(table_info(game, cheating: true).join("\n")) if game.started?
