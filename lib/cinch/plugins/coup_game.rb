@@ -499,7 +499,7 @@ module Cinch
               # Blocker didn't want to block. Process turn.
               Channel(game.channel_name).send "#{m.user.nick} passes."
               self.process_turn(game)
-            elsif !turn.action.needs_target
+            elsif !turn.action.needs_target && player != turn.active_player && game.is_enemy?(player, turn.active_player)
               # This blocker didn't want to block, but maybe someone else will
               success = game.current_turn.pass(player)
               Channel(game.channel_name).send "#{m.user.nick} passes." if success
