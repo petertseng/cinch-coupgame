@@ -299,26 +299,29 @@ module Cinch
         c.face_down? ? "(#{cname})" : "[#{cname}]"
       end
 
-      def tell_characters_to(game, player, opts = {})
-        opts = { :show_coins => true, :show_side => true }.merge(opts)
+      def player_info(game, player, opts)
         character_1, character_2 = player.characters
 
-        char1_str = character_info(character_1, show_secret: true)
-        char2_str = character_2 ? ' ' + character_info(character_2, show_secret: true) : ''
+        char1_str = character_info(character_1, opts)
+        char2_str = character_2 ? ' ' + character_info(character_2, opts) : ''
 
         coins_str = opts[:show_coins] ? " - Coins: #{player.coins}" : ""
+
+        side_str = ''
         if opts[:show_side] && !player.side_cards.empty?
           chars = player.side_cards.collect { |c| "(#{c.to_s})" }.join(' ')
           side_str = ' - Set aside: ' + chars
-        else
-          side_str = ''
         end
 
         faction_str = game.settings.include?(:reformation) ? " - #{Game::FACTIONS[player.faction]}" : ''
 
-        User(player.user).send "#{char1_str}#{char2_str}#{coins_str}#{faction_str}#{side_str}"
+        "#{char1_str}#{char2_str}#{coins_str}#{faction_str}#{side_str}"
       end
 
+      def tell_characters_to(game, player, opts = {})
+        opts = { :show_coins => true, :show_side => true, :show_secret => true }.merge(opts)
+        player.user.send(player_info(game, player, opts))
+      end
 
       def do_action(m, action, target = "")
         game = self.game_of(m)
@@ -910,21 +913,8 @@ module Cinch
 
       def table_info(game, opts = {})
         info = game.players.collect { |p|
-          character_1, character_2 = p.characters
-
-          char1_str = character_info(character_1, show_secret: opts[:cheating])
-          char2_str = character_2 ? ' ' + character_info(character_2, show_secret: opts[:cheating]) : ''
-
-          if opts[:cheating] && !p.side_cards.empty?
-            chars = p.side_cards.collect { |c| "(#{c.to_s})" }.join(' ')
-            side_str = ' - Set aside: ' + chars
-          else
-            side_str = ''
-          end
-
-          faction_str = game.settings.include?(:reformation) ? " - #{Game::FACTIONS[p.faction]}" : ''
-
-          "#{dehighlight_nick(p.to_s)}: #{char1_str}#{char2_str} - Coins: #{p.coins}#{faction_str}#{side_str}"
+          i = player_info(game, p, show_coins: true, show_side: opts[:cheating], show_secret: opts[:cheating])
+          "#{dehighlight_nick(p.to_s)}: #{i}"
         }
         unless game.discard_pile.empty?
           discards = game.discard_pile.map{ |c| "[#{c}]" }.join(" ")
