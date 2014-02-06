@@ -565,13 +565,8 @@ module Cinch
                 index = chall_player.character_position(chall_action.character_forbidden)
                 card = "[#{chall_action.character_forbidden.to_s.upcase}]"
                 Channel(game.channel_name).send("#{chall_player} reveals a #{card}. #{chall_player} loses the challenge!")
-                Channel(game.channel_name).send("#{chall_player} loses influence over the #{card} and cannot use the #{chall_action.action.to_s.upcase}.")
-                chall_player.flip_character_card(index + 1)
-                self.check_player_status(game, player)
-                # The action challenge succeeds, interrupting the action.
-                # We don't need to ask for a block. Just finish the turn.
-                turn.action_challenge_successful = true
-                self.process_turn(game)
+
+                defendant_reveal_and_lose(game, chall_player, chall_player.characters[index], chall_action)
               end
 
             else
@@ -604,6 +599,29 @@ module Cinch
         else
           i = challenger.characters.index { |c| c.face_down? }
           self.lose_challenge(game, challenger, i + 1)
+        end
+      end
+
+      def defendant_reveal_and_lose(game, defendant, revealed, action)
+        Channel(game.channel_name).send(
+          "#{defendant} loses influence over the [#{revealed}] and cannot use the #{action.action.to_s.upcase}."
+        )
+        revealed.flip_up
+        self.check_player_status(game, defendant)
+
+        turn = game.current_turn
+        if turn.waiting_for_action_challenge_reply?
+          # The action challenge succeeds, interrupting the action.
+          # We don't need to ask for a block. Just finish the turn.
+          turn.action_challenge_successful = true
+          self.process_turn(game)
+        elsif turn.waiting_for_block_challenge_reply?
+          # The block challenge succeeds, interrupting the block.
+          # That means the original action holds. Finish the turn.
+          turn.block_challenge_successful = true
+          self.process_turn(game)
+        else
+          raise "defendant_reveal_and_lose in #{turn.state}"
         end
       end
 
@@ -730,22 +748,7 @@ module Cinch
           defendant_reveal_and_win(game, player, [revealed], challenger)
         else
           Channel(game.channel_name).send "#{player} reveals a [#{revealed}]. That's not a #{action.character_required.to_s.upcase}! #{player} loses the challenge!"
-          Channel(game.channel_name).send "#{player} loses influence over the [#{revealed}] and cannot use the #{action.character_required.to_s.upcase}."
-          revealed.flip_up
-          self.check_player_status(game, player)
-          if turn.waiting_for_action_challenge_reply?
-            # The action challenge succeeds, interrupting the action.
-            # We don't need to ask for a block. Just finish the turn.
-            turn.action_challenge_successful = true
-            self.process_turn(game)
-          elsif turn.waiting_for_block_challenge_reply?
-            # The block challenge succeeds, interrupting the block.
-            # That means the original action holds. Finish the turn.
-            turn.block_challenge_successful = true
-            self.process_turn(game)
-          else
-            raise "respond_to_challenge in #{turn.state}"
-          end
+          defendant_reveal_and_lose(game, player, revealed, action)
         end
       end
 
