@@ -89,7 +89,7 @@ module Cinch
 
       xmatch /me$/i,                  :method => :whoami
       xmatch /table(?:\s*(##?\w+))?/i,:method => :show_table
-      xmatch /who$/i,                 :method => :list_players
+      xmatch /who(?:\s*(##?\w+))?/i,  :method => :list_players
       xmatch /status$/i,              :method => :status
 
       # other
@@ -1027,7 +1027,7 @@ module Cinch
 
 
       def list_players(m)
-        game = self.game_of(m)
+        game = self.game_of(m, channel_name, ['list players', '!who'])
         return unless game
 
         if game.players.empty?
