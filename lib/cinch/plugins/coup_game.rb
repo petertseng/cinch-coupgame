@@ -535,6 +535,56 @@ module Cinch
                 i = chall_player.characters.index { |c| c.face_down? }
                 self.respond_to_challenge(game, chall_player, i + 1, chall_action, player)
               end
+            elsif chall_action.character_forbidden?
+              Channel(game.channel_name).send "#{m.user.nick} challenges #{chall_player} on #{chall_action.to_s.upcase}!"
+
+              turn = game.current_turn
+
+              if game.current_turn.waiting_for_action_challenge?
+                game.current_turn.wait_for_action_challenge_reply
+                game.current_turn.action_challenger = player
+              else
+                raise "react_challenge on forbidden character in #{game.current_turn.state}"
+              end
+
+              # sleep for suspense
+              sleep(3)
+
+              if !chall_player.has_character?(chall_action.character_forbidden)
+                # Do NOT have a forbidden character, so win the challenge.
+                chars = chall_player.characters.select { |c| c.face_down? }
+                revealed = chars.collect { |c| "[#{c}]" }.join(' and ')
+                if chall_player.influence == 2
+                  pronoun = 'both'
+                  replace = 'new cards'
+                else
+                  pronoun = 'it'
+                  replace = 'a new card'
+                end
+                Channel(game.channel_name).send("#{chall_player} reveals #{revealed} and replaces #{pronoun} with #{replace} from the Court Deck.")
+                chars.each { |c| game.replace_character_with_new(chall_player, c.name) }
+                Channel(game.channel_name).send("#{m.user.nick} loses influence for losing the challenge!")
+                self.tell_characters_to(chall_player, false)
+                turn.wait_for_challenge_loser
+                if player.influence == 2
+                  self.prompt_to_flip(player)
+                else
+                  i = player.characters.index { |c| c.face_down? }
+                  self.lose_challenge(game, player, i + 1)
+                end
+              else
+                # Do have a forbidden character.
+                index = chall_player.character_position(chall_action.character_forbidden)
+                card = "[#{chall_action.character_forbidden.to_s.upcase}]"
+                Channel(game.channel_name).send("#{chall_player} reveals a #{card}. #{chall_player} loses the challenge!")
+                Channel(game.channel_name).send("#{chall_player} loses influence over the #{card} and cannot use the #{chall_action.action.to_s.upcase}.")
+                chall_player.flip_character_card(index + 1)
+                self.check_player_status(game, player)
+                # The action challenge succeeds, interrupting the action.
+                # We don't need to ask for a block. Just finish the turn.
+                turn.action_challenge_successful = true
+                self.process_turn(game)
+              end
 
             else
               User(m.user).send "#{chall_action.action.upcase} cannot be challenged."
