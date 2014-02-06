@@ -513,66 +513,53 @@ module Cinch
 
       def react_challenge(m)
         game = self.game_of(m)
-        return unless game
+        return unless game && game.started? && game.has_player?(m.user)
+        player = game.find_player(m.user)
 
-        if game.started? && game.has_player?(m.user)
-          player = game.find_player(m.user)
-          if game.current_turn.waiting_for_challenges? && game.reacting_players.include?(player)
-            chall_player = game.current_turn.challengee_player
-            chall_action = game.current_turn.challengee_action
+        turn = game.current_turn
 
-            if chall_action.character_required?
-              Channel(game.channel_name).send "#{m.user.nick} challenges #{chall_player} on #{chall_action.to_s.upcase}!"
+        return unless turn.waiting_for_challenges? && game.reacting_players.include?(player)
+        defendant = turn.challengee_player
+        chall_action = turn.challengee_action
 
-              # Prompt player if he has a choice
-              self.prompt_challenge_defendant(chall_player, chall_action) if chall_player.influence == 2
+        Channel(game.channel_name).send "#{m.user.nick} challenges #{defendant} on #{chall_action.to_s.upcase}!"
 
-              if game.current_turn.waiting_for_action_challenge?
-                game.current_turn.wait_for_action_challenge_reply
-                game.current_turn.action_challenger = player
-              elsif game.current_turn.waiting_for_block_challenge?
-                game.current_turn.wait_for_block_challenge_reply
-                game.current_turn.block_challenger = player
-              end
+        # Prompt player if he has a choice
+        self.prompt_challenge_defendant(defendant, chall_action) if defendant.influence == 2 && !chall_action.character_forbidden?
 
-              # If he doesn't have a choice, just sleep 3 seconds and make the choice for him.
-              if chall_player.influence == 1
-                sleep(3)
-                i = chall_player.characters.index { |c| c.face_down? }
-                self.respond_to_challenge(game, chall_player, i + 1, chall_action, player)
-              end
-            elsif chall_action.character_forbidden?
-              Channel(game.channel_name).send "#{m.user.nick} challenges #{chall_player} on #{chall_action.to_s.upcase}!"
+        if turn.waiting_for_action_challenge?
+          turn.wait_for_action_challenge_reply
+          turn.action_challenger = player
+        elsif game.current_turn.waiting_for_block_challenge?
+          turn.wait_for_block_challenge_reply
+          turn.block_challenger = player
+        end
 
-              turn = game.current_turn
-
-              if game.current_turn.waiting_for_action_challenge?
-                game.current_turn.wait_for_action_challenge_reply
-                game.current_turn.action_challenger = player
-              else
-                raise "react_challenge on forbidden character in #{game.current_turn.state}"
-              end
-
-              # sleep for suspense
-              sleep(3)
-
-              if !chall_player.has_character?(chall_action.character_forbidden)
-                # Do NOT have a forbidden character, so win the challenge.
-                chars = chall_player.characters.select { |c| c.face_down? }
-                defendant_reveal_and_win(game, chall_player, chars, player)
-              else
-                # Do have a forbidden character.
-                index = chall_player.character_position(chall_action.character_forbidden)
-                card = "[#{chall_action.character_forbidden.to_s.upcase}]"
-                Channel(game.channel_name).send("#{chall_player} reveals a #{card}. #{chall_player} loses the challenge!")
-
-                defendant_reveal_and_lose(game, chall_player, chall_player.characters[index], chall_action)
-              end
-
-            else
-              User(m.user).send "#{chall_action.action.upcase} cannot be challenged."
-            end
+        if chall_action.character_required?
+          # If he doesn't have a choice, just sleep 3 seconds and make the choice for him.
+          if defendant.influence == 1
+            sleep(3)
+            i = defendant.characters.index { |c| c.face_down? }
+            self.respond_to_challenge(game, defendant, i + 1, chall_action, player)
           end
+        elsif chall_action.character_forbidden?
+          # sleep for suspense
+          sleep(3)
+
+          if !defendant.has_character?(chall_action.character_forbidden)
+            # Do NOT have a forbidden character, so win the challenge.
+            chars = defendant.characters.select { |c| c.face_down? }
+            defendant_reveal_and_win(game, defendant, chars, player)
+          else
+            # Do have a forbidden character.
+            index = defendant.character_position(chall_action.character_forbidden)
+            card = "[#{chall_action.character_forbidden.to_s.upcase}]"
+            Channel(game.channel_name).send("#{defendant} reveals a #{card}. #{defendant} loses the challenge!")
+
+            defendant_reveal_and_lose(game, defendant, defendant.characters[index], chall_action)
+          end
+        else
+          raise "how are we waiting_for_challenges if #{chall_action} not challengeable?"
         end
       end
 
