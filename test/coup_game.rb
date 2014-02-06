@@ -2805,22 +2805,26 @@ describe Cinch::Plugins::CoupGame do
         ]
       end
 
-      it 'does not allow blocking factionmates foreign aid' do
-        @game.do_action(message_from(@order[1]), 'foreign_aid')
-        expect(@chan.messages).to be == [
-          "#{@order[1]} uses FOREIGN_AID",
-          "All #{Game::FACTIONS[1]} players: Would you like to block the FOREIGN_AID (\"!block duke\") or not (\"!pass\")?",
-        ]
-        @chan.messages.clear
+      context 'when factionmate uses foreign aid' do
+        before :each do
+          @game.do_action(message_from(@order[1]), 'foreign_aid')
+          expect(@chan.messages).to be == [
+            "#{@order[1]} uses FOREIGN_AID",
+            "All #{Game::FACTIONS[1]} players: Would you like to block the FOREIGN_AID (\"!block duke\") or not (\"!pass\")?",
+          ]
+          @chan.messages.clear
+        end
 
-        p = @players[@order[3]]
-        p.messages.clear
+        it 'alerts the player if he tries to block his factionmate' do
+          p = @players[@order[3]]
+          p.messages.clear
 
-        @game.do_block(message_from(@order[3]), 'duke')
-        expect(@chan.messages).to be == []
-        expect(p.messages).to be == [
-          "You cannot block a fellow #{Game::FACTIONS[0]}'s FOREIGN_AID while the #{Game::FACTIONS[1]} exist!"
-        ]
+          @game.do_block(message_from(@order[3]), 'duke')
+          expect(@chan.messages).to be == []
+          expect(p.messages).to be == [
+            "You cannot block a fellow #{Game::FACTIONS[0]}'s FOREIGN_AID while the #{Game::FACTIONS[1]} exist!"
+          ]
+        end
       end
 
       it 'allows blocking opponents foreign aid' do
