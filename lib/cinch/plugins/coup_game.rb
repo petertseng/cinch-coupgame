@@ -748,57 +748,51 @@ module Cinch
 
       def switch_cards(m, choice)
         game = self.game_of(m)
-        return unless game
+        return unless game && game.started? && game.has_player?(m.user)
+        player = game.find_player(m.user)
+        turn = game.current_turn
 
-        if game.started? && game.has_player?(m.user)
-          player = game.find_player(m.user)
-          turn = game.current_turn
+        return unless turn.waiting_for_decision? && turn.decider == player && turn.decision_type == :switch_cards
+        facedown_indices = [0, 1].select { |i| player.characters[i].face_down? }
+        facedowns = facedown_indices.collect { |i| player.characters[i] }
+        cards_to_return = facedowns + game.ambassador_cards
 
-          if turn.waiting_for_decision? && turn.decider == player && turn.decision_type == :switch_cards
-            facedown_indices = [0, 1].select { |i|
-              player.characters[i].face_down?
-            }
-            facedowns = facedown_indices.collect { |i| player.characters[i] }
-            cards_to_return = facedowns + game.ambassador_cards
+        choice = choice.to_i
+        if 1 <= choice && choice <= game.ambassador_options.size
+          card_ids = Hash.new(0)
+          new_hand = game.ambassador_options[choice - 1]
+          # Remove the new hand from cards_to_return
+          new_hand.each { |c|
+            card_index = cards_to_return.index(c)
+            cards_to_return.delete_at(card_index)
+            card_ids[c.id] += 1
+          }
 
-            choice = choice.to_i
-            if 1 <= choice && choice <= game.ambassador_options.size
-              card_ids = Hash.new(0)
-              new_hand = game.ambassador_options[choice - 1]
-              # Remove the new hand from cards_to_return
-              new_hand.each { |c|
-                card_index = cards_to_return.index(c)
-                cards_to_return.delete_at(card_index)
-                card_ids[c.id] += 1
-              }
+          # Sanity check to make sure all cards are unique (no shared references)
+          cards_to_return.each { |c| card_ids[c.id] += 1 }
 
-              # Sanity check to make sure all cards are unique (no shared references)
-              cards_to_return.each { |c| card_ids[c.id] += 1 }
-
-              all_unique = card_ids.to_a.all? { |c| c[1] == 1 }
-              unless all_unique
-                Channel(game.channel_name).send("WARNING!!! Card IDs not unique. Game will probably be bugged. See console output.")
-                puts card_ids
-              end
-
-              facedown_indices.each_with_index { |i, j|
-                # If they have two facedowns, this will switch both.
-                # If they have one facedown,
-                # this will switch their one facedown with the card they picked
-                player.switch_character(new_hand[j], i)
-              }
-
-              game.shuffle_into_deck(*cards_to_return)
-              num_cards = cards_to_return.size == 1 ? 'a card' : 'two cards'
-              Channel(game.channel_name).send "#{m.user.nick} shuffles #{num_cards} into the Court Deck."
-              returned_names = cards_to_return.collect { |c| "(#{c})" }.join(' and ')
-              m.user.send("You returned #{returned_names} to the Court Deck.")
-
-              self.start_new_turn(game)
-            else
-              User(player.user).send "#{choice} is not a valid choice"
-            end
+          all_unique = card_ids.to_a.all? { |c| c[1] == 1 }
+          unless all_unique
+            Channel(game.channel_name).send("WARNING!!! Card IDs not unique. Game will probably be bugged. See console output.")
+            puts card_ids
           end
+
+          facedown_indices.each_with_index { |i, j|
+            # If they have two facedowns, this will switch both.
+            # If they have one facedown,
+            # this will switch their one facedown with the card they picked
+            player.switch_character(new_hand[j], i)
+          }
+
+          game.shuffle_into_deck(*cards_to_return)
+          num_cards = cards_to_return.size == 1 ? 'a card' : 'two cards'
+          Channel(game.channel_name).send "#{m.user.nick} shuffles #{num_cards} into the Court Deck."
+          returned_names = cards_to_return.collect { |c| "(#{c})" }.join(' and ')
+          m.user.send("You returned #{returned_names} to the Court Deck.")
+
+          self.start_new_turn(game)
+        else
+          User(player.user).send "#{choice} is not a valid choice"
         end
       end
 
