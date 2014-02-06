@@ -32,8 +32,8 @@ class Action
 
   # State methods
 
-  def needs_reactions?
-    !self.blockable_by.empty? || self.character_required? || self.character_forbidden?
+  def challengeable?
+    self.character_required? || self.character_forbidden?
   end
 
   def needs_decision?
