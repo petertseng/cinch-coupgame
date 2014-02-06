@@ -945,7 +945,11 @@ module Cinch
           Channel(game.channel_name).send "#{player} has no more influence, and is out of the game."
           game.discard_characters_for(player)
           remove_user_from_game(player.user, game, false)
-          self.check_game_state(game)
+
+          if game.is_over?
+            Channel(game.channel_name).send "Game is over! #{game.winner} wins!"
+            self.start_new_game(game)
+          end
         end
       end
 
@@ -1000,18 +1004,6 @@ module Cinch
       def start_new_turn(game)
         game.next_turn
         Channel(game.channel_name).send "#{game.current_player}: It is your turn. Please choose an action."
-      end
-
-
-      def check_game_state(game)
-        if game.is_over?
-          self.do_end_game(game)
-        end
-      end
-
-      def do_end_game(game)
-        Channel(game.channel_name).send "Game is over! #{game.winner} wins!"
-        self.start_new_game(game)
       end
 
       def start_new_game(game)
