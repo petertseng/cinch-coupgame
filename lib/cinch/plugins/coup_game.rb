@@ -311,7 +311,10 @@ module Cinch
         else
           side_str = ''
         end
-        User(player.user).send "#{char1_str}#{char2_str}#{coins_str}#{side_str}"
+
+        faction_str = game.settings.include?(:reformation) ? " - #{Game::FACTIONS[player.faction]}" : ''
+
+        User(player.user).send "#{char1_str}#{char2_str}#{coins_str}#{faction_str}#{side_str}"
       end
 
 
