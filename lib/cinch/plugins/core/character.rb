@@ -14,6 +14,7 @@ class Character
   end 
 
   def flip_up
+    raise "card #{@id} is already face-up" unless self.face_down?
     self.face_down = false
   end
 
