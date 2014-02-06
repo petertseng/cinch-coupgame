@@ -203,7 +203,7 @@ describe Cinch::Plugins::CoupGame do
 
     it 'reports that p1 is in game in status' do
       @game.status(message_from('p1'))
-      expect(@chan.messages).to be == ['Game being started. 1 players have joined: p1']
+      expect(@chan.messages).to be == ['A game is forming. 1 players have joined: p1']
     end
   end
 
