@@ -472,44 +472,43 @@ module Cinch
 
       def react_pass(m)
         game = self.game_of(m)
-        return unless game
+        return unless game && game.started? && game.has_player?(m.user)
 
-        if game.started? && game.has_player?(m.user)
-          player = game.find_player(m.user)
-          turn = game.current_turn
-          if turn.waiting_for_challenges? && game.reacting_players.include?(player)
-            success = game.current_turn.pass(player)
-            Channel(game.channel_name).send "#{m.user.nick} passes." if success
+        player = game.find_player(m.user)
+        turn = game.current_turn
 
-            if game.all_reactions_in?
-              if turn.waiting_for_action_challenge?
-                # Nobody wanted to challenge the actor.
-                if game.current_turn.action.blockable?
-                  # If action is blockable, ask for block now.
-                  game.current_turn.wait_for_block
-                  self.prompt_blocker(game)
-                else
-                  # If action is unblockable, process turn.
-                  self.process_turn(game)
-                end
-              elsif turn.waiting_for_block_challenge?
-                # Nobody challenges blocker. Process turn.
+        if turn.waiting_for_challenges? && game.reacting_players.include?(player)
+          success = turn.pass(player)
+          Channel(game.channel_name).send "#{m.user.nick} passes." if success
+
+          if game.all_reactions_in?
+            if turn.waiting_for_action_challenge?
+              # Nobody wanted to challenge the actor.
+              if turn.action.blockable?
+                # If action is blockable, ask for block now.
+                turn.wait_for_block
+                self.prompt_blocker(game)
+              else
+                # If action is unblockable, process turn.
                 self.process_turn(game)
               end
-            end
-          elsif turn.waiting_for_block?
-            if turn.action.needs_target && turn.target_player == player
-              # Blocker didn't want to block. Process turn.
-              Channel(game.channel_name).send "#{m.user.nick} passes."
+            elsif turn.waiting_for_block_challenge?
+              # Nobody challenges blocker. Process turn.
               self.process_turn(game)
-            elsif !turn.action.needs_target && player != turn.active_player && game.is_enemy?(player, turn.active_player)
-              # This blocker didn't want to block, but maybe someone else will
-              success = game.current_turn.pass(player)
-              Channel(game.channel_name).send "#{m.user.nick} passes." if success
-              # So we wait until all reactions are in.
-              all_in = game.settings.include?(:reformation) ? game.all_enemy_reactions_in? : game.all_reactions_in?
-              self.process_turn(game) if all_in
             end
+          end
+        elsif turn.waiting_for_block?
+          if turn.action.needs_target && turn.target_player == player
+            # Blocker didn't want to block. Process turn.
+            Channel(game.channel_name).send "#{m.user.nick} passes."
+            self.process_turn(game)
+          elsif !turn.action.needs_target && player != turn.active_player && game.is_enemy?(player, turn.active_player)
+            # This blocker didn't want to block, but maybe someone else will
+            success = game.current_turn.pass(player)
+            Channel(game.channel_name).send "#{m.user.nick} passes." if success
+            # So we wait until all reactions are in.
+            all_in = game.settings.include?(:reformation) ? game.all_enemy_reactions_in? : game.all_reactions_in?
+            self.process_turn(game) if all_in
           end
         end
       end
