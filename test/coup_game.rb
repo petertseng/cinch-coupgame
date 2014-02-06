@@ -390,6 +390,91 @@ describe Cinch::Plugins::CoupGame do
     end
   end
 
+  shared_examples 'a role that blocks captain' do
+    it 'does not let unrelated player block' do
+      p = @players[@order[3]]
+      p.messages.clear
+
+      @game.do_block(message_from(@order[3]), rolename)
+      expect(@chan.messages).to be == []
+      expect(p.messages).to be == ["You can only block with #{rolename.upcase} if you are the target."]
+    end
+
+    it 'blocks steal if target blocks unchallenged' do
+      @game.do_block(message_from(@order[2]), rolename)
+      expect(@chan.messages).to be == [
+        "#{@order[2]} uses #{rolename.upcase} to block CAPTAIN",
+        CHALLENGE_PROMPT,
+      ].compact
+      @chan.messages.clear
+
+      (3..NUM_PLAYERS).each { |i|
+        @game.react_pass(message_from(@order[i]))
+        expect(@chan.messages).to be == ["#{@order[i]} passes."]
+        @chan.messages.clear
+      }
+
+      @game.react_pass(message_from(@order[1]))
+      expect(@chan.messages).to be == [
+        "#{@order[1]} passes.",
+        "#{@order[1]}'s CAPTAIN was blocked by #{@order[2]} with #{rolename.upcase}.",
+        "#{@order[2]}: It is your turn. Please choose an action.",
+      ]
+
+      expect(@game.coins(@players[@order[1]])).to be == 2
+      expect(@game.coins(@players[@order[2]])).to be == 2
+    end
+
+    context 'when block is challenged' do
+      before :each do
+        @game.force_characters(@order[2], rolesym, :duke)
+
+        @game.do_block(message_from(@order[2]), rolename)
+        expect(@chan.messages).to be == [
+          "#{@order[2]} uses #{rolename.upcase} to block CAPTAIN",
+          CHALLENGE_PROMPT,
+        ].compact
+        @chan.messages.clear
+
+        @game.react_challenge(message_from(@order[1]))
+        expect(@chan.messages).to be == [
+          "#{@order[1]} challenges #{@order[2]} on #{rolename.upcase}!",
+        ]
+        @chan.messages.clear
+      end
+
+      it 'continues to block if player shows role' do
+        @game.flip_card(message_from(@order[2]), '1')
+
+        expect(@chan.messages).to be == challenged_win(@order[2], rolesym, @order[1])
+        @chan.messages.clear
+
+        @game.flip_card(message_from(@order[1]), '1')
+
+        expect(@chan.messages.shift).to be =~ lose_card(@order[1])
+        expect(@chan.messages).to be == [
+          "#{@order[1]}'s CAPTAIN was blocked by #{@order[2]} with #{rolename.upcase}.",
+          "#{@order[2]}: It is your turn. Please choose an action.",
+        ]
+
+        expect(@game.coins(@order[1])).to be == 2
+        expect(@game.coins(@order[2])).to be == 2
+      end
+
+      it 'no longer blocks if player does not show role' do
+        @game.flip_card(message_from(@order[2]), '2')
+        expect(@chan.messages).to be == [
+          challenged_loss(@order[2], rolesym, :duke),
+          "#{@order[1]} proceeds with CAPTAIN. Take 2 coins from another player: #{@order[2]}.",
+          "#{@order[2]}: It is your turn. Please choose an action.",
+        ].flatten
+
+        expect(@game.coins(@order[1])).to be == 4
+        expect(@game.coins(@order[2])).to be == 0
+      end
+    end
+  end
+
   context 'when p1..3 are playing a game' do
     NUM_PLAYERS = 3
     before :each do
@@ -1434,172 +1519,19 @@ describe Cinch::Plugins::CoupGame do
         expect(@game.coins(@order[2])) == 0
       end
 
-      it 'does not let unrelated player block with ambassador' do
-        p = @players[@order[3]]
-        p.messages.clear
+      context 'when blocking with ambassador' do
+        let(:rolename) do 'ambassador' end
+        let(:rolesym) do :ambassador end
 
-        @game.do_block(message_from(@order[3]), 'ambassador')
-        expect(@chan.messages).to be == []
-        expect(p.messages).to be == ['You can only block with AMBASSADOR if you are the target.']
+        it_behaves_like 'a role that blocks captain'
       end
 
-      it 'does not let unrelated player block with captain' do
-        p = @players[@order[3]]
-        p.messages.clear
+      context 'when blocking with captain' do
+        let(:rolename) do 'captain' end
+        let(:rolesym) do :captain end
 
-        @game.do_block(message_from(@order[3]), 'captain')
-        expect(@chan.messages).to be == []
-        expect(p.messages).to be == ['You can only block with CAPTAIN if you are the target.']
+        it_behaves_like 'a role that blocks captain'
       end
-
-      it 'blocks steal if target blocks with ambassador' do
-        @game.do_block(message_from(@order[2]), 'ambassador')
-        expect(@chan.messages).to be == [
-          "#{@order[2]} uses AMBASSADOR to block CAPTAIN",
-          CHALLENGE_PROMPT,
-        ].compact
-        @chan.messages.clear
-
-        (3..NUM_PLAYERS).each { |i|
-          @game.react_pass(message_from(@order[i]))
-          expect(@chan.messages).to be == ["#{@order[i]} passes."]
-          @chan.messages.clear
-        }
-
-        @game.react_pass(message_from(@order[1]))
-        expect(@chan.messages).to be == [
-          "#{@order[1]} passes.",
-          "#{@order[1]}'s CAPTAIN was blocked by #{@order[2]} with AMBASSADOR.",
-          "#{@order[2]}: It is your turn. Please choose an action.",
-        ]
-
-        expect(@game.coins(@players[@order[1]])).to be == 2
-        expect(@game.coins(@players[@order[2]])).to be == 2
-      end
-
-      context 'when ambassador blocks and is challenged' do
-        before :each do
-          @game.force_characters(@order[2], :ambassador, :duke)
-
-          @game.do_block(message_from(@order[2]), 'ambassador')
-          expect(@chan.messages).to be == [
-            "#{@order[2]} uses AMBASSADOR to block CAPTAIN",
-            CHALLENGE_PROMPT,
-          ].compact
-          @chan.messages.clear
-
-          @game.react_challenge(message_from(@order[1]))
-          expect(@chan.messages).to be == [
-            "#{@order[1]} challenges #{@order[2]} on AMBASSADOR!",
-          ]
-          @chan.messages.clear
-        end
-
-        it 'continues to block if player shows ambassador' do
-          @game.flip_card(message_from(@order[2]), '1')
-
-          expect(@chan.messages).to be == challenged_win(@order[2], :ambassador, @order[1])
-          @chan.messages.clear
-
-          @game.flip_card(message_from(@order[1]), '1')
-
-          expect(@chan.messages.shift).to be =~ lose_card(@order[1])
-          expect(@chan.messages).to be == [
-            "#{@order[1]}'s CAPTAIN was blocked by #{@order[2]} with AMBASSADOR.",
-            "#{@order[2]}: It is your turn. Please choose an action.",
-          ]
-
-          expect(@game.coins(@order[1])).to be == 2
-          expect(@game.coins(@order[2])).to be == 2
-        end
-
-        it 'no longer blocks if player does not show ambassador' do
-          @game.flip_card(message_from(@order[2]), '2')
-          expect(@chan.messages).to be == [
-            challenged_loss(@order[2], :ambassador, :duke),
-            "#{@order[1]} proceeds with CAPTAIN. Take 2 coins from another player: #{@order[2]}.",
-            "#{@order[2]}: It is your turn. Please choose an action.",
-          ].flatten
-
-          expect(@game.coins(@order[1])).to be == 4
-          expect(@game.coins(@order[2])).to be == 0
-        end
-      end
-
-      it 'blocks steal if target blocks with captain unchallenged' do
-        @game.do_block(message_from(@order[2]), 'captain')
-        expect(@chan.messages).to be == [
-          "#{@order[2]} uses CAPTAIN to block CAPTAIN",
-          CHALLENGE_PROMPT,
-        ].compact
-        @chan.messages.clear
-
-        (3..NUM_PLAYERS).each { |i|
-          @game.react_pass(message_from(@order[i]))
-          expect(@chan.messages).to be == ["#{@order[i]} passes."]
-          @chan.messages.clear
-        }
-        @game.react_pass(message_from(@order[1]))
-
-        expect(@chan.messages).to be == [
-          "#{@order[1]} passes.",
-          "#{@order[1]}'s CAPTAIN was blocked by #{@order[2]} with CAPTAIN.",
-          "#{@order[2]}: It is your turn. Please choose an action.",
-        ]
-
-        expect(@game.coins(@players[@order[1]])).to be == 2
-        expect(@game.coins(@players[@order[2]])).to be == 2
-      end
-
-      context 'when captain blocks and is challenged' do
-        before :each do
-          @game.force_characters(@order[2], :captain, :ambassador)
-
-          @game.do_block(message_from(@order[2]), 'captain')
-          expect(@chan.messages).to be == [
-            "#{@order[2]} uses CAPTAIN to block CAPTAIN",
-            CHALLENGE_PROMPT,
-          ].compact
-          @chan.messages.clear
-
-          @game.react_challenge(message_from(@order[1]))
-          expect(@chan.messages).to be == [
-            "#{@order[1]} challenges #{@order[2]} on CAPTAIN!",
-          ]
-          @chan.messages.clear
-        end
-
-        it 'continues to block if player shows captain' do
-          @game.flip_card(message_from(@order[2]), '1')
-
-          expect(@chan.messages).to be == challenged_win(@order[2], :captain, @order[1])
-          @chan.messages.clear
-
-          @game.flip_card(message_from(@order[1]), '1')
-
-          expect(@chan.messages.shift).to be =~ lose_card(@order[1])
-          expect(@chan.messages).to be == [
-            "#{@order[1]}'s CAPTAIN was blocked by #{@order[2]} with CAPTAIN.",
-            "#{@order[2]}: It is your turn. Please choose an action.",
-          ]
-
-          expect(@game.coins(@order[1])).to be == 2
-          expect(@game.coins(@order[2])).to be == 2
-        end
-
-        it 'no longer blocks if player does not show captain' do
-          @game.flip_card(message_from(@order[2]), '2')
-          expect(@chan.messages).to be == [
-            challenged_loss(@order[2], :captain, :ambassador),
-            "#{@order[1]} proceeds with CAPTAIN. Take 2 coins from another player: #{@order[2]}.",
-            "#{@order[2]}: It is your turn. Please choose an action.",
-          ].flatten
-
-          expect(@game.coins(@order[1])).to be == 4
-          expect(@game.coins(@order[2])).to be == 0
-        end
-      end
-
     end
 
     context 'when captain steals and is challenged' do
@@ -2581,38 +2513,11 @@ describe Cinch::Plugins::CoupGame do
         @chan.messages.clear
       end
 
-      it 'does not let unrelated player block with inquisitor' do
-        p = @players[@order[3]]
-        p.messages.clear
+      context 'when blocking with inquisitor' do
+        let(:rolename) do 'inquisitor' end
+        let(:rolesym) do :inquisitor end
 
-        @game.do_block(message_from(@order[3]), 'inquisitor')
-        expect(@chan.messages).to be == []
-        expect(p.messages).to be == ['You can only block with INQUISITOR if you are the target.']
-      end
-
-      it 'blocks steal if target blocks with inquisitor' do
-        @game.do_block(message_from(@order[2]), 'inquisitor')
-        expect(@chan.messages).to be == [
-          "#{@order[2]} uses INQUISITOR to block CAPTAIN",
-          CHALLENGE_PROMPT,
-        ].compact
-        @chan.messages.clear
-
-        (3..NUM_PLAYERS).each { |i|
-          @game.react_pass(message_from(@order[i]))
-          expect(@chan.messages).to be == ["#{@order[i]} passes."]
-          @chan.messages.clear
-        }
-
-        @game.react_pass(message_from(@order[1]))
-        expect(@chan.messages).to be == [
-          "#{@order[1]} passes.",
-          "#{@order[1]}'s CAPTAIN was blocked by #{@order[2]} with INQUISITOR.",
-          "#{@order[2]}: It is your turn. Please choose an action.",
-        ]
-
-        expect(@game.coins(@players[@order[1]])).to be == 2
-        expect(@game.coins(@players[@order[2]])).to be == 2
+        it_behaves_like 'a role that blocks captain'
       end
     end
 
