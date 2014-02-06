@@ -323,6 +323,18 @@ module Cinch
         player.user.send(player_info(game, player, opts))
       end
 
+      def check_action(m, game, action)
+        if (mf = Game::ACTIONS[action.to_sym].mode_forbidden) && game.settings.include?(mf)
+          m.user.send("#{action.upcase} may not be used if the game type is #{mf.to_s.capitalize}.")
+          return false
+        end
+        if (mr = Game::ACTIONS[action.to_sym].mode_required) && !game.settings.include?(mr)
+          m.user.send("#{action.upcase} may only be used if the game type is #{mr.to_s.capitalize}.")
+          return false
+        end
+        true
+      end
+
       def do_action(m, action, target = "")
         game = self.game_of(m)
         return unless game
@@ -337,14 +349,7 @@ module Cinch
               return
             end
 
-            if (mf = Game::ACTIONS[action.to_sym].mode_forbidden) && game.settings.include?(mf)
-              m.user.send("#{action.upcase} may not be used if the game type is #{mf.to_s.capitalize}.")
-              return
-            end
-            if (mr = Game::ACTIONS[action.to_sym].mode_required) && !game.settings.include?(mr)
-              m.user.send("#{action.upcase} may only be used if the game type is #{mr.to_s.capitalize}.")
-              return
-            end
+            return unless check_action(m, game, action)
 
             if target.nil? || target.empty?
               target_msg = ""
@@ -437,14 +442,7 @@ module Cinch
           player = game.find_player(m.user)
           if game.current_turn.waiting_for_block? && game.reacting_players.include?(player)
             if game.current_turn.action.blockable?
-              if (mf = Game::ACTIONS[action.to_sym].mode_forbidden) && game.settings.include?(mf)
-                m.user.send("#{action.upcase} may not be used if the game type is #{mf.to_s.capitalize}.")
-                return
-              end
-              if (mr = Game::ACTIONS[action.to_sym].mode_required) && !game.settings.include?(mr)
-                m.user.send("#{action.upcase} may only be used if the game type is #{mr.to_s.capitalize}.")
-                return
-              end
+              return unless check_action(m, game, action)
 
               unless game.is_enemy?(player, game.current_turn.active_player)
                 us = Game::FACTIONS[game.current_player.faction]
