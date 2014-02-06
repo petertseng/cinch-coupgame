@@ -900,19 +900,7 @@ module Cinch
       end
 
       def show_table(m, channel_name = nil)
-        if m.channel
-          # If in a channel, must be for that channel.
-          game = @games[m.channel.name]
-        elsif channel_name
-          # If in private and channel specified, show that channel.
-          game = @games[channel_name]
-        else
-          # If in private and channel not specified, show the game the player is in.
-          game = @user_games[m.user]
-          # and advise them if they aren't in any
-          m.reply('To see a game via PM you must specify the channel: ' +
-                  '!table #channel') unless game
-        end
+        game = self.game_of(m, channel_name, ['see a game', '!table'])
 
         return unless game
         m.reply(table_info(game).join("\n"))
@@ -1175,38 +1163,14 @@ module Cinch
       #--------------------------------------------------------------------------------
 
       def get_game_settings(m, channel_name = nil)
-        if m.channel
-          # If in a channel, must be for that channel.
-          game = @games[m.channel.name]
-        elsif channel_name
-          # If in private and channel specified, show that channel.
-          game = @games[channel_name]
-        else
-          # If in private and channel not specified, show the game the player is in.
-          game = @user_games[m.user]
-          # and advise them if they aren't in any
-          m.reply('To see settings via PM you must specify the channel: ' +
-                  '!settings #channel') unless game
-        end
+        game = self.game_of(m, channel_name, ['see settings', '!settings'])
 
         return unless game
         m.reply("Game settings: #{game_settings(game)}.")
       end
 
       def set_game_settings(m, channel_name = nil, options = "")
-        if m.channel
-          # If in a channel, must be for that channel.
-          game = @games[m.channel.name]
-        elsif channel_name
-          # If in private and channel specified, show that channel.
-          game = @games[channel_name]
-        else
-          # If in private and channel not specified, show the game the player is in.
-          game = @user_games[m.user]
-          # and advise them if they aren't in any
-          m.reply('To change settings via PM you must specify the channel: ' +
-                  '!settings #channel') unless game
-        end
+        game = self.game_of(m, channel_name, ['change settings', '!settings'])
 
         return unless game && !game.started?
 
@@ -1238,8 +1202,20 @@ module Cinch
       # Helpers
       #--------------------------------------------------------------------------------
 
-      def game_of(m)
-        m.channel ? @games[m.channel.name] : @user_games[m.user]
+      def game_of(m, channel_name = nil, warn_user = nil)
+        # If in a channel, must be for that channel.
+        return @games[m.channel.name] if m.channel
+
+        # If in private and channel specified, show that channel.
+        return game = @games[channel_name] if channel_name
+
+        # If in private and channel not specified, show the game the player is in.
+        game = @user_games[m.user]
+
+        # and advise them if they aren't in any
+        m.reply("To #{warn_user[0]} via PM you must specify the channel: #{warn_user[1]} #channel") if game.nil? && !warn_user.nil?
+
+        game
       end
 
       def help(m, page)
