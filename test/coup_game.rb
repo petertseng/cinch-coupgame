@@ -2050,6 +2050,20 @@ describe Cinch::Plugins::CoupGame do
       end
     end
 
+    describe 'list_players' do
+      let(:expected_table) do
+        ["#{dehighlight(@order[1])} #{dehighlight(@order[2])} #{dehighlight(@order[3])}"]
+      end
+
+      let(:expected_error) do
+        'To list players via PM you must specify the channel: !who #channel'
+      end
+
+      let(:method) do :list_players end
+
+      it_behaves_like 'information source'
+    end
+
     describe 'show_table' do
       let(:expected_table) do
         [
