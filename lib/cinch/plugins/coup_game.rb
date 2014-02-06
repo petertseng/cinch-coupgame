@@ -979,7 +979,7 @@ module Cinch
 
 
 
-      def list_players(m)
+      def list_players(m, channel_name = nil)
         game = self.game_of(m, channel_name, ['list players', '!who'])
         return unless game
 
