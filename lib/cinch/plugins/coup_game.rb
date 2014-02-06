@@ -1142,8 +1142,7 @@ module Cinch
 
       def who_chars(m, channel_name)
         return unless self.is_mod? m.user.nick
-        channel = channel_name ? Channel(channel_name) : m.channel
-        game = @games[channel.name]
+        game = self.game_of(m, channel_name, ['see a game', '!chars'])
 
         return unless game
 
