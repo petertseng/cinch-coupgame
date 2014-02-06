@@ -212,6 +212,15 @@ class Game
     $player_count = self.player_count
 
     self.next_turn
+
+    # Do this after #next_turn since next_turn rotates the players!
+    if @settings.include?(:reformation)
+      faction = 0
+      self.players.each { |p|
+        p.faction = faction
+        faction = 1 - faction
+      }
+    end
   end
 
   # Build starting deck
