@@ -1067,35 +1067,35 @@ module Cinch
       end
 
       def reset_game(m, channel_name)
-        if self.is_mod? m.user.nick
-          channel = channel_name ? Channel(channel_name) : m.channel
-          game = @games[channel.name]
+        return unless self.is_mod? m.user.nick
+        game = self.game_of(m, channel_name, ['reset a game', '!reset'])
 
-          # Show everyone's cards.
-          channel.send(table_info(game, true).join("\n"))
+        return unless game
 
-          game.players.each do |p|
-            @user_games.delete(p.user)
-          end
+        # Show everyone's cards.
+        channel.send(table_info(game, true).join("\n"))
 
-          @games[channel.name] = Game.new(channel.name)
-          self.devoice_channel(channel)
-          channel.send "The game has been reset."
-          @idle_timers[channel.name].start
+        game.players.each do |p|
+          @user_games.delete(p.user)
         end
+
+        @games[channel.name] = Game.new(channel.name)
+        self.devoice_channel(channel)
+        channel.send("The game has been reset.")
+        @idle_timers[channel.name].start
       end
 
       def kick_user(m, channel_name, nick)
-        if self.is_mod? m.user.nick
-          channel = channel_name ? Channel(channel_name) : m.channel
-          game = @games[channel.name]
+        return unless self.is_mod? m.user.nick
+        game = self.game_of(m, channel_name, ['kick a user', '!kick'])
 
-          if game.not_started?
-            user = User(nick)
-            self.remove_user_from_game(user, game)
-          else
-            User(m.user).send "You can't kick someone while a game is in progress."
-          end
+        return unless game
+
+        if game.not_started?
+          user = User(nick)
+          self.remove_user_from_game(user, game)
+        else
+          m.user.send "You can't kick someone while a game is in progress."
         end
       end
 
