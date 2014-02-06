@@ -559,25 +559,7 @@ module Cinch
               if !chall_player.has_character?(chall_action.character_forbidden)
                 # Do NOT have a forbidden character, so win the challenge.
                 chars = chall_player.characters.select { |c| c.face_down? }
-                revealed = chars.collect { |c| "[#{c}]" }.join(' and ')
-                if chall_player.influence == 2
-                  pronoun = 'both'
-                  replace = 'new cards'
-                else
-                  pronoun = 'it'
-                  replace = 'a new card'
-                end
-                Channel(game.channel_name).send("#{chall_player} reveals #{revealed} and replaces #{pronoun} with #{replace} from the Court Deck.")
-                chars.each { |c| game.replace_character_with_new(chall_player, c.name) }
-                Channel(game.channel_name).send("#{m.user.nick} loses influence for losing the challenge!")
-                self.tell_characters_to(game, chall_player, false)
-                turn.wait_for_challenge_loser
-                if player.influence == 2
-                  self.prompt_to_flip(player)
-                else
-                  i = player.characters.index { |c| c.face_down? }
-                  self.lose_challenge(game, player, i + 1)
-                end
+                defendant_reveal_and_win(game, chall_player, chars, player)
               else
                 # Do have a forbidden character.
                 index = chall_player.character_position(chall_action.character_forbidden)
@@ -596,6 +578,32 @@ module Cinch
               User(m.user).send "#{chall_action.action.upcase} cannot be challenged."
             end
           end
+        end
+      end
+
+      def defendant_reveal_and_win(game, defendant, chars, challenger)
+        revealed = chars.collect { |c| "[#{c}]" }.join(' and ')
+        raise "defendant reveals #{chars.size} cards?!" unless chars.size == 2 || chars.size == 1
+        pronoun = chars.size == 2 ? 'both' : 'it'
+        replacement = chars.size == 2 ? 'new cards' : 'a new card'
+        revealed = 'a ' + revealed if chars.size == 1
+
+        Channel(game.channel_name).send(
+          "#{defendant} reveals #{revealed} and replaces #{pronoun} with #{replacement} from the Court Deck."
+        )
+
+        # Give defendant his new characters and tell him about them.
+        chars.each { |c| game.replace_character_with_new(defendant, c.name) }
+        self.tell_characters_to(game, defendant, false)
+
+        Channel(game.channel_name).send("#{challenger} loses influence for losing the challenge!")
+        game.current_turn.wait_for_challenge_loser
+
+        if challenger.influence == 2
+          self.prompt_to_flip(challenger)
+        else
+          i = challenger.characters.index { |c| c.face_down? }
+          self.lose_challenge(game, challenger, i + 1)
         end
       end
 
@@ -719,17 +727,7 @@ module Cinch
         turn = game.current_turn
 
         if revealed.name == action.character_required
-          Channel(game.channel_name).send "#{player} reveals a [#{action.character_required.to_s.upcase}] and replaces it with a new card from the Court Deck."
-          game.replace_character_with_new(player, action.character_required)
-          Channel(game.channel_name).send "#{challenger} loses influence for losing the challenge!"
-          self.tell_characters_to(game, player, false)
-          turn.wait_for_challenge_loser
-          if challenger.influence == 2
-            self.prompt_to_flip(challenger)
-          else
-            i = challenger.characters.index { |c| c.face_down? }
-            self.lose_challenge(game, challenger, i + 1)
-          end
+          defendant_reveal_and_win(game, player, [revealed], challenger)
         else
           Channel(game.channel_name).send "#{player} reveals a [#{revealed}]. That's not a #{action.character_required.to_s.upcase}! #{player} loses the challenge!"
           Channel(game.channel_name).send "#{player} loses influence over the [#{revealed}] and cannot use the #{action.character_required.to_s.upcase}."

@@ -2711,7 +2711,7 @@ describe Cinch::Plugins::CoupGame do
       @game.react_challenge(message_from(@order[1]))
       expect(@chan.messages).to be == [
         "#{@order[1]} challenges #{@order[3]} on EMBEZZLE!",
-        "#{@order[3]} reveals [ASSASSIN] and replaces it with a new card from the Court Deck.",
+        "#{@order[3]} reveals a [ASSASSIN] and replaces it with a new card from the Court Deck.",
         "#{@order[1]} loses influence for losing the challenge!",
       ]
       @chan.messages.clear
