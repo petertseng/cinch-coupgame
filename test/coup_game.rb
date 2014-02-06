@@ -1973,6 +1973,25 @@ describe Cinch::Plugins::CoupGame do
       end
     end
 
+    describe 'whoami' do
+      it 'shows a player' do
+        p = @players['p1']
+        p.messages.clear
+        @game.whoami(message_from('p1'))
+        expect(@chan.messages).to be == []
+        expect(p.messages.shift).to be =~ /^\(\w+\) \(\w+\) - Coins: 2$/
+        expect(p.messages).to be == []
+      end
+
+      it 'does nothing to a non-player' do
+        p = @players['npc']
+        p.messages.clear
+        @game.whoami(message_from('npc'))
+        expect(@chan.messages).to be == []
+        expect(p.messages).to be == []
+      end
+    end
+
     describe 'show_table' do
       let(:expected_table) do
         [
