@@ -375,7 +375,7 @@ module Cinch
 
               Channel(game.channel_name).send "#{m.user.nick} uses #{action.upcase}#{target_msg}"
               game.current_turn.add_action(action, target_player)
-              if game.current_turn.action.character_required?
+              if game.current_turn.action.character_required? || game.current_turn.action.character_forbidden?
                 game.current_turn.wait_for_action_challenge
                 self.prompt_challengers(game)
               elsif game.current_turn.action.blockable?
