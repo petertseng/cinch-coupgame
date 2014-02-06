@@ -498,7 +498,8 @@ module Cinch
               success = game.current_turn.pass(player)
               Channel(game.channel_name).send "#{m.user.nick} passes." if success
               # So we wait until all reactions are in.
-              self.process_turn(game) if game.all_reactions_in?
+              all_in = game.settings.include?(:reformation) ? game.all_enemy_reactions_in? : game.all_reactions_in?
+              self.process_turn(game) if all_in
             end
           end
         end

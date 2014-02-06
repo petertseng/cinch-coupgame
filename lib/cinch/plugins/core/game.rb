@@ -354,6 +354,18 @@ class Game
     self.not_reacted.size == 0
   end
 
+  def all_enemy_reactions_in?
+    # If there are no enemies, just return all_reactions_in?
+    return self.all_reactions_in? if self.players.all? { |p| p.faction == self.current_player.faction }
+
+    reacted_players = self.current_turn.reactions.keys
+    pending = self.reacting_players.reject { |player|
+      # Reject if they have react, or if their faction is the same (they can't react)
+      reacted_players.include?(player) || player.faction == self.current_player.faction
+    }
+    pending.size == 0
+  end
+
   def not_selected_initial_character
     self.players.select { |p| p.characters.size < 2 }
   end
