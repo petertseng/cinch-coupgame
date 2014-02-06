@@ -369,6 +369,18 @@ class Game
     action.mode_required.nil? || self.settings.include?(action.mode_required)
   end
 
+  def is_enemy?(player, target)
+    return true unless @settings.include?(:reformation)
+    # self-targetting is OK (Inquisitor)
+    # It's not this code's responsibility to check whether action can self-target
+    return true if player == target
+
+    enemies = self.players.select { |p| p.faction != player.faction }
+
+    # I can target them if the enemy faction is vanquished, or they are an ENEMY
+    return enemies.empty? || target.faction != player.faction
+  end
+
   # turns
 
   def next_turn

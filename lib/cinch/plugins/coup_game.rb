@@ -356,6 +356,13 @@ module Cinch
               else
                 target_msg = " on #{target}"
               end
+
+              unless game.is_enemy?(game.current_player, target_player)
+                us = Game::FACTIONS[game.current_player.faction]
+                them = Game::FACTIONS[1 - game.current_player.faction]
+                m.user.send("You cannot target a fellow #{us} with #{action.upcase} while the #{them} exist!")
+                return
+              end
             end
 
             unless target_msg.nil?
@@ -418,6 +425,13 @@ module Cinch
               end
               if (mr = Game::ACTIONS[action.to_sym].mode_required) && !game.settings.include?(mr)
                 m.user.send("#{action.upcase} may only be used if the game type is #{mr.to_s.capitalize}.")
+                return
+              end
+
+              unless game.is_enemy?(player, game.current_turn.active_player)
+                us = Game::FACTIONS[game.current_player.faction]
+                them = Game::FACTIONS[1 - game.current_player.faction]
+                m.user.send("You cannot block a fellow #{us}'s #{game.current_turn.action.action.upcase} while the #{them} exist!")
                 return
               end
 
