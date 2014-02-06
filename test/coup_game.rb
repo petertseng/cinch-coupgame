@@ -2537,7 +2537,8 @@ describe Cinch::Plugins::CoupGame do
         before :each do
           @game.show_to_inquisitor(message_from(@order[2]), '1')
           expect(@chan.messages).to be == [
-            "#{@order[2]} passes a card to #{@order[1]}. Should #{@order[2]} be allowed to keep this card (\"!keep\") or not (\"!discard\")?",
+            "#{@order[2]} passes a card to #{@order[1]}.",
+            "#{@order[1]}: Should #{@order[2]} be allowed to keep this card (\"!keep\") or not (\"!discard\")?",
           ]
           @chan.messages.clear
         end

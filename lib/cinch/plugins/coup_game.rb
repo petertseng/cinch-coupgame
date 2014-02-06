@@ -844,7 +844,8 @@ module Cinch
       end
 
       def _show_to_inquisitor(game, target, position, inquisitor)
-        Channel(game.channel_name).send("#{target} passes a card to #{inquisitor}. Should #{target} be allowed to keep this card (\"!keep\") or not (\"!discard\")?")
+        Channel(game.channel_name).send("#{target} passes a card to #{inquisitor}.")
+        Channel(game.channel_name).send("#{inquisitor}: Should #{target} be allowed to keep this card (\"!keep\") or not (\"!discard\")?")
         revealed = target.characters[position - 1]
         inquisitor.user.send("#{target} shows you a #{revealed}.")
 
