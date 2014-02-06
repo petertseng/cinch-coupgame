@@ -2825,6 +2825,11 @@ describe Cinch::Plugins::CoupGame do
             "You cannot block a fellow #{Game::FACTIONS[0]}'s FOREIGN_AID while the #{Game::FACTIONS[1]} exist!"
           ]
         end
+
+        it 'does nothing if player passes on block' do
+          @game.react_pass(message_from(@order[3]))
+          expect(@chan.messages).to be == []
+        end
       end
 
       it 'allows blocking opponents foreign aid' do
