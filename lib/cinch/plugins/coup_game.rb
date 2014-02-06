@@ -964,11 +964,16 @@ module Cinch
             side_str = ''
           end
 
-          "#{dehighlight_nick(p.to_s)}: #{char1_str}#{char2_str} - Coins: #{p.coins}#{side_str}"
+          faction_str = game.settings.include?(:reformation) ? " - #{Game::FACTIONS[p.faction]}" : ''
+
+          "#{dehighlight_nick(p.to_s)}: #{char1_str}#{char2_str} - Coins: #{p.coins}#{faction_str}#{side_str}"
         }
         unless game.discard_pile.empty?
           discards = game.discard_pile.map{ |c| "[#{c}]" }.join(" ")
           info << "Discard Pile: #{discards}"
+        end
+        if game.settings.include?(:reformation)
+          info << "#{Game::BANK_NAME}: #{game.bank} coin#{game.bank == 1 ? '' : 's'}"
         end
         info
       end
