@@ -718,7 +718,7 @@ module Cinch
 
         turn = game.current_turn
 
-        if revealed.to_s == action.character_required.to_s.upcase
+        if revealed.name == action.character_required
           Channel(game.channel_name).send "#{player} reveals a [#{action.character_required.to_s.upcase}] and replaces it with a new card from the Court Deck."
           game.replace_character_with_new(player, action.character_required)
           Channel(game.channel_name).send "#{challenger} loses influence for losing the challenge!"
