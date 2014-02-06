@@ -472,23 +472,20 @@ module Cinch
         player = game.find_player(m.user)
         turn = game.current_turn
 
-        if turn.waiting_for_challenges? && game.reacting_players.include?(player)
+        return unless game.reacting_players.include?(player)
+
+        if turn.waiting_for_challenges?
           success = turn.pass(player)
           Channel(game.channel_name).send "#{m.user.nick} passes." if success
 
           if game.all_reactions_in?
-            if turn.waiting_for_action_challenge?
+            if turn.waiting_for_action_challenge? && turn.action.blockable?
               # Nobody wanted to challenge the actor.
-              if turn.action.blockable?
-                # If action is blockable, ask for block now.
-                turn.wait_for_block
-                self.prompt_blocker(game)
-              else
-                # If action is unblockable, process turn.
-                self.process_turn(game)
-              end
-            elsif turn.waiting_for_block_challenge?
-              # Nobody challenges blocker. Process turn.
+              # If action is blockable, ask for block now.
+              turn.wait_for_block
+              self.prompt_blocker(game)
+            else
+              # If action is unblockable or if nobody is challenging the blocker, proceed.
               self.process_turn(game)
             end
           end
@@ -497,7 +494,7 @@ module Cinch
             # Blocker didn't want to block. Process turn.
             Channel(game.channel_name).send "#{m.user.nick} passes."
             self.process_turn(game)
-          elsif !turn.action.needs_target && player != turn.active_player && game.is_enemy?(player, turn.active_player)
+          elsif !turn.action.needs_target && game.is_enemy?(player, turn.active_player)
             # This blocker didn't want to block, but maybe someone else will
             success = game.current_turn.pass(player)
             Channel(game.channel_name).send "#{m.user.nick} passes." if success
