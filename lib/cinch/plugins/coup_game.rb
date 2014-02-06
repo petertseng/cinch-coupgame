@@ -1073,7 +1073,7 @@ module Cinch
         return unless game
 
         # Show everyone's cards.
-        channel.send(table_info(game, true).join("\n"))
+        channel.send(table_info(game, true).join("\n")) if game.started?
 
         game.players.each do |p|
           @user_games.delete(p.user)
