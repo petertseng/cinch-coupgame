@@ -906,20 +906,20 @@ module Cinch
         m.reply(table_info(game).join("\n"))
       end
 
-      def table_info(game, cheating = false)
+      def table_info(game, opts = {})
         info = game.players.collect { |p|
           character_1, character_2 = p.characters
 
-          char1_str = character_1.face_down? && !cheating ? '########' : character_1.to_s
+          char1_str = character_1.face_down? && !opts[:cheating] ? '########' : character_1.to_s
           char1_str = character_1.face_down? ? "(#{char1_str})" : "[#{char1_str}]"
           if character_2
-            char2_str = character_2.face_down? && !cheating ? '########' : character_2.to_s
+            char2_str = character_2.face_down? && !opts[:cheating] ? '########' : character_2.to_s
             char2_str = character_2.face_down? ? " (#{char2_str})" : " [#{char2_str}]"
           else
             char2_str = ''
           end
 
-          if cheating && !p.side_cards.empty?
+          if opts[:cheating] && !p.side_cards.empty?
             chars = p.side_cards.collect { |c| "(#{c.to_s})" }.join(' ')
             side_str = ' - Set aside: ' + chars
           else
@@ -1065,7 +1065,7 @@ module Cinch
         return unless game
 
         # Show everyone's cards.
-        channel.send(table_info(game, true).join("\n")) if game.started?
+        channel.send(table_info(game, cheating: true).join("\n")) if game.started?
 
         game.players.each do |p|
           @user_games.delete(p.user)
@@ -1142,7 +1142,7 @@ module Cinch
           if game.has_player?(m.user)
             m.user.send('Cheater!!!')
           else
-            m.user.send(table_info(game, true).join("\n"))
+            m.user.send(table_info(game, cheating: true).join("\n"))
           end
         else
           m.user.send('There is no game going on.')
