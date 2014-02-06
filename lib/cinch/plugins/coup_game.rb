@@ -406,7 +406,14 @@ module Cinch
         if action.needs_target
           prefix = game.current_turn.target_player.to_s
         else
-          prefix = 'All other players'
+          if game.settings.include?(:reformation)
+            active_faction = game.current_turn.active_player.faction
+            enemies_exist = game.players.count { |p| p.faction != active_faction } > 0
+            enemies = enemies_exist ? Game::FACTIONS[1 - active_faction] : 'other'
+            prefix = "All #{enemies} players"
+          else
+            prefix = 'All other players'
+          end
         end
         Channel(game.channel_name).send("#{prefix}: Would you like to block the #{action.action.to_s.upcase} (#{blockers}) or not (\"!pass\")?")
       end
