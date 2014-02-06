@@ -270,7 +270,7 @@ module Cinch
       def pass_out_characters(game)
         game.players.each do |p|
           User(p.user).send "="*40
-          self.tell_characters_to(p, true, false)
+          self.tell_characters_to(game, p, true, false)
         end
 
         if game.players.size == 2
@@ -290,11 +290,11 @@ module Cinch
 
         if game.started? && game.has_player?(m.user)
           player = game.find_player(m.user)
-          self.tell_characters_to(player)
+          self.tell_characters_to(game, player)
         end
       end
       
-      def tell_characters_to(player, tell_coins = true, tell_side = true)
+      def tell_characters_to(game, player, tell_coins = true, tell_side = true)
         character_1, character_2 = player.characters
 
         char1_str = character_1.face_down? ? "(#{character_1})" : "[#{character_1}]"
@@ -567,7 +567,7 @@ module Cinch
                 Channel(game.channel_name).send("#{chall_player} reveals #{revealed} and replaces #{pronoun} with #{replace} from the Court Deck.")
                 chars.each { |c| game.replace_character_with_new(chall_player, c.name) }
                 Channel(game.channel_name).send("#{m.user.nick} loses influence for losing the challenge!")
-                self.tell_characters_to(chall_player, false)
+                self.tell_characters_to(game, chall_player, false)
                 turn.wait_for_challenge_loser
                 if player.influence == 2
                   self.prompt_to_flip(player)
@@ -719,7 +719,7 @@ module Cinch
           Channel(game.channel_name).send "#{player} reveals a [#{action.character_required.to_s.upcase}] and replaces it with a new card from the Court Deck."
           game.replace_character_with_new(player, action.character_required)
           Channel(game.channel_name).send "#{challenger} loses influence for losing the challenge!"
-          self.tell_characters_to(player, false)
+          self.tell_characters_to(game, player, false)
           turn.wait_for_challenge_loser
           if challenger.influence == 2
             self.prompt_to_flip(challenger)
@@ -901,7 +901,7 @@ module Cinch
 
         Channel(game.channel_name).send("#{turn.target_player} is forced to discard that card and replace it with another from the Court Deck.")
         game.replace_character_with_new(turn.target_player, game.inquisitor_shown_card.name)
-        self.tell_characters_to(turn.target_player, false)
+        self.tell_characters_to(game, turn.target_player, false)
         self.start_new_turn(game)
       end
 
@@ -1162,7 +1162,7 @@ module Cinch
 
           # tell characters to new player
           User(player.user).send "="*40
-          self.tell_characters_to(player)
+          self.tell_characters_to(game, player)
         end
       end
 
