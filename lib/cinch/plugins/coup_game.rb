@@ -612,28 +612,21 @@ module Cinch
         end
       end
 
+      def prompt_to_pick_card(target, what, cmd)
+        user = User(target.user)
+        raise "#{target} has no choice to #{what}" unless target.influence == 2
+        character_1, character_2 = target.characters
+        user.send("Choose a character to #{what}: 1 - (#{character_1}) or 2 - (#{character_2}); \"!#{cmd} 1\" or \"!#{cmd} 2\"")
+      end
+
       def prompt_challenge_defendant(target, action)
         user = User(target.user)
         user.send("You are being challenged to show a #{action}!")
-        if target.influence == 2
-          character_1, character_2 = target.characters
-          user.send("Choose a character to reveal: 1 - (#{character_1}) or 2 - (#{character_2}); \"!flip 1\" or \"!flip 2\"")
-        else
-          character = target.characters.find{ |c| c.face_down? }
-          i = target.characters.index(character)
-          user.send("You only have one character left. #{i+1} - (#{character}); \"!flip #{i+1}\"")
-        end
+        prompt_to_pick_card(target, 'reveal', 'flip')
       end
 
       def prompt_to_flip(target)
-        if target.influence == 2
-          character_1, character_2 = target.characters
-          User(target.user).send "Choose a character to turn face up: 1 - (#{character_1}) or 2 - (#{character_2}); \"!lose 1\" or \"!lose 2\""
-        else 
-          character = target.characters.find{ |c| c.face_down? }
-          i = target.characters.index(character)
-          User(target.user).send "You only have one character left. #{i+1} - (#{character}); \"!lose #{i+1}\""
-        end
+        prompt_to_pick_card(target, 'turn face up', 'lose')
       end
 
       def flip_card(m, position)
@@ -825,17 +818,6 @@ module Cinch
         end
       end
 
-      def prompt_to_show_inquisitor(target, inquisitor)
-        if target.influence == 2
-          character_1, character_2 = target.characters
-          User(target.user).send "Choose a character to show to #{inquisitor}: 1 - (#{character_1}) or 2 - (#{character_2}); \"!show 1\" or \"!show 2\""
-        else
-          character = target.characters.find { |c| c.face_down? }
-          i = target.characters.index(character)
-          User(target.user).send "You only have one character left. #{i+1} - (#{character}); \"!show #{i+1}\""
-        end
-      end
-
       def show_to_inquisitor(m, position)
         game = self.game_of(m)
         return unless game && game.started? && game.has_player?(m.user)
@@ -1012,7 +994,7 @@ module Cinch
               if turn.target_player == turn.active_player
                 self.prompt_to_switch(game, turn.active_player, 1)
               elsif turn.target_player.influence == 2
-                self.prompt_to_show_inquisitor(turn.target_player, turn.active_player)
+                self.prompt_to_pick_card(turn.target_player, "show to #{turn.active_player}", 'show')
               else
                 i = turn.target_player.characters.index { |c| c.face_down? }
                 self._show_to_inquisitor(game, turn.target_player, i + 1, turn.active_player)
