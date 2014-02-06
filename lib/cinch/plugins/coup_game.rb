@@ -270,7 +270,7 @@ module Cinch
       def pass_out_characters(game)
         game.players.each do |p|
           User(p.user).send "="*40
-          self.tell_characters_to(game, p, true, false)
+          self.tell_characters_to(game, p, show_side: false)
         end
 
         if game.players.size == 2
@@ -294,7 +294,8 @@ module Cinch
         end
       end
       
-      def tell_characters_to(game, player, tell_coins = true, tell_side = true)
+      def tell_characters_to(game, player, opts = {})
+        opts = { :show_coins => true, :show_side => true }.merge(opts)
         character_1, character_2 = player.characters
 
         char1_str = character_1.face_down? ? "(#{character_1})" : "[#{character_1}]"
@@ -304,8 +305,8 @@ module Cinch
           char2_str = ''
         end
 
-        coins_str = tell_coins ? " - Coins: #{player.coins}" : ""
-        if tell_side && !player.side_cards.empty?
+        coins_str = opts[:show_coins] ? " - Coins: #{player.coins}" : ""
+        if opts[:show_side] && !player.side_cards.empty?
           chars = player.side_cards.collect { |c| "(#{c.to_s})" }.join(' ')
           side_str = ' - Set aside: ' + chars
         else
@@ -576,7 +577,7 @@ module Cinch
 
         # Give defendant his new characters and tell him about them.
         chars.each { |c| game.replace_character_with_new(defendant, c.name) }
-        self.tell_characters_to(game, defendant, false)
+        self.tell_characters_to(game, defendant, show_coins: false)
 
         Channel(game.channel_name).send("#{challenger} loses influence for losing the challenge!")
         game.current_turn.wait_for_challenge_loser
@@ -875,7 +876,7 @@ module Cinch
 
         Channel(game.channel_name).send("#{turn.target_player} is forced to discard that card and replace it with another from the Court Deck.")
         game.replace_character_with_new(turn.target_player, game.inquisitor_shown_card.name)
-        self.tell_characters_to(game, turn.target_player, false)
+        self.tell_characters_to(game, turn.target_player, show_coins: false)
         self.start_new_turn(game)
       end
 
