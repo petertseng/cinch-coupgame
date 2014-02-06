@@ -36,6 +36,7 @@ class MyUser
 
   alias :nick :name
   alias :to_s :name
+  alias :authname :name
 
   def ==(that)
     return false if that.nil?
@@ -49,6 +50,10 @@ class MyUser
 
   def send(msg)
     msg.split("\n").each { |line| @messages << line }
+  end
+
+  def authed?
+    true
   end
 end
 
@@ -117,12 +122,13 @@ describe Cinch::Plugins::CoupGame do
             CHANNAME,
             CHANNAME2,
           ],
+          :mods => ['p1', 'npmod'],
         }
       end
     end
     b.loggers.stub('debug') { nil }
 
-    @player_names = ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'npc']
+    @player_names = ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'npc', 'npmod']
     @players = Hash.new { |h, x| raise 'Nonexistent player ' + x }
 
     @player_names.each { |n|
