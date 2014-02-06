@@ -2013,6 +2013,68 @@ describe Cinch::Plugins::CoupGame do
       it_behaves_like 'information source'
     end
 
+    describe 'reset_game' do
+      def expected(i)
+        /^#{dehighlight(@order[i])}: \(\w+\) \(\w+\) - Coins: 2$/
+      end
+
+      # TODO resetting a game not in progress as well?
+
+      it 'does nothing to non-mods' do
+        p = @players['p2']
+        p.messages.clear
+        @game.reset_game(message_from('p2'), nil)
+        expect(@chan.messages).to be == []
+        expect(p.messages).to be == []
+      end
+
+      it 'publicly resets game in progress from participant' do
+        @chan.messages.clear
+        @game.reset_game(message_from('p1'), CHANNAME)
+        (1..3).each { |i|
+          expect(@chan.messages.shift).to be =~ expected(i)
+        }
+        expect(@chan.messages).to be == ['The game has been reset.']
+      end
+
+      it 'publicly resets game in progress from non-participant' do
+        @chan.messages.clear
+        @game.reset_game(message_from('npmod'), nil)
+        (1..3).each { |i|
+          expect(@chan.messages.shift).to be =~ expected(i)
+        }
+        expect(@chan.messages).to be == ['The game has been reset.']
+      end
+
+      it 'privately resets game in progress from participant' do
+        @chan.messages.clear
+        @game.reset_game(pm_from('p1'), nil)
+        (1..3).each { |i|
+          expect(@chan.messages.shift).to be =~ expected(i)
+        }
+        expect(@chan.messages).to be == ['The game has been reset.']
+      end
+
+      it 'asks for channel if non-participant resets privately' do
+        p = @players['npmod']
+        p.messages.clear
+
+        @chan.messages.clear
+        @game.reset_game(pm_from('npmod'), nil)
+        expect(p.messages).to be == ['To reset a game via PM you must specify the channel: !reset #channel']
+        expect(@chan.messages).to be == []
+      end
+
+      it 'privately resets game in progress from non-participant specifying channel' do
+        @chan.messages.clear
+        @game.reset_game(pm_from('npmod'), CHANNAME)
+        (1..3).each { |i|
+          expect(@chan.messages.shift).to be =~ expected(i)
+        }
+        expect(@chan.messages).to be == ['The game has been reset.']
+      end
+    end
+
     describe 'who_chars' do
       def expected(i)
         /^#{dehighlight(@order[i])}: \(\w+\) \(\w+\) - Coins: 2$/
