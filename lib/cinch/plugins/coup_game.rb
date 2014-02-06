@@ -337,74 +337,70 @@ module Cinch
 
       def do_action(m, action, target = "")
         game = self.game_of(m)
-        return unless game
+        return unless game && game.started? && game.has_player?(m.user)
 
-        if game.started? && game.has_player?(m.user)
-          if game.current_turn.waiting_for_action? && game.current_player.user == m.user
+        if game.current_turn.waiting_for_action? && game.current_player.user == m.user
 
-            action = ACTION_ALIASES[action.downcase] || action.downcase
+          action = ACTION_ALIASES[action.downcase] || action.downcase
 
-            if game.current_player.coins >= 10 && action.upcase != "COUP"
-              m.user.send "Since you have 10 coins, you must use COUP. !action coup <target>"
+          if game.current_player.coins >= 10 && action.upcase != "COUP"
+            m.user.send "Since you have 10 coins, you must use COUP. !action coup <target>"
+            return
+          end
+
+          return unless check_action(m, game, action)
+
+          if target.nil? || target.empty?
+            target_msg = ""
+
+            if Game::ACTIONS[action.to_sym].needs_target
+              m.user.send("You must specify a target for #{action.upcase}: !action #{action} <playername>")
+              return
+            end
+          else
+            target_player = game.find_player(target)
+
+            # No self-targeting!
+            if target_player == game.current_player && !Game::ACTIONS[action.to_sym].self_targettable
+              m.user.send("You may not target yourself with #{action.upcase}.")
               return
             end
 
-            return unless check_action(m, game, action)
-
-            if target.nil? || target.empty?
-              target_msg = ""
-
-              if Game::ACTIONS[action.to_sym].needs_target
-                m.user.send("You must specify a target for #{action.upcase}: !action #{action} <playername>")
-                return
-              end
-            else
-              target_player = game.find_player(target)
-
-              # No self-targeting!
-              if target_player == game.current_player && !Game::ACTIONS[action.to_sym].self_targettable
-                m.user.send("You may not target yourself with #{action.upcase}.")
-                return
-              end
-
-              if target_player.nil?
-                User(m.user).send "\"#{target}\" is an invalid target."
-              else
-                target_msg = " on #{target}"
-              end
-
-              unless game.is_enemy?(game.current_player, target_player)
-                us = Game::FACTIONS[game.current_player.faction]
-                them = Game::FACTIONS[1 - game.current_player.faction]
-                m.user.send("You cannot target a fellow #{us} with #{action.upcase} while the #{them} exist!")
-                return
-              end
+            if target_player.nil?
+              User(m.user).send "\"#{target}\" is an invalid target."
+              return
             end
 
-            unless target_msg.nil?
-              cost = Game::ACTIONS[action.to_sym].cost
-              if game.current_player.coins < cost
-                coins = game.current_player.coins
-                m.user.send "You need #{cost} coins to use #{action.upcase}, but you only have #{coins} coins."
-                return
-              end
+            target_msg = " on #{target}"
 
-              Channel(game.channel_name).send "#{m.user.nick} uses #{action.upcase}#{target_msg}"
-              game.current_turn.add_action(action, target_player)
-              if game.current_turn.action.challengeable?
-                game.current_turn.wait_for_action_challenge
-                self.prompt_challengers(game)
-              elsif game.current_turn.action.blockable?
-                game.current_turn.wait_for_block
-                self.prompt_blocker(game)
-              else 
-                self.process_turn(game)
-              end
+            unless game.is_enemy?(game.current_player, target_player)
+              us = Game::FACTIONS[game.current_player.faction]
+              them = Game::FACTIONS[1 - game.current_player.faction]
+              m.user.send("You cannot target a fellow #{us} with #{action.upcase} while the #{them} exist!")
+              return
             end
-
-          else
-            User(m.user).send "You are not the current player."
           end
+
+          cost = Game::ACTIONS[action.to_sym].cost
+          if game.current_player.coins < cost
+            coins = game.current_player.coins
+            m.user.send "You need #{cost} coins to use #{action.upcase}, but you only have #{coins} coins."
+            return
+          end
+
+          Channel(game.channel_name).send "#{m.user.nick} uses #{action.upcase}#{target_msg}"
+          game.current_turn.add_action(action, target_player)
+          if game.current_turn.action.challengeable?
+            game.current_turn.wait_for_action_challenge
+            self.prompt_challengers(game)
+          elsif game.current_turn.action.blockable?
+            game.current_turn.wait_for_block
+            self.prompt_blocker(game)
+          else
+            self.process_turn(game)
+          end
+        else
+          User(m.user).send "You are not the current player."
         end
       end
 
