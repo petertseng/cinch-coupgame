@@ -1973,6 +1973,28 @@ describe Cinch::Plugins::CoupGame do
       end
     end
 
+    # ===== player info =====
+
+    it 'tells players their start characters' do
+      expect(@players['p1'].messages.shift).to be == '=' * 40
+      expect(@players['p1'].messages.shift).to be =~ /^\(\w+\) \(\w+\) - Coins: 2$/
+      expect(@players['p1'].messages).to be == []
+    end
+
+    it 'tells players their new character after defending a challenge' do
+      @game.force_characters(@order[1], :ambassador, :duke)
+      @game.do_action(message_from(@order[1]), 'ambassador')
+      @game.react_challenge(message_from(@order[2]))
+
+      p = @players[@order[1]]
+      p.messages.clear
+
+      @game.flip_card(message_from(@order[1]), '1')
+
+      expect(p.messages.shift).to be =~ /^\(\w+\) \(DUKE\)$/
+      expect(p.messages).to be == []
+    end
+
     describe 'whoami' do
       it 'shows a player' do
         p = @players['p1']
