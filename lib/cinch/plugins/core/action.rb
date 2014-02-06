@@ -6,6 +6,7 @@
 class Action
 
   attr_accessor :action, :name, :character_required, :effect, :needs_target, :has_decision, :cost, :blocks, :blockable_by
+  attr_reader :character_forbidden
   attr_reader :mode_forbidden
   attr_reader :mode_required
   attr_reader :self_targettable
@@ -15,6 +16,7 @@ class Action
     self.action              = options[:action]
     self.name                = options[:name] 
     self.character_required  = options[:character_required] || nil          
+    @character_forbidden     = options[:character_forbidden] || nil
     self.effect              = options[:effect] || ""
     self.needs_target        = options[:needs_target] || false
     self.has_decision        = options[:has_decision] || false
@@ -31,7 +33,7 @@ class Action
   # State methods
 
   def needs_reactions?
-    !self.blockable_by.empty? || self.character_required?
+    !self.blockable_by.empty? || self.character_required? || self.character_forbidden?
   end
 
   def needs_decision?
@@ -40,6 +42,10 @@ class Action
 
   def character_required?
     !self.character_required.nil?
+  end
+
+  def character_forbidden?
+    !self.character_forbidden.nil?
   end
 
   def blockable?

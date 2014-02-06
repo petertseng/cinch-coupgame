@@ -14,6 +14,13 @@ class Game
   MIN_PLAYERS = 2
   MAX_PLAYERS = 6
   COINS = 50
+
+  BANK_NAME = 'Almshouse'
+  FACTIONS = [
+    'Protestant',
+    'Catholic',
+  ]
+
   ACTIONS = {
     :income      => Action.new( :action       => :income,
                                 :name         => "Income",      
@@ -30,6 +37,24 @@ class Game
                                 :has_decision => true,
                                 :needs_target => true,
                                 :cost         => 7 ),
+
+    :embezzle    => Action.new( :action              => :embezzle,
+                                :character_forbidden => :duke,
+                                :name                => "Embezzle",
+                                :effect              => "Take all coins from the #{BANK_NAME}",
+                                :mode_required       => :reformation),
+
+    :apostatize  => Action.new( :action              => :apostatize,
+                                :name                => "Apostatize",
+                                :cost                => 1,
+                                :effect              => "Pay 1 coin to #{BANK_NAME}, change own faction",
+                                :mode_required       => :reformation),
+
+    :convert     => Action.new( :action              => :convert,
+                                :name                => "Convert",
+                                :cost                => 2,
+                                :effect              => "Pay 2 coins to #{BANK_NAME}, choose player to change faction",
+                                :mode_required       => :reformation),
 
     :duke        => Action.new( :action             => :duke,      
                                 :character_required => :duke, 
@@ -84,6 +109,7 @@ class Game
   attr_accessor :inquisitor_shown_card
   attr_reader :channel_name
   attr_accessor :settings
+  attr_reader :bank
   
   def initialize(channel_name)
     @channel_name = channel_name
@@ -96,6 +122,7 @@ class Game
     @ambassador_cards = []
     @ambassador_options = []
     @inquisitor_shown_card = nil
+    @bank = 0
   end
 
   #----------------------------------------------
@@ -185,6 +212,15 @@ class Game
     $player_count = self.player_count
 
     self.next_turn
+
+    # Do this after #next_turn since next_turn rotates the players!
+    if @settings.include?(:reformation)
+      faction = 0
+      self.players.each { |p|
+        p.faction = faction
+        faction = 1 - faction
+      }
+    end
   end
 
   # Build starting deck
@@ -262,6 +298,12 @@ class Game
       self.current_player.take_coins 7
     when :assassin
       self.current_player.take_coins 3
+    when :apostatize
+      self.current_player.take_coins 1
+      @bank += 1
+    when :convert
+      self.current_player.take_coins 2
+      @bank += 2
     end
   end
 
@@ -288,6 +330,13 @@ class Game
     when :captain
       taken = self.target_player.take_coins 2
       self.current_player.give_coins taken
+    when :embezzle
+      self.current_player.give_coins @bank
+      @bank = 0
+    when :apostatize
+      self.current_player.change_faction
+    when :convert
+      self.target_player.change_faction
     end
   end
 
@@ -305,6 +354,18 @@ class Game
     self.not_reacted.size == 0
   end
 
+  def all_enemy_reactions_in?
+    # If there are no enemies, just return all_reactions_in?
+    return self.all_reactions_in? if self.players.all? { |p| p.faction == self.current_player.faction }
+
+    reacted_players = self.current_turn.reactions.keys
+    pending = self.reacting_players.reject { |player|
+      # Reject if they have react, or if their faction is the same (they can't react)
+      reacted_players.include?(player) || player.faction == self.current_player.faction
+    }
+    pending.size == 0
+  end
+
   def not_selected_initial_character
     self.players.select { |p| p.characters.size < 2 }
   end
@@ -318,6 +379,18 @@ class Game
     return false if action.mode_forbidden && self.settings.include?(action.mode_forbidden)
     # Usable if action does not require a mode, or the settings include the required mode.
     action.mode_required.nil? || self.settings.include?(action.mode_required)
+  end
+
+  def is_enemy?(player, target)
+    return true unless @settings.include?(:reformation)
+    # self-targetting is OK (Inquisitor)
+    # It's not this code's responsibility to check whether action can self-target
+    return true if player == target
+
+    enemies = self.players.select { |p| p.faction != player.faction }
+
+    # I can target them if the enemy faction is vanquished, or they are an ENEMY
+    return enemies.empty? || target.faction != player.faction
   end
 
   # turns

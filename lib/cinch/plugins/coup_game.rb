@@ -20,6 +20,8 @@ module Cinch
       'steal' => 'captain',
       'extort' => 'captain',
       'exchange' => 'ambassador',
+      'recant' => 'apostatize',
+      'repent' => 'apostatize',
     }
 
     # Length of the longest character's name (Ambassador / Inquisitor)
@@ -68,7 +70,8 @@ module Cinch
     
       # game    
       xmatch /(?:action )?(duke|tax|ambassador|exchange|income|foreign(?: |_)aid)/i, :method => :do_action
-      xmatch /(?:action )?(assassin(?:ate)?|kill|captain|steal|extort|coup|inquisitor)(?: (.+))?/i, :method => :do_action
+      xmatch /(?:action )?(recant|repent|apostatize|convert|embezzle)/i, :method => :do_action
+      xmatch /(?:action )?(assassin(?:ate)?|kill|captain|steal|extort|coup|inquisitor|convert)(?: (.+))?/i, :method => :do_action
       xmatch /block (duke|contessa|captain|ambassador|inquisitor)/i, :method => :do_block
       xmatch /pass/i,                 :method => :react_pass
       xmatch /challenge/i,            :method => :react_challenge
@@ -267,7 +270,7 @@ module Cinch
       def pass_out_characters(game)
         game.players.each do |p|
           User(p.user).send "="*40
-          self.tell_characters_to(p, true, false)
+          self.tell_characters_to(game, p, true, false)
         end
 
         if game.players.size == 2
@@ -287,11 +290,11 @@ module Cinch
 
         if game.started? && game.has_player?(m.user)
           player = game.find_player(m.user)
-          self.tell_characters_to(player)
+          self.tell_characters_to(game, player)
         end
       end
       
-      def tell_characters_to(player, tell_coins = true, tell_side = true)
+      def tell_characters_to(game, player, tell_coins = true, tell_side = true)
         character_1, character_2 = player.characters
 
         char1_str = character_1.face_down? ? "(#{character_1})" : "[#{character_1}]"
@@ -308,7 +311,10 @@ module Cinch
         else
           side_str = ''
         end
-        User(player.user).send "#{char1_str}#{char2_str}#{coins_str}#{side_str}"
+
+        faction_str = game.settings.include?(:reformation) ? " - #{Game::FACTIONS[player.faction]}" : ''
+
+        User(player.user).send "#{char1_str}#{char2_str}#{coins_str}#{faction_str}#{side_str}"
       end
 
 
@@ -356,6 +362,13 @@ module Cinch
               else
                 target_msg = " on #{target}"
               end
+
+              unless game.is_enemy?(game.current_player, target_player)
+                us = Game::FACTIONS[game.current_player.faction]
+                them = Game::FACTIONS[1 - game.current_player.faction]
+                m.user.send("You cannot target a fellow #{us} with #{action.upcase} while the #{them} exist!")
+                return
+              end
             end
 
             unless target_msg.nil?
@@ -368,7 +381,7 @@ module Cinch
 
               Channel(game.channel_name).send "#{m.user.nick} uses #{action.upcase}#{target_msg}"
               game.current_turn.add_action(action, target_player)
-              if game.current_turn.action.character_required?
+              if game.current_turn.action.character_required? || game.current_turn.action.character_forbidden?
                 game.current_turn.wait_for_action_challenge
                 self.prompt_challengers(game)
               elsif game.current_turn.action.blockable?
@@ -399,7 +412,14 @@ module Cinch
         if action.needs_target
           prefix = game.current_turn.target_player.to_s
         else
-          prefix = 'All other players'
+          if game.settings.include?(:reformation)
+            active_faction = game.current_turn.active_player.faction
+            enemies_exist = game.players.count { |p| p.faction != active_faction } > 0
+            enemies = enemies_exist ? Game::FACTIONS[1 - active_faction] : 'other'
+            prefix = "All #{enemies} players"
+          else
+            prefix = 'All other players'
+          end
         end
         Channel(game.channel_name).send("#{prefix}: Would you like to block the #{action.action.to_s.upcase} (#{blockers}) or not (\"!pass\")?")
       end
@@ -418,6 +438,13 @@ module Cinch
               end
               if (mr = Game::ACTIONS[action.to_sym].mode_required) && !game.settings.include?(mr)
                 m.user.send("#{action.upcase} may only be used if the game type is #{mr.to_s.capitalize}.")
+                return
+              end
+
+              unless game.is_enemy?(player, game.current_turn.active_player)
+                us = Game::FACTIONS[game.current_player.faction]
+                them = Game::FACTIONS[1 - game.current_player.faction]
+                m.user.send("You cannot block a fellow #{us}'s #{game.current_turn.action.action.upcase} while the #{them} exist!")
                 return
               end
 
@@ -477,7 +504,8 @@ module Cinch
               success = game.current_turn.pass(player)
               Channel(game.channel_name).send "#{m.user.nick} passes." if success
               # So we wait until all reactions are in.
-              self.process_turn(game) if game.all_reactions_in?
+              all_in = game.settings.include?(:reformation) ? game.all_enemy_reactions_in? : game.all_reactions_in?
+              self.process_turn(game) if all_in
             end
           end
         end
@@ -512,6 +540,56 @@ module Cinch
                 sleep(3)
                 i = chall_player.characters.index { |c| c.face_down? }
                 self.respond_to_challenge(game, chall_player, i + 1, chall_action, player)
+              end
+            elsif chall_action.character_forbidden?
+              Channel(game.channel_name).send "#{m.user.nick} challenges #{chall_player} on #{chall_action.to_s.upcase}!"
+
+              turn = game.current_turn
+
+              if game.current_turn.waiting_for_action_challenge?
+                game.current_turn.wait_for_action_challenge_reply
+                game.current_turn.action_challenger = player
+              else
+                raise "react_challenge on forbidden character in #{game.current_turn.state}"
+              end
+
+              # sleep for suspense
+              sleep(3)
+
+              if !chall_player.has_character?(chall_action.character_forbidden)
+                # Do NOT have a forbidden character, so win the challenge.
+                chars = chall_player.characters.select { |c| c.face_down? }
+                revealed = chars.collect { |c| "[#{c}]" }.join(' and ')
+                if chall_player.influence == 2
+                  pronoun = 'both'
+                  replace = 'new cards'
+                else
+                  pronoun = 'it'
+                  replace = 'a new card'
+                end
+                Channel(game.channel_name).send("#{chall_player} reveals #{revealed} and replaces #{pronoun} with #{replace} from the Court Deck.")
+                chars.each { |c| game.replace_character_with_new(chall_player, c.name) }
+                Channel(game.channel_name).send("#{m.user.nick} loses influence for losing the challenge!")
+                self.tell_characters_to(game, chall_player, false)
+                turn.wait_for_challenge_loser
+                if player.influence == 2
+                  self.prompt_to_flip(player)
+                else
+                  i = player.characters.index { |c| c.face_down? }
+                  self.lose_challenge(game, player, i + 1)
+                end
+              else
+                # Do have a forbidden character.
+                index = chall_player.character_position(chall_action.character_forbidden)
+                card = "[#{chall_action.character_forbidden.to_s.upcase}]"
+                Channel(game.channel_name).send("#{chall_player} reveals a #{card}. #{chall_player} loses the challenge!")
+                Channel(game.channel_name).send("#{chall_player} loses influence over the #{card} and cannot use the #{chall_action.action.to_s.upcase}.")
+                chall_player.flip_character_card(index + 1)
+                self.check_player_status(game, player)
+                # The action challenge succeeds, interrupting the action.
+                # We don't need to ask for a block. Just finish the turn.
+                turn.action_challenge_successful = true
+                self.process_turn(game)
               end
 
             else
@@ -644,7 +722,7 @@ module Cinch
           Channel(game.channel_name).send "#{player} reveals a [#{action.character_required.to_s.upcase}] and replaces it with a new card from the Court Deck."
           game.replace_character_with_new(player, action.character_required)
           Channel(game.channel_name).send "#{challenger} loses influence for losing the challenge!"
-          self.tell_characters_to(player, false)
+          self.tell_characters_to(game, player, false)
           turn.wait_for_challenge_loser
           if challenger.influence == 2
             self.prompt_to_flip(challenger)
@@ -826,7 +904,7 @@ module Cinch
 
         Channel(game.channel_name).send("#{turn.target_player} is forced to discard that card and replace it with another from the Court Deck.")
         game.replace_character_with_new(turn.target_player, game.inquisitor_shown_card.name)
-        self.tell_characters_to(turn.target_player, false)
+        self.tell_characters_to(game, turn.target_player, false)
         self.start_new_turn(game)
       end
 
@@ -889,11 +967,16 @@ module Cinch
             side_str = ''
           end
 
-          "#{dehighlight_nick(p.to_s)}: #{char1_str}#{char2_str} - Coins: #{p.coins}#{side_str}"
+          faction_str = game.settings.include?(:reformation) ? " - #{Game::FACTIONS[p.faction]}" : ''
+
+          "#{dehighlight_nick(p.to_s)}: #{char1_str}#{char2_str} - Coins: #{p.coins}#{faction_str}#{side_str}"
         }
         unless game.discard_pile.empty?
           discards = game.discard_pile.map{ |c| "[#{c}]" }.join(" ")
           info << "Discard Pile: #{discards}"
+        end
+        if game.settings.include?(:reformation)
+          info << "#{Game::BANK_NAME}: #{game.bank} coin#{game.bank == 1 ? '' : 's'}"
         end
         info
       end
@@ -1082,7 +1165,7 @@ module Cinch
 
           # tell characters to new player
           User(player.user).send "="*40
-          self.tell_characters_to(player)
+          self.tell_characters_to(game, player)
         end
       end
 
@@ -1164,6 +1247,8 @@ module Cinch
             settings.clear
           when 'inquisitor'
             settings << :inquisitor
+          when 'reformation'
+            settings << :reformation
           end
         }
 

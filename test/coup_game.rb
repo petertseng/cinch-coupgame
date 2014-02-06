@@ -1796,6 +1796,35 @@ describe Cinch::Plugins::CoupGame do
       end
     end
 
+    # ===== Reformation =====
+
+    it 'does not allow apostatize action in a base game' do
+      p = @players[@order[1]]
+      p.messages.clear
+
+      @game.do_action(message_from(@order[1]), 'apostatize', @order[2])
+      expect(@chan.messages).to be == []
+      expect(p.messages).to be == ['APOSTATIZE may only be used if the game type is Reformation.']
+    end
+
+    it 'does not allow convert action in a base game' do
+      p = @players[@order[1]]
+      p.messages.clear
+
+      @game.do_action(message_from(@order[1]), 'convert', @order[2])
+      expect(@chan.messages).to be == []
+      expect(p.messages).to be == ['CONVERT may only be used if the game type is Reformation.']
+    end
+
+    it 'does not allow embezzle action in a base game' do
+      p = @players[@order[1]]
+      p.messages.clear
+
+      @game.do_action(message_from(@order[1]), 'embezzle', @order[2])
+      expect(@chan.messages).to be == []
+      expect(p.messages).to be == ['EMBEZZLE may only be used if the game type is Reformation.']
+    end
+
     # ===== Inquisitor =====
 
     it 'does not allow inquisitor action in a base game' do
@@ -2536,6 +2565,311 @@ describe Cinch::Plugins::CoupGame do
     end
 
     # TODO: There could be tests of the inquisitor being blocked, but... meh.
+
+  end
+
+  context 'when p1..3 are playing a reformation game' do
+    before :each do
+      (1..NUM_PLAYERS).each { |i| @game.join(message_from("p#{i}")) }
+      @game.set_game_settings(message_from('p1'), nil, 'reformation')
+      @chan.messages.clear
+      @game.start_game(message_from('p1'))
+
+      expect(@chan.messages.size).to be == 3
+      expect(@chan.messages[-3]).to be == 'The game has started.'
+      match = (TURN_ORDER_REGEX3.match(@chan.messages[-2]))
+      @order = match
+      expect(@chan.messages[-1]).to be == "FIRST TURN. Player: #{@order[1]}. Please choose an action."
+      @chan.messages.clear
+    end
+
+    # ===== Apostatize =====
+
+    it 'allows the apostatize action' do
+      @game.do_action(message_from(@order[1]), 'apostatize')
+
+      expect(@chan.messages).to be == [
+        "#{@order[1]} uses APOSTATIZE",
+        "#{@order[1]} proceeds with APOSTATIZE. Pay 1 coin to #{Game::BANK_NAME}, change own faction.",
+        "#{@order[2]}: It is your turn. Please choose an action.",
+      ]
+
+      expect(@game.coins(@order[1])).to be == 1
+    end
+
+    # TODO consider a test of someone using apostatize when they have 0 coin
+
+    # ===== Convert =====
+
+    it 'allows the convert action' do
+      @game.do_action(message_from(@order[1]), 'convert', @order[2])
+
+      expect(@chan.messages).to be == [
+        "#{@order[1]} uses CONVERT on #{@order[2]}",
+        "#{@order[1]} proceeds with CONVERT. Pay 2 coins to #{Game::BANK_NAME}, choose player to change faction: #{@order[2]}.",
+        "#{@order[2]}: It is your turn. Please choose an action.",
+      ]
+
+      expect(@game.coins(@order[1])).to be == 0
+    end
+
+    # TODO consider a test of someone using convert when they have 1 coin
+
+    # ===== Embezzle =====
+
+    it 'allows the embezzle action' do
+      # Put some money in the bank first
+      @game.do_action(message_from(@order[1]), 'apostatize')
+      @chan.messages.clear
+
+      @game.do_action(message_from(@order[2]), 'embezzle')
+
+      expect(@chan.messages).to be == [
+        "#{@order[2]} uses EMBEZZLE",
+        CHALLENGE_PROMPT,
+      ].compact
+      @chan.messages.clear
+
+      (3..NUM_PLAYERS).each { |i|
+        @game.react_pass(message_from(@order[i]))
+        expect(@chan.messages).to be == ["#{@order[i]} passes."]
+        @chan.messages.clear
+      }
+      @game.react_pass(message_from(@order[1]))
+
+      expect(@chan.messages).to be == [
+        "#{@order[1]} passes.",
+        "#{@order[2]} proceeds with EMBEZZLE. Take all coins from the #{Game::BANK_NAME}.",
+        "#{@order[3]}: It is your turn. Please choose an action.",
+      ]
+
+      expect(@game.coins(@order[2])).to be == 3
+    end
+
+    it 'does not give money when embezzler challenged successfully' do
+      # Put some money in the bank first
+      @game.do_action(message_from(@order[1]), 'apostatize')
+      @game.force_characters(@order[2], :ambassador, :duke)
+      @game.do_action(message_from(@order[2]), 'embezzle')
+      @chan.messages.clear
+
+      @game.react_challenge(message_from(@order[1]))
+      expect(@chan.messages).to be == [
+        "#{@order[1]} challenges #{@order[2]} on EMBEZZLE!",
+        "#{@order[2]} reveals a [DUKE]. #{@order[2]} loses the challenge!",
+        "#{@order[2]} loses influence over the [DUKE] and cannot use the EMBEZZLE.",
+        "#{@order[3]}: It is your turn. Please choose an action.",
+      ]
+      expect(@game.coins(@order[2])).to be == 2
+    end
+
+    it 'flips two cards and gives money when 2-influence embezzler challenged unsuccessfully' do
+      # Put some money in the bank first
+      @game.do_action(message_from(@order[1]), 'apostatize')
+      @game.force_characters(@order[2], :ambassador, :assassin)
+      @game.do_action(message_from(@order[2]), 'embezzle')
+      @chan.messages.clear
+
+      @game.react_challenge(message_from(@order[1]))
+      expect(@chan.messages).to be == [
+        "#{@order[1]} challenges #{@order[2]} on EMBEZZLE!",
+        "#{@order[2]} reveals [AMBASSADOR] and [ASSASSIN] and replaces both with new cards from the Court Deck.",
+        "#{@order[1]} loses influence for losing the challenge!",
+      ]
+      @chan.messages.clear
+
+      @game.flip_card(message_from(@order[1]), '1')
+
+      expect(@chan.messages.shift).to be =~ lose_card(@order[1])
+      expect(@chan.messages).to be == [
+        "#{@order[2]} proceeds with EMBEZZLE. Take all coins from the #{Game::BANK_NAME}.",
+        "#{@order[3]}: It is your turn. Please choose an action.",
+      ]
+      expect(@game.coins(@order[2])).to be == 3
+    end
+
+    it 'flips one card and gives money when 1-influence embezzler challenged unsuccessfully' do
+      5.times do
+        (1..NUM_PLAYERS).each { |i|
+          @game.do_action(message_from(@order[i]), 'income')
+        }
+      end
+
+      # Put some money in the bank first
+      @game.do_action(message_from(@order[1]), 'apostatize')
+      @game.force_characters(@order[3], :ambassador, :assassin)
+      @game.do_action(message_from(@order[2]), 'coup', @order[3])
+      @game.flip_card(message_from(@order[3]), '1')
+      @game.do_action(message_from(@order[3]), 'embezzle')
+      @chan.messages.clear
+
+      @game.react_challenge(message_from(@order[1]))
+      expect(@chan.messages).to be == [
+        "#{@order[1]} challenges #{@order[3]} on EMBEZZLE!",
+        "#{@order[3]} reveals [ASSASSIN] and replaces it with a new card from the Court Deck.",
+        "#{@order[1]} loses influence for losing the challenge!",
+      ]
+      @chan.messages.clear
+
+      @game.flip_card(message_from(@order[1]), '1')
+
+      expect(@chan.messages.shift).to be =~ lose_card(@order[1])
+      expect(@chan.messages).to be == [
+        "#{@order[3]} proceeds with EMBEZZLE. Take all coins from the #{Game::BANK_NAME}.",
+        "#{@order[1]}: It is your turn. Please choose an action.",
+      ]
+      expect(@game.coins(@order[3])).to be == 8
+    end
+
+    # ===== Reformation factional targetting rules =====
+
+    shared_examples "first player can target second" do
+      it 'allows targeting opponent with captain' do
+        @game.do_action(message_from(@order[1]), 'captain', @order[2])
+        expect(@chan.messages[0]).to be == "#{@order[1]} uses CAPTAIN on #{@order[2]}"
+      end
+
+      it 'allows targeting opponent with assassin' do
+        (1..NUM_PLAYERS).each { |i|
+          @game.do_action(message_from(@order[i]), 'income')
+        }
+        @chan.messages.clear
+
+        @game.do_action(message_from(@order[1]), 'assassin', @order[2])
+        expect(@chan.messages[0]).to be == "#{@order[1]} uses ASSASSIN on #{@order[2]}"
+      end
+
+      it 'allows targeting opponent with assassin' do
+        5.times do
+          (1..NUM_PLAYERS).each { |i|
+            @game.do_action(message_from(@order[i]), 'income')
+          }
+        end
+        @chan.messages.clear
+
+        @game.do_action(message_from(@order[1]), 'coup', @order[2])
+        expect(@chan.messages[0]).to be == "#{@order[1]} uses COUP on #{@order[2]}"
+      end
+    end
+
+    context 'when there are multiple factions' do
+      it_behaves_like "first player can target second"
+
+      it 'does not allow targeting factionmate with captain' do
+        p = @players[@order[1]]
+        p.messages.clear
+
+        @game.do_action(message_from(@order[1]), 'captain', @order[3])
+        expect(@chan.messages).to be == []
+        expect(p.messages).to be == [
+          "You cannot target a fellow #{Game::FACTIONS[0]} with CAPTAIN while the #{Game::FACTIONS[1]} exist!"
+        ]
+      end
+
+      it 'does not allow targeting factionmate with assassin' do
+        (1..NUM_PLAYERS).each { |i|
+          @game.do_action(message_from(@order[i]), 'income')
+        }
+        @chan.messages.clear
+
+        p = @players[@order[1]]
+        p.messages.clear
+
+        @game.do_action(message_from(@order[1]), 'assassin', @order[3])
+        expect(@chan.messages).to be == []
+        expect(p.messages).to be == [
+          "You cannot target a fellow #{Game::FACTIONS[0]} with ASSASSIN while the #{Game::FACTIONS[1]} exist!"
+        ]
+      end
+
+      it 'does not allow targeting factionmate with coup' do
+        5.times do
+          (1..NUM_PLAYERS).each { |i|
+            @game.do_action(message_from(@order[i]), 'income')
+          }
+        end
+        @chan.messages.clear
+
+        p = @players[@order[1]]
+        p.messages.clear
+
+        @game.do_action(message_from(@order[1]), 'coup', @order[3])
+        expect(@chan.messages).to be == []
+        expect(p.messages).to be == [
+          "You cannot target a fellow #{Game::FACTIONS[0]} with COUP while the #{Game::FACTIONS[1]} exist!"
+        ]
+      end
+
+      it 'does not allow blocking factionmates foreign aid' do
+        @game.do_action(message_from(@order[1]), 'foreign_aid')
+        expect(@chan.messages).to be == [
+          "#{@order[1]} uses FOREIGN_AID",
+          "All #{Game::FACTIONS[1]} players: Would you like to block the FOREIGN_AID (\"!block duke\") or not (\"!pass\")?",
+        ]
+        @chan.messages.clear
+
+        p = @players[@order[3]]
+        p.messages.clear
+
+        @game.do_block(message_from(@order[3]), 'duke')
+        expect(@chan.messages).to be == []
+        expect(p.messages).to be == [
+          "You cannot block a fellow #{Game::FACTIONS[0]}'s FOREIGN_AID while the #{Game::FACTIONS[1]} exist!"
+        ]
+      end
+
+      it 'allows blocking opponents foreign aid' do
+        @game.do_action(message_from(@order[1]), 'foreign_aid')
+        expect(@chan.messages).to be == [
+          "#{@order[1]} uses FOREIGN_AID",
+          "All #{Game::FACTIONS[1]} players: Would you like to block the FOREIGN_AID (\"!block duke\") or not (\"!pass\")?",
+        ]
+        @chan.messages.clear
+
+        @game.do_block(message_from(@order[2]), 'duke')
+        expect(@chan.messages[0]).to be == "#{@order[2]} uses DUKE to block FOREIGN_AID"
+      end
+
+      it 'proceeds when all opponents have passed blocking foreign aid' do
+        @game.do_action(message_from(@order[1]), 'foreign_aid')
+        expect(@chan.messages).to be == [
+          "#{@order[1]} uses FOREIGN_AID",
+          "All #{Game::FACTIONS[1]} players: Would you like to block the FOREIGN_AID (\"!block duke\") or not (\"!pass\")?",
+        ]
+        @chan.messages.clear
+
+        @game.react_pass(message_from(@order[2]))
+        expect(@chan.messages).to be == [
+          "#{@order[2]} passes.",
+          "#{@order[1]} proceeds with FOREIGN_AID. Take 2 coins.",
+          "#{@order[2]}: It is your turn. Please choose an action.",
+        ]
+      end
+
+    end
+
+    context 'when there is only one faction' do
+      before :each do
+        @game.do_action(message_from(@order[1]), 'income')
+        @game.do_action(message_from(@order[2]), 'apostatize')
+        @game.do_action(message_from(@order[3]), 'income')
+        @chan.messages.clear
+      end
+
+      it_behaves_like "first player can target second"
+
+      it 'allows blocking opponents foreign aid' do
+        @game.do_action(message_from(@order[1]), 'foreign_aid')
+        expect(@chan.messages).to be == [
+          "#{@order[1]} uses FOREIGN_AID",
+          "All other players: Would you like to block the FOREIGN_AID (\"!block duke\") or not (\"!pass\")?",
+        ]
+        @chan.messages.clear
+
+        @game.do_block(message_from(@order[2]), 'duke')
+        expect(@chan.messages[0]).to be == "#{@order[2]} uses DUKE to block FOREIGN_AID"
+      end
+    end
 
   end
 
