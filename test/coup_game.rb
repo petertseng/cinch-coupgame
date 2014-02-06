@@ -3007,6 +3007,54 @@ describe Cinch::Plugins::CoupGame do
       end
     end
 
+    # ===== character info =====
+
+    it 'tells players their start characters and alignment' do
+      p = @players[@order[1]]
+      expect(p.messages.shift).to be == '=' * 40
+      expect(p.messages.shift).to be =~ /^\(\w+\) \(\w+\) - Coins: 2 - #{Game::FACTIONS[0]}$/
+      expect(p.messages).to be == []
+      p = @players[@order[2]]
+      expect(p.messages.shift).to be == '=' * 40
+      expect(p.messages.shift).to be =~ /^\(\w+\) \(\w+\) - Coins: 2 - #{Game::FACTIONS[1]}$/
+      expect(p.messages).to be == []
+    end
+
+    it 'reminds a player of his own faction' do
+      p = @players[@order[1]]
+      p.messages.clear
+      @game.whoami(message_from(@order[1]))
+      expect(@chan.messages).to be == []
+      expect(p.messages.shift).to be =~ /^\(\w+\) \(\w+\) - Coins: 2 - #{Game::FACTIONS[0]}$/
+      expect(p.messages).to be == []
+    end
+
+    it 'shows table publicly to player' do
+      @game.show_table(message_from('p1'))
+      expect(@chan.messages).to be == [
+        "#{dehighlight(@order[1])}: (########) (########) - Coins: 2 - #{Game::FACTIONS[0]}",
+        "#{dehighlight(@order[2])}: (########) (########) - Coins: 2 - #{Game::FACTIONS[1]}",
+        "#{dehighlight(@order[3])}: (########) (########) - Coins: 2 - #{Game::FACTIONS[0]}",
+        "#{Game::BANK_NAME}: 0 coins",
+      ]
+    end
+
+    describe 'who_chars' do
+      def expected(i)
+        /^#{dehighlight(@order[i])}: \(\w+\) \(\w+\) - Coins: 2 - #{Game::FACTIONS[(i + 1) % 2]}$/
+      end
+
+      it 'shows mods not in the game' do
+        p = @players['npmod']
+        p.messages.clear
+        @game.who_chars(message_from('npmod'), nil)
+        expect(@chan.messages).to be == []
+        (1..3).each { |i|
+          expect(p.messages.shift).to be =~ expected(i)
+        }
+        expect(p.messages).to be == ["#{Game::BANK_NAME}: 0 coins"]
+      end
+    end
   end
 
 end
