@@ -2740,6 +2740,19 @@ describe Cinch::Plugins::CoupGame do
       expect(@game.coins(@order[1])).to be == 0
     end
 
+    it 'allows the convert action on a factionmate' do
+      @game.do_action(message_from(@order[1]), 'convert', @order[3])
+
+      expect(@chan.messages).to be == [
+        "#{@order[1]} uses CONVERT on #{@order[3]}",
+        "#{@order[1]} proceeds with CONVERT. Pay 2 coins to #{Game::BANK_NAME}, choose player to change faction: #{@order[3]}.",
+        "#{@order[2]}: It is your turn. Please choose an action.",
+      ]
+
+      expect(@game.coins(@order[1])).to be == 0
+    end
+
+
     # TODO consider a test of someone using convert when they have 1 coin
 
     # ===== Embezzle =====
