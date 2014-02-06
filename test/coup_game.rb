@@ -106,6 +106,14 @@ def lose_card(player, char = nil)
   end
 end
 
+def winner_regex(playername, char1, char2, hidden1, hidden2)
+  c1 = char1.nil? ? '\w+' : char1.to_s.upcase
+  c2 = char2.nil? ? '\w+' : char2.to_s.upcase
+  c1 = hidden1 ? "\\(#{c1}\\)" : "\\[#{c1}\\]"
+  c2 = hidden2 ? "\\(#{c2}\\)" : "\\[#{c2}\\]"
+  /^#{playername} was #{c1} #{c2}\.$/
+end
+
 def dehighlight(nickname)
   nickname.chars.to_a.join(8203.chr('UTF-8'))
 end
@@ -1473,13 +1481,14 @@ describe Cinch::Plugins::CoupGame do
       @chan.messages.clear
 
       @game.react_pass(message_from(@order[1]))
-      expect(@chan.messages).to be == [
+      expect(@chan.messages[0...-1]).to be == [
         "#{@order[1]} passes.",
         "#{@order[3]} proceeds with ASSASSIN. Pay 3 coins, choose player to lose influence: #{@order[1]}.",
         lose_card(@order[1], :duke),
         "#{@order[1]} has no more influence, and is out of the game.",
         "Game is over! #{@order[3]} wins!",
       ]
+      expect(@chan.messages[-1]).to be =~ winner_regex(@order[3], nil, :assassin, true, true)
     end
 
     # ===== Captain =====
@@ -2184,12 +2193,13 @@ describe Cinch::Plugins::CoupGame do
 
         @game.react_challenge(message_from(@order[1]))
 
-        expect(@chan.messages).to be == [
+        expect(@chan.messages[0...-1]).to be == [
           "#{@order[1]} challenges #{@order[2]} on AMBASSADOR!",
           challenged_loss(@order[2], :ambassador, :assassin),
           "#{@order[2]} has no more influence, and is out of the game.",
           "Game is over! #{@order[1]} wins!",
         ].flatten
+        expect(@chan.messages[-1]).to be =~ winner_regex(@order[1], nil, nil, true, true)
       end
 
       it 'ends the game if player with 1 influence gets challenged on a block' do
@@ -2202,12 +2212,13 @@ describe Cinch::Plugins::CoupGame do
 
         @game.react_challenge(message_from(@order[1]))
 
-        expect(@chan.messages).to be == [
+        expect(@chan.messages[0...-1]).to be == [
           "#{@order[1]} challenges #{@order[2]} on AMBASSADOR!",
           challenged_loss(@order[2], :ambassador, :assassin),
           "#{@order[2]} has no more influence, and is out of the game.",
           "Game is over! #{@order[1]} wins!",
         ].flatten
+        expect(@chan.messages[-1]).to be =~ winner_regex(@order[1], nil, nil, true, true)
       end
 
       it 'ends the game if player with 1 influence wrongly challenges an action' do
@@ -2220,12 +2231,13 @@ describe Cinch::Plugins::CoupGame do
 
         @game.flip_card(message_from(@order[1]), '1')
 
-        expect(@chan.messages).to be == [
+        expect(@chan.messages[0...-1]).to be == [
           challenged_win(@order[1], :ambassador, @order[2]),
           lose_card(@order[2], :assassin),
           "#{@order[2]} has no more influence, and is out of the game.",
           "Game is over! #{@order[1]} wins!",
         ].flatten
+        expect(@chan.messages[-1]).to be =~ winner_regex(@order[1], nil, :ambassador, true, true)
       end
 
       it 'ends the game if player with 1 influence wrongly challenges a block' do
@@ -2239,12 +2251,13 @@ describe Cinch::Plugins::CoupGame do
 
         @game.flip_card(message_from(@order[1]), '1')
 
-        expect(@chan.messages).to be == [
+        expect(@chan.messages[0...-1]).to be == [
           challenged_win(@order[1], :ambassador, @order[2]),
           lose_card(@order[2], :assassin),
           "#{@order[2]} has no more influence, and is out of the game.",
           "Game is over! #{@order[1]} wins!",
         ].flatten
+        expect(@chan.messages[-1]).to be =~ winner_regex(@order[1], nil, :ambassador, true, true)
       end
 
       context 'after game ends' do
