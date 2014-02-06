@@ -6,6 +6,7 @@
 class Action
 
   attr_accessor :action, :name, :character_required, :effect, :needs_target, :has_decision, :cost, :blocks, :blockable_by
+  attr_reader :can_target_friends
   attr_reader :character_forbidden
   attr_reader :mode_forbidden
   attr_reader :mode_required
@@ -19,6 +20,7 @@ class Action
     @character_forbidden     = options[:character_forbidden] || nil
     self.effect              = options[:effect] || ""
     self.needs_target        = options[:needs_target] || false
+    @can_target_friends      = options[:can_target_friends] || false
     self.has_decision        = options[:has_decision] || false
     self.cost                = options[:cost] || 0
     self.blocks              = options[:blocks] || nil

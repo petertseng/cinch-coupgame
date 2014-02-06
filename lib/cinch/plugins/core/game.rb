@@ -54,6 +54,7 @@ class Game
                                 :name                => "Convert",
                                 :cost                => 2,
                                 :needs_target        => true,
+                                :can_target_friends  => true,
                                 :effect              => "Pay 2 coins to #{BANK_NAME}, choose player to change faction",
                                 :mode_required       => :reformation),
 
