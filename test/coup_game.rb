@@ -2829,6 +2829,23 @@ describe Cinch::Plugins::CoupGame do
         @game.do_block(message_from(@order[2]), 'duke')
         expect(@chan.messages[0]).to be == "#{@order[2]} uses DUKE to block FOREIGN_AID"
       end
+
+      it 'proceeds when all opponents have passed blocking foreign aid' do
+        @game.do_action(message_from(@order[1]), 'foreign_aid')
+        expect(@chan.messages).to be == [
+          "#{@order[1]} uses FOREIGN_AID",
+          "All #{Game::FACTIONS[1]} players: Would you like to block the FOREIGN_AID (\"!block duke\") or not (\"!pass\")?",
+        ]
+        @chan.messages.clear
+
+        @game.react_pass(message_from(@order[2]))
+        expect(@chan.messages).to be == [
+          "#{@order[2]} passes.",
+          "#{@order[1]} proceeds with FOREIGN_AID. Take 2 coins.",
+          "#{@order[2]}: It is your turn. Please choose an action.",
+        ]
+      end
+
     end
 
     context 'when there is only one faction' do
