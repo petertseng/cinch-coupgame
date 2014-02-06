@@ -2014,6 +2014,42 @@ describe Cinch::Plugins::CoupGame do
       end
     end
 
+    shared_examples 'information source' do
+      it 'shows table publicly to player' do
+        @game.send(method, message_from('p1'))
+        expect(@chan.messages).to be == expected_table
+      end
+
+      it 'shows table publicly to non-player' do
+        @game.send(method, message_from('npc'))
+        expect(@chan.messages).to be == expected_table
+      end
+
+      it 'shows table privately to player without arguments' do
+        p = @players['p1']
+        p.messages.clear
+        @game.send(method, pm_from('p1'))
+        expect(@chan.messages).to be == []
+        expect(p.messages).to be == expected_table
+      end
+
+      it 'asks for channel if non-player asks for table privately' do
+        p = @players['npc']
+        p.messages.clear
+        @game.send(method, pm_from('npc'))
+        expect(@chan.messages).to be == []
+        expect(p.messages).to be == [expected_error]
+      end
+
+      it 'shows table if non-player asks for table privately and specifies channel' do
+        p = @players['npc']
+        p.messages.clear
+        @game.send(method, pm_from('npc'), CHANNAME)
+        expect(@chan.messages).to be == []
+        expect(p.messages).to be == expected_table
+      end
+    end
+
     describe 'show_table' do
       let(:expected_table) do
         [
@@ -2023,41 +2059,12 @@ describe Cinch::Plugins::CoupGame do
         ]
       end
 
-      it 'shows table publicly to player' do
-        @game.show_table(message_from('p1'))
-        expect(@chan.messages).to be == expected_table
+      let(:expected_error) do
+        'To see a game via PM you must specify the channel: !table #channel'
       end
+      let(:method) do :show_table end
 
-      it 'shows table publicly to non-player' do
-        @game.show_table(message_from('npc'))
-        expect(@chan.messages).to be == expected_table
-      end
-
-      it 'shows table privately to player without arguments' do
-        p = @players['p1']
-        p.messages.clear
-        @game.show_table(pm_from('p1'))
-        expect(@chan.messages).to be == []
-        expect(p.messages).to be == expected_table
-      end
-
-      it 'asks for channel if non-player asks for table privately' do
-        p = @players['npc']
-        p.messages.clear
-        @game.show_table(pm_from('npc'))
-        expect(@chan.messages).to be == []
-        expect(p.messages).to be == [
-          'To see a game via PM you must specify the channel: !table #channel'
-        ]
-      end
-
-      it 'shows table if non-player asks for table privately and specifies channel' do
-        p = @players['npc']
-        p.messages.clear
-        @game.show_table(pm_from('npc'), CHANNAME)
-        expect(@chan.messages).to be == []
-        expect(p.messages).to be == expected_table
-      end
+      it_behaves_like 'information source'
     end
 
     describe 'who_chars' do
