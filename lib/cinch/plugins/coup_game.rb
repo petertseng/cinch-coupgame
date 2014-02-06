@@ -128,8 +128,8 @@ module Cinch
       end
 
       def remove_if_not_started(m, user)
-        game = @games[m.channel.name]
-        self.remove_user_from_game(user, game) if game.not_started?
+        game = @user_games[user]
+        self.remove_user_from_game(user, game) if game && game.not_started?
       end
 
       def devoice_everyone_on_start(m, user)
