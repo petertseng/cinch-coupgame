@@ -293,17 +293,18 @@ module Cinch
           self.tell_characters_to(game, player)
         end
       end
-      
+
+      def character_info(c, opts = {})
+        cname = c.face_down? && !opts[:show_secret] ? '########' : c.to_s
+        c.face_down? ? "(#{cname})" : "[#{cname}]"
+      end
+
       def tell_characters_to(game, player, opts = {})
         opts = { :show_coins => true, :show_side => true }.merge(opts)
         character_1, character_2 = player.characters
 
-        char1_str = character_1.face_down? ? "(#{character_1})" : "[#{character_1}]"
-        if character_2
-          char2_str = character_2.face_down? ? " (#{character_2})" : " [#{character_2}]"
-        else
-          char2_str = ''
-        end
+        char1_str = character_info(character_1, show_secret: true)
+        char2_str = character_2 ? ' ' + character_info(character_2, show_secret: true) : ''
 
         coins_str = opts[:show_coins] ? " - Coins: #{player.coins}" : ""
         if opts[:show_side] && !player.side_cards.empty?
@@ -911,14 +912,8 @@ module Cinch
         info = game.players.collect { |p|
           character_1, character_2 = p.characters
 
-          char1_str = character_1.face_down? && !opts[:cheating] ? '########' : character_1.to_s
-          char1_str = character_1.face_down? ? "(#{char1_str})" : "[#{char1_str}]"
-          if character_2
-            char2_str = character_2.face_down? && !opts[:cheating] ? '########' : character_2.to_s
-            char2_str = character_2.face_down? ? " (#{char2_str})" : " [#{char2_str}]"
-          else
-            char2_str = ''
-          end
+          char1_str = character_info(character_1, show_secret: opts[:cheating])
+          char2_str = character_2 ? ' ' + character_info(character_2, show_secret: opts[:cheating]) : ''
 
           if opts[:cheating] && !p.side_cards.empty?
             chars = p.side_cards.collect { |c| "(#{c.to_s})" }.join(' ')
