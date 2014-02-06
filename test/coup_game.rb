@@ -80,6 +80,10 @@ class MyChannel
   end
   alias :devoice :voice
   alias :moderated= :voice
+
+  def voiced
+    []
+  end
 end
 
 def challenged_win(player, char, challenger)
