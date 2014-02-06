@@ -1164,6 +1164,8 @@ module Cinch
             settings.clear
           when 'inquisitor'
             settings << :inquisitor
+          when 'reformation'
+            settings << :reformation
           end
         }
 
