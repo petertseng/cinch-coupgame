@@ -2019,6 +2019,39 @@ describe Cinch::Plugins::CoupGame do
       end
     end
 
+    describe 'who_chars' do
+      def expected(i)
+        /^#{dehighlight(@order[i])}: \(\w+\) \(\w+\) - Coins: 2$/
+      end
+
+      it 'admonishes cheaters' do
+        p = @players['p1']
+        p.messages.clear
+        @game.who_chars(message_from('p1'), nil)
+        expect(@chan.messages).to be == []
+        expect(p.messages).to be == ['Cheater!!!']
+      end
+
+      it 'does nothing to non-mods' do
+        p = @players['p2']
+        p.messages.clear
+        @game.who_chars(message_from('p2'), nil)
+        expect(@chan.messages).to be == []
+        expect(p.messages).to be == []
+      end
+
+      it 'shows mods not in the game' do
+        p = @players['npmod']
+        p.messages.clear
+        @game.who_chars(message_from('npmod'), nil)
+        expect(@chan.messages).to be == []
+        (1..3).each { |i|
+          expect(p.messages.shift).to be =~ expected(i)
+        }
+        expect(p.messages).to be == []
+      end
+    end
+
     describe 'ending the game' do
       before :each do
         # Have each player take income to bump them up to 7 coins
