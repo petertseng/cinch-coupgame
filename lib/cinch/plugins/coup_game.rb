@@ -436,37 +436,32 @@ module Cinch
 
       def do_block(m, action)
         game = self.game_of(m)
-        return unless game
+        return unless game && game.started? && game.has_player?(m.user)
 
-        if game.started? && game.has_player?(m.user)
-          player = game.find_player(m.user)
-          if game.current_turn.waiting_for_block? && game.reacting_players.include?(player)
-            if game.current_turn.action.blockable?
-              return unless check_action(m, game, action)
+        player = game.find_player(m.user)
+        turn = game.current_turn
 
-              unless game.is_enemy?(player, game.current_turn.active_player)
-                us = Game::FACTIONS[game.current_player.faction]
-                them = Game::FACTIONS[1 - game.current_player.faction]
-                m.user.send("You cannot block a fellow #{us}'s #{game.current_turn.action.action.upcase} while the #{them} exist!")
-                return
-              end
+        return unless turn.waiting_for_block? && game.reacting_players.include?(player)
+        return unless check_action(m, game, action)
 
-              if Game::ACTIONS[action.to_sym].blocks == game.current_turn.action.action
-                if game.current_turn.action.needs_target && m.user != game.current_turn.target_player.user
-                  m.user.send "You can only block with #{action.upcase} if you are the target."
-                  return
-                end
-                game.current_turn.add_counteraction(action, player)
-                Channel(game.channel_name).send "#{m.user.nick} uses #{action.upcase} to block #{game.current_turn.action.action.upcase}"
-                self.prompt_challengers(game)
-                game.current_turn.wait_for_block_challenge
-              else
-                User(m.user).send "#{action.upcase} does not block that #{game.current_turn.action.action.upcase}."
-              end
-            else
-              User(m.user).send "#{game.current_turn.action.action.upcase} cannot be blocked."
-            end
+        unless game.is_enemy?(player, turn.active_player)
+          us = Game::FACTIONS[game.current_player.faction]
+          them = Game::FACTIONS[1 - game.current_player.faction]
+          m.user.send("You cannot block a fellow #{us}'s #{turn.action.action.upcase} while the #{them} exist!")
+          return
+        end
+
+        if Game::ACTIONS[action.to_sym].blocks == turn.action.action
+          if turn.action.needs_target && m.user != turn.target_player.user
+            m.user.send "You can only block with #{action.upcase} if you are the target."
+            return
           end
+          turn.add_counteraction(action, player)
+          Channel(game.channel_name).send "#{player} uses #{action.upcase} to block #{turn.action.action.upcase}"
+          self.prompt_challengers(game)
+          turn.wait_for_block_challenge
+        else
+          User(m.user).send "#{action.upcase} does not block that #{turn.action.action.upcase}."
         end
       end
 
