@@ -1775,6 +1775,25 @@ describe Cinch::Plugins::CoupGame do
       end
     end
 
+    it 'advances the turn to the immediately-next player if the active player gets knocked out' do
+      5.times do
+        (1..NUM_PLAYERS).each { |i|
+          @game.do_action(message_from(@order[i]), 'income')
+        }
+      end
+
+      @game.do_action(message_from(@order[1]), 'coup', @order[2])
+      @game.flip_card(message_from(@order[2]), '1')
+      @game.force_characters(@order[2], nil, :ambassador)
+      @game.do_action(message_from(@order[2]), 'duke')
+      @chan.messages.clear
+
+      @game.react_challenge(message_from(@order[1]))
+
+      # It really should be the third player's turn, not the first player's.
+      expect(@chan.messages[-1]).to be == "#{@order[3]}: It is your turn. Please choose an action."
+    end
+
     # ===== Reformation =====
 
     it 'does not allow apostatize action in a base game' do
