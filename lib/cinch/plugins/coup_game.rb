@@ -405,7 +405,13 @@ module Cinch
       end
 
       def prompt_challengers(game)
-        Channel(game.channel_name).send('All other players: Would you like to challenge ("!challenge") or not ("!pass")?')
+        turn = game.current_turn
+        action = "#{dehighlight_nick(turn.active_player.user.nick)}'s #{turn.action.to_s.upcase}"
+        action = "#{dehighlight_nick(turn.counteracting_player.user.nick)}'s #{turn.counteraction.to_s.upcase} blocking #{action}" if turn.counteraction
+
+        list = game.reacting_players.collect(&:to_s).join(', ')
+
+        Channel(game.channel_name).send("All other players (#{list}): Would you like to challenge #{action} (\"!challenge\") or not (\"!pass\")?")
       end
 
       def prompt_blocker(game)

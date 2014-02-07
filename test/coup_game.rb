@@ -8,8 +8,6 @@ CHANNAME = '#playcoup'
 CHANNAME2 = '#otherchannel'
 BOGUS_CHANNEL = '#blahblahblah'
 
-CHALLENGE_PROMPT = 'All other players: Would you like to challenge ("!challenge") or not ("!pass")?'
-
 class Message
   attr_reader :user, :channel
   def initialize(user, channel)
@@ -116,6 +114,15 @@ end
 
 def dehighlight(nickname)
   nickname.chars.to_a.join(8203.chr('UTF-8'))
+end
+
+def challenge_prompt(players, actor, action, target = nil, blocker = nil, counteraction = nil)
+  # target does nothing for now, but maybe later...
+  list = players.join(', ')
+  action = "#{dehighlight(actor)}'s #{action.to_s.upcase}"
+  action = "#{dehighlight(blocker)}'s #{counteraction.to_s.upcase} blocking #{action}" if counteraction
+
+  "All other players (#{list}): Would you like to challenge #{action} (\"!challenge\") or not (\"!pass\")?"
 end
 
 describe Cinch::Plugins::CoupGame do
@@ -439,7 +446,7 @@ describe Cinch::Plugins::CoupGame do
       @game.do_block(message_from(@order[2]), rolename)
       expect(@chan.messages).to be == [
         "#{@order[2]} uses #{rolename.upcase} to block CAPTAIN",
-        CHALLENGE_PROMPT,
+        challenge_prompt([@order[1], @order[3]], @order[1], :captain, @order[2], @order[2], rolesym),
       ].compact
       @chan.messages.clear
 
@@ -467,7 +474,7 @@ describe Cinch::Plugins::CoupGame do
         @game.do_block(message_from(@order[2]), rolename)
         expect(@chan.messages).to be == [
           "#{@order[2]} uses #{rolename.upcase} to block CAPTAIN",
-          CHALLENGE_PROMPT,
+          challenge_prompt([@order[1], @order[3]], @order[1], :captain, @order[2], @order[2], rolesym),
         ].compact
         @chan.messages.clear
 
@@ -610,7 +617,7 @@ describe Cinch::Plugins::CoupGame do
         @game.do_block(message_from(@order[2]), 'duke')
         expect(@chan.messages).to be == [
           "#{@order[2]} uses DUKE to block FOREIGN_AID",
-          CHALLENGE_PROMPT,
+          challenge_prompt([@order[1], @order[3]], @order[1], :foreign_aid, nil, @order[2], :duke),
         ].compact
         @chan.messages.clear
 
@@ -637,7 +644,7 @@ describe Cinch::Plugins::CoupGame do
           @game.do_block(message_from(@order[2]), 'duke')
           expect(@chan.messages).to be == [
             "#{@order[2]} uses DUKE to block FOREIGN_AID",
-            CHALLENGE_PROMPT,
+            challenge_prompt([@order[1], @order[3]], @order[1], :foreign_aid, nil, @order[2], :duke),
           ].compact
           @chan.messages.clear
 
@@ -862,7 +869,7 @@ describe Cinch::Plugins::CoupGame do
         @game.do_action(message_from(@order[1]), 'ambassador')
         expect(@chan.messages).to be == [
           "#{@order[1]} uses AMBASSADOR",
-          CHALLENGE_PROMPT,
+          challenge_prompt([@order[2], @order[3]], @order[1], :ambassador),
         ].compact
         @chan.messages.clear
 
@@ -929,7 +936,7 @@ describe Cinch::Plugins::CoupGame do
         @game.do_action(message_from(@order[2]), 'ambassador')
         expect(@chan.messages).to be == [
           "#{@order[2]} uses AMBASSADOR",
-          CHALLENGE_PROMPT,
+          challenge_prompt([@order[3], @order[1]], @order[2], :ambassador),
         ].compact
         @chan.messages.clear
 
@@ -984,7 +991,7 @@ describe Cinch::Plugins::CoupGame do
         @game.do_action(message_from(@order[1]), 'ambassador')
         expect(@chan.messages).to be == [
           "#{@order[1]} uses AMBASSADOR",
-          CHALLENGE_PROMPT,
+          challenge_prompt([@order[2], @order[3]], @order[1], :ambassador),
         ].compact
         @chan.messages.clear
 
@@ -1072,7 +1079,7 @@ describe Cinch::Plugins::CoupGame do
         @game.do_action(message_from(@order[1]), 'assassin', @order[2])
         expect(@chan.messages).to be == [
           "#{@order[1]} uses ASSASSIN on #{@order[2]}",
-          CHALLENGE_PROMPT,
+          challenge_prompt([@order[2], @order[3]], @order[1], :assassin, @order[2]),
         ].compact
         @chan.messages.clear
 
@@ -1138,7 +1145,7 @@ describe Cinch::Plugins::CoupGame do
         @game.do_block(message_from(@order[2]), 'contessa')
         expect(@chan.messages).to be == [
           "#{@order[2]} uses CONTESSA to block ASSASSIN",
-          CHALLENGE_PROMPT,
+          challenge_prompt([@order[1], @order[3]], @order[1], :assassin, @order[2], @order[2], :contessa),
         ].compact
         @chan.messages.clear
 
@@ -1166,7 +1173,7 @@ describe Cinch::Plugins::CoupGame do
           @game.do_block(message_from(@order[2]), 'contessa')
           expect(@chan.messages).to be == [
             "#{@order[2]} uses CONTESSA to block ASSASSIN",
-            CHALLENGE_PROMPT,
+            challenge_prompt([@order[1], @order[3]], @order[1], :assassin, @order[2], @order[2], :contessa),
           ].compact
           @chan.messages.clear
 
@@ -1224,7 +1231,7 @@ describe Cinch::Plugins::CoupGame do
         @game.do_action(message_from(@order[1]), 'assassin', @order[2])
         expect(@chan.messages).to be == [
           "#{@order[1]} uses ASSASSIN on #{@order[2]}",
-          CHALLENGE_PROMPT,
+          challenge_prompt([@order[2], @order[3]], @order[1], :assassin, @order[2]),
         ].compact
         @chan.messages.clear
 
@@ -1520,7 +1527,7 @@ describe Cinch::Plugins::CoupGame do
         @game.do_action(message_from(@order[1]), 'captain', @order[2])
         expect(@chan.messages).to be == [
           "#{@order[1]} uses CAPTAIN on #{@order[2]}",
-          CHALLENGE_PROMPT,
+          challenge_prompt([@order[2], @order[3]], @order[1], :captain, @order[2]),
         ].compact
         @chan.messages.clear
 
@@ -1577,7 +1584,7 @@ describe Cinch::Plugins::CoupGame do
         @game.do_action(message_from(@order[1]), 'captain', @order[2])
         expect(@chan.messages).to be == [
           "#{@order[1]} uses CAPTAIN on #{@order[2]}",
-          CHALLENGE_PROMPT,
+          challenge_prompt([@order[2], @order[3]], @order[1], :captain, @order[2]),
         ].compact
         @chan.messages.clear
 
@@ -1707,7 +1714,7 @@ describe Cinch::Plugins::CoupGame do
       @game.do_action(message_from(@order[1]), 'duke')
       expect(@chan.messages).to be == [
         "#{@order[1]} uses DUKE",
-        CHALLENGE_PROMPT,
+        challenge_prompt([@order[2], @order[3]], @order[1], :duke),
       ].compact
       @chan.messages.clear
 
@@ -1737,7 +1744,7 @@ describe Cinch::Plugins::CoupGame do
         @game.do_action(message_from(@order[1]), 'duke')
         expect(@chan.messages).to be == [
           "#{@order[1]} uses DUKE",
-          CHALLENGE_PROMPT,
+          challenge_prompt([@order[2], @order[3]], @order[1], :duke),
         ].compact
         @chan.messages.clear
 
@@ -2503,7 +2510,7 @@ describe Cinch::Plugins::CoupGame do
         @game.do_action(message_from(@order[1]), 'inquisitor', @order[1])
         expect(@chan.messages).to be == [
           "#{@order[1]} uses INQUISITOR on #{@order[1]}",
-          CHALLENGE_PROMPT,
+          challenge_prompt([@order[2], @order[3]], @order[1], :inquisitor, @order[1]),
         ].compact
         @chan.messages.clear
 
@@ -2570,7 +2577,7 @@ describe Cinch::Plugins::CoupGame do
         @game.do_action(message_from(@order[2]), 'inquisitor', @order[2])
         expect(@chan.messages).to be == [
           "#{@order[2]} uses INQUISITOR on #{@order[2]}",
-          CHALLENGE_PROMPT,
+          challenge_prompt([@order[3], @order[1]], @order[2], :inquisitor, @order[2]),
         ].compact
         @chan.messages.clear
 
@@ -2623,7 +2630,7 @@ describe Cinch::Plugins::CoupGame do
         @game.do_action(message_from(@order[1]), 'captain', @order[2])
         expect(@chan.messages).to be == [
           "#{@order[1]} uses CAPTAIN on #{@order[2]}",
-          CHALLENGE_PROMPT,
+          challenge_prompt([@order[2], @order[3]], @order[1], :captain, @order[2]),
         ].compact
         @chan.messages.clear
 
@@ -2655,7 +2662,7 @@ describe Cinch::Plugins::CoupGame do
         @game.do_action(message_from(@order[1]), 'inquisitor', @order[2])
         expect(@chan.messages).to be == [
           "#{@order[1]} uses INQUISITOR on #{@order[2]}",
-          CHALLENGE_PROMPT,
+          challenge_prompt([@order[2], @order[3]], @order[1], :inquisitor, @order[2]),
         ].compact
         @chan.messages.clear
 
@@ -2821,7 +2828,7 @@ describe Cinch::Plugins::CoupGame do
 
       expect(@chan.messages).to be == [
         "#{@order[2]} uses EMBEZZLE",
-        CHALLENGE_PROMPT,
+        challenge_prompt([@order[3], @order[1]], @order[2], :embezzle),
       ].compact
       @chan.messages.clear
 
