@@ -125,6 +125,11 @@ def challenge_prompt(players, actor, action, target = nil, blocker = nil, counte
   "All other players (#{list}): Would you like to challenge #{action} (\"!challenge\") or not (\"!pass\")?"
 end
 
+def block_foreign_aid(blocker_names, aided, blocker_group = "other")
+  list = blocker_names.join(', ')
+  "All #{blocker_group} players (#{list}): Would you like to block #{dehighlight(aided)}'s FOREIGN_AID (\"!block duke\") or not (\"!pass\")?"
+end
+
 describe Cinch::Plugins::CoupGame do
   def message_from(username, channel = nil)
     Message.new(@players[username], channel || @chan)
@@ -572,7 +577,7 @@ describe Cinch::Plugins::CoupGame do
         @game.do_action(message_from(@order[1]), 'foreign_aid')
         expect(@chan.messages).to be == [
           "#{@order[1]} uses FOREIGN_AID",
-          "All other players (#{@order[2]}, #{@order[3]}): Would you like to block the FOREIGN_AID (\"!block duke\") or not (\"!pass\")?",
+          block_foreign_aid([@order[2], @order[3]], @order[1]),
         ]
         @chan.messages.clear
       end
@@ -1067,7 +1072,12 @@ describe Cinch::Plugins::CoupGame do
       expect(p.messages).to be == ['You must specify a target for ASSASSIN: !action assassin <playername>']
     end
 
+    def block_assassin(victim, assassin)
+      "#{victim}: Would you like to block #{dehighlight(assassin)}'s ASSASSIN (\"!block contessa\") or not (\"!pass\")?"
+    end
+
     context 'when player uses assassin unchallenged' do
+
       before :each do
         # Have each player take income to bump them up to 3 coins
         (1..NUM_PLAYERS).each { |i|
@@ -1093,7 +1103,7 @@ describe Cinch::Plugins::CoupGame do
 
         expect(@chan.messages).to be == [
           "#{@order[NUM_PLAYERS]} passes.",
-          "#{@order[2]}: Would you like to block the ASSASSIN (\"!block contessa\") or not (\"!pass\")?",
+          block_assassin(@order[2], @order[1]),
         ]
         @chan.messages.clear
       end
@@ -1252,7 +1262,7 @@ describe Cinch::Plugins::CoupGame do
 
         expect(@chan.messages.shift).to be =~ lose_card(@order[2])
         expect(@chan.messages).to be == [
-          "#{@order[2]}: Would you like to block the ASSASSIN (\"!block contessa\") or not (\"!pass\")?",
+          block_assassin(@order[2], @order[1]),
         ]
 
         @game.react_pass(message_from(@order[2]))
@@ -1388,7 +1398,7 @@ describe Cinch::Plugins::CoupGame do
         @game.flip_card(message_from(@order[2]), '2')
         expect(@chan.messages.shift).to be =~ lose_card(@order[2])
         expect(@chan.messages).to be == [
-          "#{@order[2]}: Would you like to block the ASSASSIN (\"!block contessa\") or not (\"!pass\")?",
+          block_assassin(@order[2], @order[1]),
         ]
 
         @chan.messages.clear
@@ -1483,7 +1493,7 @@ describe Cinch::Plugins::CoupGame do
         challenged_win(@order[3], :assassin, @order[2]),
         lose_card(@order[2], :duke),
         "#{@order[2]} has no more influence, and is out of the game.",
-        "#{@order[1]}: Would you like to block the ASSASSIN (\"!block contessa\") or not (\"!pass\")?",
+        block_assassin(@order[1], @order[3]),
       ].flatten
       @chan.messages.clear
 
@@ -1544,7 +1554,7 @@ describe Cinch::Plugins::CoupGame do
 
         expect(@chan.messages).to be == [
           "#{@order[NUM_PLAYERS]} passes.",
-          "#{@order[2]}: Would you like to block the CAPTAIN (\"!block captain\" or \"!block ambassador\") or not (\"!pass\")?",
+          "#{@order[2]}: Would you like to block #{dehighlight(@order[1])}'s CAPTAIN (\"!block captain\" or \"!block ambassador\") or not (\"!pass\")?",
         ]
         @chan.messages.clear
       end
@@ -1605,7 +1615,7 @@ describe Cinch::Plugins::CoupGame do
 
         expect(@chan.messages.shift).to be =~ lose_card(@order[2])
         expect(@chan.messages).to be == [
-          "#{@order[2]}: Would you like to block the CAPTAIN (\"!block captain\" or \"!block ambassador\") or not (\"!pass\")?",
+          "#{@order[2]}: Would you like to block #{dehighlight(@order[1])}'s CAPTAIN (\"!block captain\" or \"!block ambassador\") or not (\"!pass\")?",
         ]
       end
 
@@ -2644,7 +2654,7 @@ describe Cinch::Plugins::CoupGame do
 
         expect(@chan.messages).to be == [
           "#{@order[NUM_PLAYERS]} passes.",
-          "#{@order[2]}: Would you like to block the CAPTAIN (\"!block captain\" or \"!block inquisitor\") or not (\"!pass\")?",
+          "#{@order[2]}: Would you like to block #{dehighlight(@order[1])}'s CAPTAIN (\"!block captain\" or \"!block inquisitor\") or not (\"!pass\")?",
         ]
         @chan.messages.clear
       end
@@ -3007,7 +3017,7 @@ describe Cinch::Plugins::CoupGame do
           @game.do_action(message_from(@order[1]), 'foreign_aid')
           expect(@chan.messages).to be == [
             "#{@order[1]} uses FOREIGN_AID",
-            "All #{Game::FACTIONS[1]} players (#{@order[2]}): Would you like to block the FOREIGN_AID (\"!block duke\") or not (\"!pass\")?",
+            block_foreign_aid([@order[2]], @order[1], Game::FACTIONS[1]),
           ]
           @chan.messages.clear
         end
@@ -3033,7 +3043,7 @@ describe Cinch::Plugins::CoupGame do
         @game.do_action(message_from(@order[1]), 'foreign_aid')
         expect(@chan.messages).to be == [
           "#{@order[1]} uses FOREIGN_AID",
-          "All #{Game::FACTIONS[1]} players (#{@order[2]}): Would you like to block the FOREIGN_AID (\"!block duke\") or not (\"!pass\")?",
+          block_foreign_aid([@order[2]], @order[1], Game::FACTIONS[1]),
         ]
         @chan.messages.clear
 
@@ -3045,7 +3055,7 @@ describe Cinch::Plugins::CoupGame do
         @game.do_action(message_from(@order[1]), 'foreign_aid')
         expect(@chan.messages).to be == [
           "#{@order[1]} uses FOREIGN_AID",
-          "All #{Game::FACTIONS[1]} players (#{@order[2]}): Would you like to block the FOREIGN_AID (\"!block duke\") or not (\"!pass\")?",
+          block_foreign_aid([@order[2]], @order[1], Game::FACTIONS[1]),
         ]
         @chan.messages.clear
 
@@ -3073,7 +3083,7 @@ describe Cinch::Plugins::CoupGame do
         @game.do_action(message_from(@order[1]), 'foreign_aid')
         expect(@chan.messages).to be == [
           "#{@order[1]} uses FOREIGN_AID",
-          "All other players (#{@order[2]}, #{@order[3]}): Would you like to block the FOREIGN_AID (\"!block duke\") or not (\"!pass\")?",
+          block_foreign_aid([@order[2], @order[3]], @order[1]),
         ]
         @chan.messages.clear
 
