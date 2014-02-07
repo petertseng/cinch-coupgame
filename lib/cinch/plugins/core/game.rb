@@ -125,6 +125,8 @@ class Game
     @ambassador_options = []
     @inquisitor_shown_card = nil
     @bank = 0
+
+    @active_player_killed = false
   end
 
   #----------------------------------------------
@@ -179,6 +181,7 @@ class Game
     unless player.nil?
       self.players.delete(player)
       removed = player
+      @active_player_killed = current_turn && current_turn.active_player == player
     end
     removed
   end
@@ -399,7 +402,13 @@ class Game
 
   def next_turn
     self.current_turn.end_turn unless current_turn.nil?
-    self.turns << Turn.new(self.players.rotate!.first)
+
+    # If the active player was killed, do not rotate.
+    # Rotating would skip the player after him!
+    self.players.rotate! unless @active_player_killed
+    @active_player_killed = false
+
+    self.turns << Turn.new(self.players.first)
   end
 
   def current_turn
