@@ -2767,29 +2767,15 @@ describe Cinch::Plugins::CoupGame do
 
   end
 
-  context 'when p1..3 are playing a reformation game' do
-    before :each do
-      (1..NUM_PLAYERS).each { |i| @game.join(message_from("p#{i}")) }
-      @game.set_game_settings(message_from('p1'), nil, 'reformation')
-      @chan.messages.clear
-      @game.start_game(message_from('p1'))
-
-      expect(@chan.messages.size).to be == 3
-      expect(@chan.messages[-3]).to be == 'The game has started.'
-      match = (TURN_ORDER_REGEX3.match(@chan.messages[-2]))
-      @order = match
-      expect(@chan.messages[-1]).to be == "FIRST TURN. Player: #{@order[1]}. Please choose an action."
-      @chan.messages.clear
-    end
-
+  shared_examples 'game with faction-changing actions' do
     # ===== Apostatize =====
 
-    it 'allows the apostatize action' do
-      @game.do_action(message_from(@order[1]), 'apostatize')
+    it 'allows the self-convert action' do
+      @game.do_action(message_from(@order[1]), convert_self_name)
 
       expect(@chan.messages).to be == [
-        "#{@order[1]} uses APOSTATIZE",
-        "#{@order[1]} proceeds with APOSTATIZE. Pay 1 coin to #{Game::BANK_NAME}, change own faction.",
+        "#{@order[1]} uses #{convert_self_name.upcase}",
+        "#{@order[1]} proceeds with #{convert_self_name.upcase}. Pay 1 coin to #{bank_name}, change own faction.",
         "#{@order[2]}: It is your turn. Please choose an action.",
       ]
 
@@ -2800,12 +2786,12 @@ describe Cinch::Plugins::CoupGame do
 
     # ===== Convert =====
 
-    it 'allows the convert action' do
-      @game.do_action(message_from(@order[1]), 'convert', @order[2])
+    it 'allows the targeted convert action' do
+      @game.do_action(message_from(@order[1]), convert_other_name, @order[2])
 
       expect(@chan.messages).to be == [
-        "#{@order[1]} uses CONVERT on #{@order[2]}",
-        "#{@order[1]} proceeds with CONVERT. Pay 2 coins to #{Game::BANK_NAME}, choose player to change faction: #{@order[2]}.",
+        "#{@order[1]} uses #{convert_other_name.upcase} on #{@order[2]}",
+        "#{@order[1]} proceeds with #{convert_other_name.upcase}. Pay 2 coins to #{bank_name}, choose player to change faction: #{@order[2]}.",
         "#{@order[2]}: It is your turn. Please choose an action.",
       ]
 
@@ -2816,8 +2802,8 @@ describe Cinch::Plugins::CoupGame do
       @game.do_action(message_from(@order[1]), 'convert', @order[3])
 
       expect(@chan.messages).to be == [
-        "#{@order[1]} uses CONVERT on #{@order[3]}",
-        "#{@order[1]} proceeds with CONVERT. Pay 2 coins to #{Game::BANK_NAME}, choose player to change faction: #{@order[3]}.",
+        "#{@order[1]} uses #{convert_other_name.upcase} on #{@order[3]}",
+        "#{@order[1]} proceeds with #{convert_other_name.upcase}. Pay 2 coins to #{bank_name}, choose player to change faction: #{@order[3]}.",
         "#{@order[2]}: It is your turn. Please choose an action.",
       ]
 
@@ -2831,7 +2817,7 @@ describe Cinch::Plugins::CoupGame do
 
     it 'allows the embezzle action' do
       # Put some money in the bank first
-      @game.do_action(message_from(@order[1]), 'apostatize')
+      @game.do_action(message_from(@order[1]), convert_self_name)
       @chan.messages.clear
 
       @game.do_action(message_from(@order[2]), 'embezzle')
@@ -2851,7 +2837,7 @@ describe Cinch::Plugins::CoupGame do
 
       expect(@chan.messages).to be == [
         "#{@order[1]} passes.",
-        "#{@order[2]} proceeds with EMBEZZLE. Take all coins from the #{Game::BANK_NAME}.",
+        "#{@order[2]} proceeds with EMBEZZLE. Take all coins from the #{bank_name}.",
         "#{@order[3]}: It is your turn. Please choose an action.",
       ]
 
@@ -2860,7 +2846,7 @@ describe Cinch::Plugins::CoupGame do
 
     it 'does not give money when embezzler challenged successfully' do
       # Put some money in the bank first
-      @game.do_action(message_from(@order[1]), 'apostatize')
+      @game.do_action(message_from(@order[1]), convert_self_name)
       @game.force_characters(@order[2], :ambassador, :duke)
       @game.do_action(message_from(@order[2]), 'embezzle')
       @chan.messages.clear
@@ -2877,7 +2863,7 @@ describe Cinch::Plugins::CoupGame do
 
     it 'flips two cards and gives money when 2-influence embezzler challenged unsuccessfully' do
       # Put some money in the bank first
-      @game.do_action(message_from(@order[1]), 'apostatize')
+      @game.do_action(message_from(@order[1]), convert_self_name)
       @game.force_characters(@order[2], :ambassador, :assassin)
       @game.do_action(message_from(@order[2]), 'embezzle')
       @chan.messages.clear
@@ -2894,7 +2880,7 @@ describe Cinch::Plugins::CoupGame do
 
       expect(@chan.messages.shift).to be =~ lose_card(@order[1])
       expect(@chan.messages).to be == [
-        "#{@order[2]} proceeds with EMBEZZLE. Take all coins from the #{Game::BANK_NAME}.",
+        "#{@order[2]} proceeds with EMBEZZLE. Take all coins from the #{bank_name}.",
         "#{@order[3]}: It is your turn. Please choose an action.",
       ]
       expect(@game.coins(@order[2])).to be == 3
@@ -2908,7 +2894,7 @@ describe Cinch::Plugins::CoupGame do
       end
 
       # Put some money in the bank first
-      @game.do_action(message_from(@order[1]), 'apostatize')
+      @game.do_action(message_from(@order[1]), convert_self_name)
       @game.force_characters(@order[3], :ambassador, :assassin)
       @game.do_action(message_from(@order[2]), 'coup', @order[3])
       @game.flip_card(message_from(@order[3]), '1')
@@ -2927,14 +2913,14 @@ describe Cinch::Plugins::CoupGame do
 
       expect(@chan.messages.shift).to be =~ lose_card(@order[1])
       expect(@chan.messages).to be == [
-        "#{@order[3]} proceeds with EMBEZZLE. Take all coins from the #{Game::BANK_NAME}.",
+        "#{@order[3]} proceeds with EMBEZZLE. Take all coins from the #{bank_name}.",
         "#{@order[1]}: It is your turn. Please choose an action.",
       ]
       expect(@game.coins(@order[3])).to be == 8
     end
+  end
 
-    # ===== Reformation factional targetting rules =====
-
+  shared_examples 'game with factional targetting rules' do
     shared_examples "first player can target second" do
       it 'allows targeting opponent with captain' do
         @game.do_action(message_from(@order[1]), 'captain', @order[2])
@@ -2974,7 +2960,7 @@ describe Cinch::Plugins::CoupGame do
         @game.do_action(message_from(@order[1]), 'captain', @order[3])
         expect(@chan.messages).to be == []
         expect(p.messages).to be == [
-          "You cannot target a fellow #{Game::FACTIONS[0]} with CAPTAIN while the #{Game::FACTIONS[1]} exist!"
+          "You cannot target a fellow #{factions[0]} with CAPTAIN while the #{factions[1]} exist!"
         ]
       end
 
@@ -2990,7 +2976,7 @@ describe Cinch::Plugins::CoupGame do
         @game.do_action(message_from(@order[1]), 'assassin', @order[3])
         expect(@chan.messages).to be == []
         expect(p.messages).to be == [
-          "You cannot target a fellow #{Game::FACTIONS[0]} with ASSASSIN while the #{Game::FACTIONS[1]} exist!"
+          "You cannot target a fellow #{factions[0]} with ASSASSIN while the #{factions[1]} exist!"
         ]
       end
 
@@ -3008,7 +2994,7 @@ describe Cinch::Plugins::CoupGame do
         @game.do_action(message_from(@order[1]), 'coup', @order[3])
         expect(@chan.messages).to be == []
         expect(p.messages).to be == [
-          "You cannot target a fellow #{Game::FACTIONS[0]} with COUP while the #{Game::FACTIONS[1]} exist!"
+          "You cannot target a fellow #{factions[0]} with COUP while the #{factions[1]} exist!"
         ]
       end
 
@@ -3017,7 +3003,7 @@ describe Cinch::Plugins::CoupGame do
           @game.do_action(message_from(@order[1]), 'foreign_aid')
           expect(@chan.messages).to be == [
             "#{@order[1]} uses FOREIGN_AID",
-            block_foreign_aid([@order[2]], @order[1], Game::FACTIONS[1]),
+            block_foreign_aid([@order[2]], @order[1], factions[1]),
           ]
           @chan.messages.clear
         end
@@ -3029,7 +3015,7 @@ describe Cinch::Plugins::CoupGame do
           @game.do_block(message_from(@order[3]), 'duke')
           expect(@chan.messages).to be == []
           expect(p.messages).to be == [
-            "You cannot block a fellow #{Game::FACTIONS[0]}'s FOREIGN_AID while the #{Game::FACTIONS[1]} exist!"
+            "You cannot block a fellow #{factions[0]}'s FOREIGN_AID while the #{factions[1]} exist!"
           ]
         end
 
@@ -3043,7 +3029,7 @@ describe Cinch::Plugins::CoupGame do
         @game.do_action(message_from(@order[1]), 'foreign_aid')
         expect(@chan.messages).to be == [
           "#{@order[1]} uses FOREIGN_AID",
-          block_foreign_aid([@order[2]], @order[1], Game::FACTIONS[1]),
+          block_foreign_aid([@order[2]], @order[1], factions[1]),
         ]
         @chan.messages.clear
 
@@ -3055,7 +3041,7 @@ describe Cinch::Plugins::CoupGame do
         @game.do_action(message_from(@order[1]), 'foreign_aid')
         expect(@chan.messages).to be == [
           "#{@order[1]} uses FOREIGN_AID",
-          block_foreign_aid([@order[2]], @order[1], Game::FACTIONS[1]),
+          block_foreign_aid([@order[2]], @order[1], factions[1]),
         ]
         @chan.messages.clear
 
@@ -3072,7 +3058,7 @@ describe Cinch::Plugins::CoupGame do
     context 'when there is only one faction' do
       before :each do
         @game.do_action(message_from(@order[1]), 'income')
-        @game.do_action(message_from(@order[2]), 'apostatize')
+        @game.do_action(message_from(@order[2]), convert_self_name)
         @game.do_action(message_from(@order[3]), 'income')
         @chan.messages.clear
       end
@@ -3091,17 +3077,17 @@ describe Cinch::Plugins::CoupGame do
         expect(@chan.messages[0]).to be == "#{@order[2]} uses DUKE to block FOREIGN_AID"
       end
     end
+  end
 
-    # ===== character info =====
-
+  shared_examples 'game with factional info' do
     it 'tells players their start characters and alignment' do
       p = @players[@order[1]]
       expect(p.messages.shift).to be == '=' * 40
-      expect(p.messages.shift).to be =~ /^\(\w+\) \(\w+\) - Coins: 2 - #{Game::FACTIONS[0]}$/
+      expect(p.messages.shift).to be =~ /^\(\w+\) \(\w+\) - Coins: 2 - #{factions[0]}$/
       expect(p.messages).to be == []
       p = @players[@order[2]]
       expect(p.messages.shift).to be == '=' * 40
-      expect(p.messages.shift).to be =~ /^\(\w+\) \(\w+\) - Coins: 2 - #{Game::FACTIONS[1]}$/
+      expect(p.messages.shift).to be =~ /^\(\w+\) \(\w+\) - Coins: 2 - #{factions[1]}$/
       expect(p.messages).to be == []
     end
 
@@ -3110,23 +3096,23 @@ describe Cinch::Plugins::CoupGame do
       p.messages.clear
       @game.whoami(message_from(@order[1]))
       expect(@chan.messages).to be == []
-      expect(p.messages.shift).to be =~ /^\(\w+\) \(\w+\) - Coins: 2 - #{Game::FACTIONS[0]}$/
+      expect(p.messages.shift).to be =~ /^\(\w+\) \(\w+\) - Coins: 2 - #{factions[0]}$/
       expect(p.messages).to be == []
     end
 
     it 'shows table publicly to player' do
       @game.show_table(message_from('p1'))
       expect(@chan.messages).to be == [
-        "#{dehighlight(@order[1])}: (########) (########) - Coins: 2 - #{Game::FACTIONS[0]}",
-        "#{dehighlight(@order[2])}: (########) (########) - Coins: 2 - #{Game::FACTIONS[1]}",
-        "#{dehighlight(@order[3])}: (########) (########) - Coins: 2 - #{Game::FACTIONS[0]}",
-        "#{Game::BANK_NAME}: 0 coins",
+        "#{dehighlight(@order[1])}: (########) (########) - Coins: 2 - #{factions[0]}",
+        "#{dehighlight(@order[2])}: (########) (########) - Coins: 2 - #{factions[1]}",
+        "#{dehighlight(@order[3])}: (########) (########) - Coins: 2 - #{factions[0]}",
+        "#{bank_name}: 0 coins",
       ]
     end
 
     describe 'who_chars' do
       def expected(i)
-        /^#{dehighlight(@order[i])}: \(\w+\) \(\w+\) - Coins: 2 - #{Game::FACTIONS[(i + 1) % 2]}$/
+        /^#{dehighlight(@order[i])}: \(\w+\) \(\w+\) - Coins: 2 - #{factions[(i + 1) % 2]}$/
       end
 
       it 'shows mods not in the game' do
@@ -3137,9 +3123,34 @@ describe Cinch::Plugins::CoupGame do
         (1..3).each { |i|
           expect(p.messages.shift).to be =~ expected(i)
         }
-        expect(p.messages).to be == ["#{Game::BANK_NAME}: 0 coins"]
+        expect(p.messages).to be == ["#{bank_name}: 0 coins"]
       end
     end
+  end
+
+  context 'when p1..3 are playing a reformation game' do
+    before :each do
+      (1..NUM_PLAYERS).each { |i| @game.join(message_from("p#{i}")) }
+      @game.set_game_settings(message_from('p1'), nil, 'reformation')
+      @chan.messages.clear
+      @game.start_game(message_from('p1'))
+
+      expect(@chan.messages.size).to be == 3
+      expect(@chan.messages[-3]).to be == 'The game has started.'
+      match = (TURN_ORDER_REGEX3.match(@chan.messages[-2]))
+      @order = match
+      expect(@chan.messages[-1]).to be == "FIRST TURN. Player: #{@order[1]}. Please choose an action."
+      @chan.messages.clear
+    end
+
+    let(:convert_self_name) do 'apostatize' end
+    let(:convert_other_name) do 'convert' end
+    let(:bank_name) do 'Almshouse' end
+    let(:factions) do ['Protestant', 'Catholic'] end
+
+    it_behaves_like 'game with faction-changing actions'
+    it_behaves_like 'game with factional targetting rules'
+    it_behaves_like 'game with factional info'
   end
 
 end
