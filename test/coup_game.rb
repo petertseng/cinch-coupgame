@@ -2799,7 +2799,7 @@ describe Cinch::Plugins::CoupGame do
     end
 
     it 'allows the convert action on a factionmate' do
-      @game.do_action(message_from(@order[1]), 'convert', @order[3])
+      @game.do_action(message_from(@order[1]), convert_other_name, @order[3])
 
       expect(@chan.messages).to be == [
         "#{@order[1]} uses #{convert_other_name.upcase} on #{@order[3]}",
@@ -3147,6 +3147,31 @@ describe Cinch::Plugins::CoupGame do
     let(:convert_other_name) do 'convert' end
     let(:bank_name) do 'Almshouse' end
     let(:factions) do ['Protestant', 'Catholic'] end
+
+    it_behaves_like 'game with faction-changing actions'
+    it_behaves_like 'game with factional targetting rules'
+    it_behaves_like 'game with factional info'
+  end
+
+  context 'when p1..3 are playing an incorporation game' do
+    before :each do
+      (1..NUM_PLAYERS).each { |i| @game.join(message_from("p#{i}")) }
+      @game.set_game_settings(message_from('p1'), nil, 'incorporation')
+      @chan.messages.clear
+      @game.start_game(message_from('p1'))
+
+      expect(@chan.messages.size).to be == 3
+      expect(@chan.messages[-3]).to be == 'The game has started.'
+      match = (TURN_ORDER_REGEX3.match(@chan.messages[-2]))
+      @order = match
+      expect(@chan.messages[-1]).to be == "FIRST TURN. Player: #{@order[1]}. Please choose an action."
+      @chan.messages.clear
+    end
+
+    let(:convert_self_name) do 'defect' end
+    let(:convert_other_name) do 'bribe' end
+    let(:bank_name) do 'Corporate Bank' end
+    let(:factions) do ['Resistance', 'Imperial'] end
 
     it_behaves_like 'game with faction-changing actions'
     it_behaves_like 'game with factional targetting rules'
