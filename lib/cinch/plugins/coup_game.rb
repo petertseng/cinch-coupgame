@@ -1152,7 +1152,7 @@ module Cinch
           case opt.downcase
           when 'base'
             settings.clear
-          when 'inquisitor'
+          when 'inquisitor', 'inquisition'
             settings << :inquisitor
           when 'reformation'
             settings << :reformation
@@ -1210,8 +1210,8 @@ module Cinch
             m.user.send('!status - shows which phase the game is in, and who currently needs to take an action')
           when "3"
             User(m.user).send "--- HELP PAGE 3/3 ---"
-            m.user.send('!rules (actions|inquisition|reformation) - provides rules for the game; when provided with an argument, provides specified rules')
-            m.user.send('!settings (modes) - changes the game to the specified game type. modes may be any combination of "inquisition" or "reformation", or blank to see current settings')
+            m.user.send('!rules (actions|inquisitor|reformation) - provides rules for the game; when provided with an argument, provides specified rules')
+            m.user.send('!settings (modes) - changes the game to the specified game type. modes may be "inquisitor" plus one of ("reformation" or "incorporation"), or blank to see current settings')
 
             User(m.user).send "!subscribe - subscribe your current nick to receive PMs when someone calls !invite"
             User(m.user).send "!unsubscribe - remove your nick from the invitation list"
@@ -1241,7 +1241,7 @@ module Cinch
 
       def rules(m, section)
         case section.to_s.downcase
-        when 'inquisition'
+        when 'inquisition', 'inquisitor'
           m.user.send('http://boardgamegeek.com/image/1825161/coup')
           m.user.send('The Inquisitor is a new role that replaces the Ambassador.')
           m.user.send('Like the Ambassador, the Inquisitor blocks the Captain from stealing coins from you.')
