@@ -219,7 +219,7 @@ class Game
     self.next_turn
 
     # Do this after #next_turn since next_turn rotates the players!
-    if @settings.include?(:reformation)
+    if self.has_factions?
       faction = 0
       self.players.each { |p|
         p.faction = faction
@@ -386,8 +386,12 @@ class Game
     action.mode_required.nil? || self.settings.include?(action.mode_required)
   end
 
+  def has_factions?
+    @settings.include?(:reformation)
+  end
+
   def is_enemy?(player, target)
-    return true unless @settings.include?(:reformation)
+    return true unless self.has_factions?
     # self-targetting is OK (Inquisitor)
     # It's not this code's responsibility to check whether action can self-target
     return true if player == target

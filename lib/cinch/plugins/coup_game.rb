@@ -313,7 +313,7 @@ module Cinch
           side_str = ' - Set aside: ' + chars
         end
 
-        faction_str = game.settings.include?(:reformation) ? " - #{Game::FACTIONS[player.faction]}" : ''
+        faction_str = game.has_factions? ? " - #{Game::FACTIONS[player.faction]}" : ''
 
         "#{char1_str}#{char2_str}#{coins_str}#{faction_str}#{side_str}"
       end
@@ -427,7 +427,7 @@ module Cinch
           prefix = 'All other players'
           enemies = game.reacting_players
 
-          if game.settings.include?(:reformation)
+          if game.has_factions?
             active_faction = game.current_turn.active_player.faction
             faction_enemies = game.players.select { |p| p.faction != active_faction }
             unless faction_enemies.empty?
@@ -506,7 +506,7 @@ module Cinch
             success = game.current_turn.pass(player)
             Channel(game.channel_name).send "#{m.user.nick} passes." if success
             # So we wait until all reactions are in.
-            all_in = game.settings.include?(:reformation) ? game.all_enemy_reactions_in? : game.all_reactions_in?
+            all_in = game.has_factions? ? game.all_enemy_reactions_in? : game.all_reactions_in?
             self.process_turn(game) if all_in
           end
         end
@@ -902,7 +902,7 @@ module Cinch
           discards = game.discard_pile.map{ |c| "[#{c}]" }.join(" ")
           info << "Discard Pile: #{discards}"
         end
-        if game.settings.include?(:reformation)
+        if game.has_factions?
           info << "#{Game::BANK_NAME}: #{game.bank} coin#{game.bank == 1 ? '' : 's'}"
         end
         info
