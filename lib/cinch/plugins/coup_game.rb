@@ -1219,6 +1219,17 @@ module Cinch
         when 'reformation'
           # TODO
         when 'actions'
+          m.user.send('http://boardgamegeek.com/image/1812508/coup')
+          m.user.send('General actions: Always available')
+          m.user.send('* Income: Take one coin from the treasury.')
+          m.user.send('* Foreign Aid: Take two coin from the treasury (blockable by Duke).')
+          m.user.send('* Coup: Pay seven coins and launch a coup against an opponent, forcing that player to lose an influence. If you have ten coins, you must take this action.')
+          m.user.send('Character actions: Anyone may perform these actions, but if challenged they must show that they influence that character.')
+          m.user.send('* Duke: Take three coins from the treasury. Block someone from taking foreign aid.')
+          m.user.send('* Assassin: Pay three coins and try to assassinate another player\'s character (blockable by Contessa).')
+          m.user.send('* Contessa: Block an assassination attempt against yourself.')
+          m.user.send('* Captain: Take two coins from another player (blockable by Captain or Ambassador). Block someone from stealing coins from you.')
+          m.user.send('* Ambassador: Draw two character cards from the Court Deck, choose which (if any) to exchange with your face-down characters, then return two. Block someone from stealing coins from you.')
         else
           m.user.send 'Each player starts the game with two coins and two influence - i.e., two face-down character cards; the fifteen card deck consists of three copies of five different characters, each with a unique set of powers.'
           m.user.send('You can see all possible actions with the command "!rules actions", or by consulting the player aid at http://boardgamegeek.com/image/1812508/coup')
