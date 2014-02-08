@@ -15,12 +15,6 @@ class Game
   MAX_PLAYERS = 6
   COINS = 50
 
-  BANK_NAME = 'Almshouse'
-  FACTIONS = [
-    'Protestant',
-    'Catholic',
-  ]
-
   ACTIONS = {
     :income      => Action.new( :action       => :income,
                                 :name         => "Income",      
@@ -41,13 +35,13 @@ class Game
     :embezzle    => Action.new( :action              => :embezzle,
                                 :character_forbidden => :duke,
                                 :name                => "Embezzle",
-                                :effect              => "Take all coins from the #{BANK_NAME}",
+                                :effect              => "Take all coins from the Almshouse",
                                 :mode_required       => :reformation),
 
     :apostatize  => Action.new( :action              => :apostatize,
                                 :name                => "Apostatize",
                                 :cost                => 1,
-                                :effect              => "Pay 1 coin to #{BANK_NAME}, change own faction",
+                                :effect              => "Pay 1 coin to Almshouse, change own faction",
                                 :mode_required       => :reformation),
 
     :convert     => Action.new( :action              => :convert,
@@ -55,7 +49,7 @@ class Game
                                 :cost                => 2,
                                 :needs_target        => true,
                                 :can_target_friends  => true,
-                                :effect              => "Pay 2 coins to #{BANK_NAME}, choose player to change faction",
+                                :effect              => "Pay 2 coins to Almshouse, choose player to change faction",
                                 :mode_required       => :reformation),
 
     :duke        => Action.new( :action             => :duke,      
@@ -388,6 +382,22 @@ class Game
 
   def has_factions?
     @settings.include?(:reformation)
+  end
+
+  def bank_name
+    if @settings.include?(:reformation)
+      'Almshouse'
+    else
+      raise "Game settings #{@settings} does not have bank"
+    end
+  end
+
+  def factions
+    if @settings.include?(:reformation)
+      ['Protestant', 'Catholic']
+    else
+      raise "Game settings #{@settings} does not have factions"
+    end
   end
 
   def is_enemy?(player, target)

@@ -313,7 +313,7 @@ module Cinch
           side_str = ' - Set aside: ' + chars
         end
 
-        faction_str = game.has_factions? ? " - #{Game::FACTIONS[player.faction]}" : ''
+        faction_str = game.has_factions? ? " - #{game.factions[player.faction]}" : ''
 
         "#{char1_str}#{char2_str}#{coins_str}#{faction_str}#{side_str}"
       end
@@ -374,8 +374,8 @@ module Cinch
             target_msg = " on #{target}"
 
             unless Game::ACTIONS[action.to_sym].can_target_friends || game.is_enemy?(game.current_player, target_player)
-              us = Game::FACTIONS[game.current_player.faction]
-              them = Game::FACTIONS[1 - game.current_player.faction]
+              us = game.factions[game.current_player.faction]
+              them = game.factions[1 - game.current_player.faction]
               m.user.send("You cannot target a fellow #{us} with #{action.upcase} while the #{them} exist!")
               return
             end
@@ -432,7 +432,7 @@ module Cinch
             faction_enemies = game.players.select { |p| p.faction != active_faction }
             unless faction_enemies.empty?
               enemies = faction_enemies
-              prefix = "All #{Game::FACTIONS[1 - active_faction]} players"
+              prefix = "All #{game.factions[1 - active_faction]} players"
             end
           end
           prefix << " (#{enemies.collect(&:to_s).join(', ')})"
@@ -452,8 +452,8 @@ module Cinch
         return unless check_action(m, game, action)
 
         unless game.is_enemy?(player, turn.active_player)
-          us = Game::FACTIONS[game.current_player.faction]
-          them = Game::FACTIONS[1 - game.current_player.faction]
+          us = game.factions[game.current_player.faction]
+          them = game.factions[1 - game.current_player.faction]
           m.user.send("You cannot block a fellow #{us}'s #{turn.action.action.upcase} while the #{them} exist!")
           return
         end
@@ -903,7 +903,7 @@ module Cinch
           info << "Discard Pile: #{discards}"
         end
         if game.has_factions?
-          info << "#{Game::BANK_NAME}: #{game.bank} coin#{game.bank == 1 ? '' : 's'}"
+          info << "#{game.bank_name}: #{game.bank} coin#{game.bank == 1 ? '' : 's'}"
         end
         info
       end
@@ -1244,9 +1244,9 @@ module Cinch
           m.user.send('In Reformation, each player can belong to one of two factions: the Protestants or the Catholics. The initial faction distribution alternates around the table.')
           m.user.send('While there are members of the opposite faction in the game, you may not target your factionmates with Captain, Assassin, Inquisitor, Coup, nor may you block their Foreign Aid. You may still challenge your factionmates.')
           m.user.send('There are now three new actions available:')
-          m.user.send("* Apostatize: Pay one coin to the #{Game::BANK_NAME} to change your own faction.")
-          m.user.send("* Convert: Pay two coins to the #{Game::BANK_NAME} to change another player's faction.")
-          m.user.send("* Embezzle: Take all coins from the #{Game::BANK_NAME}. You must NOT have influence over the Duke to perform this action--if challenged, you must reveal both of your face-down characters to prove it.")
+          m.user.send("* Apostatize: Pay one coin to the Almshouse to change your own faction.")
+          m.user.send("* Convert: Pay two coins to the Almshouse to change another player's faction.")
+          m.user.send("* Embezzle: Take all coins from the Almshouse. You must NOT have influence over the Duke to perform this action--if challenged, you must reveal both of your face-down characters to prove it.")
           m.user.send('When only one faction exists, that faction descends into in-fighting and anyone can be targeted. Of course, someone may be converted to the opposite faction again....')
         when 'actions'
           m.user.send('http://boardgamegeek.com/image/1812508/coup')
