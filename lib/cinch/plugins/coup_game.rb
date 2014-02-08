@@ -1070,6 +1070,12 @@ module Cinch
           # Find game based on user 1
           game = @user_games[user1]
 
+          # Can't do it if user2 is in a different game!
+          if (game2 = @user_games[user2])
+            m.user.send("#{nick2} is already in the #{game2.channel_name} game.")
+            return
+          end
+
           # replace the users for the players
           player = game.find_player(user1)
           player.user = user2
