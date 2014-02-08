@@ -395,12 +395,14 @@ class Game
   end
 
   def has_factions?
-    @settings.include?(:reformation)
+    @settings.include?(:reformation) || @settings.include?(:incorporation)
   end
 
   def bank_name
     if @settings.include?(:reformation)
       'Almshouse'
+    elsif @settings.include?(:incorporation)
+      'Corporate Bank'
     else
       raise "Game settings #{@settings} does not have bank"
     end
@@ -409,6 +411,8 @@ class Game
   def factions
     if @settings.include?(:reformation)
       ['Protestant', 'Catholic']
+    elsif @settings.include?(:incorporation)
+      ['Resistance', 'Imperial']
     else
       raise "Game settings #{@settings} does not have factions"
     end
