@@ -1156,8 +1156,10 @@ module Cinch
             settings << :inquisitor
           when 'reformation'
             settings << :reformation
+            settings.delete(:incorporation)
           when 'incorporation'
             settings << :incorporation
+            settings.delete(:reforation)
           end
         }
 
