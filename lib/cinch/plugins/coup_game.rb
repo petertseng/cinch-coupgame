@@ -1221,7 +1221,14 @@ module Cinch
           m.user.send('Target yourself with the Inquisitor action to draw one card from the Court Deck. You may exchange this card with one of your face-down characters. The card you choose not to keep is returned to the Court Deck.')
           m.user.send('Target an opponent with the Inquisitor to force that opponent to show you one of their character cards (their choice which). You may then allow them to keep that card, or discard it and draw a new one from the Court Deck.')
         when 'reformation'
-          # TODO
+          m.user.send('In Reformation, each player can belong to one of two factions: the Protestants or the Catholics.')
+          m.user.send('The initial team distribution alternates around the table.')
+          m.user.send('While there are members of the opposite faction in the game, you may not target your factionmates with Captain, Assassin, Inquisitor, Coup, nor may you block their Foreign Aid. You may still challenge your factionmates.')
+          m.user.send('There are now three new actions available:')
+          m.user.send("* Apostatize: Pay one coin to the #{Game::BANK_NAME} to change your own faction.")
+          m.user.send("* Convert: Pay two coins to the #{Game::BANK_NAME} to change another player's faction.")
+          m.user.send("* Embezzle: Take all coins from the #{Game::BANK_NAME}. You must NOT have influence over the Duke to perform this action--if challenged, you must reveal both of your face-down characters to prove it.")
+          m.user.send('When only one faction exists, that faction descends into in-fighting and anyone can be targeted. Of course, someone may be converted to the opposite faction again....')
         when 'actions'
           m.user.send('http://boardgamegeek.com/image/1812508/coup')
           m.user.send('General actions: Always available')
