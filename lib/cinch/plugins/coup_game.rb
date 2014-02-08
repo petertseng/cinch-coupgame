@@ -1192,13 +1192,20 @@ module Cinch
           User(m.user).send "!replace nick1 nick1 - replaces a player in-game with a player out-of-game"
           User(m.user).send "!kick nick1 - removes a presumably unresponsive user from an unstarted game"
           User(m.user).send "!room silent|vocal - switches the channel from voice only users and back"
+          m.user.send('!chars - the obligatory cheating command - NOT to be used while you are a participant of the game')
         else 
           case page
           when "2"
             User(m.user).send "--- HELP PAGE 2/3 ---"
+            m.user.send('!me - PMs you your current character cards')
+            m.user.send('!table - examines the table, showing any face-up cards and how many coins each player has')
+            m.user.send('!who - shows a list of players in turn order')
+            m.user.send('!status - shows which phase the game is in, and who currently needs to take an action')
           when "3"
             User(m.user).send "--- HELP PAGE 3/3 ---"
-            User(m.user).send "!rules - provides rules for the game"
+            m.user.send('!rules (actions|inquisition|reformation) - provides rules for the game; when provided with an argument, provides specified rules')
+            m.user.send('!settings (modes) - changes the game to the specified game type. modes may be any combination of "inquisition" or "reformation", or blank to see current settings')
+
             User(m.user).send "!subscribe - subscribe your current nick to receive PMs when someone calls !invite"
             User(m.user).send "!unsubscribe - remove your nick from the invitation list"
             User(m.user).send "!invite - invites #boardgames and subscribers to join the game"
@@ -1209,7 +1216,14 @@ module Cinch
             User(m.user).send "!leave - leaves the game"
             User(m.user).send "!start - starts the game"
 
-            User(m.user).send "!help (#) - when provided a number, pulls up specified page"
+            m.user.send('!action actionname - uses an action on your turn. actionname may be: income, foreign aid, duke, ambassador')
+            m.user.send('!action actionname targetname - uses an action on your turn against the specified target. actionname may be: coup, assassin, captain')
+            m.user.send('!block character - uses the specified character (duke, ambassador, captain, contessa) to block an opponent\'s action')
+            m.user.send('!challenge - challenge an opponent\'s claim of influence over a given character')
+            m.user.send('!pass - pass on either a chance to challenge or a chance to block an opponent\'s action')
+            m.user.send('!flip 1|2 - flip one of your character cards in response to a challenge')
+
+            m.user.send('!help (#) - when provided a number, pulls up specified page. Page 2 lists commands that show information about the current game. Page 3 lists commands to give information about CoupBot or about variants of Coup')
           end
         end
       end
