@@ -395,7 +395,7 @@ module Cinch
           end
 
           Channel(game.channel_name).send "#{m.user.nick} uses #{action.upcase}#{target_msg}"
-          game.current_turn.add_action(action, target_player)
+          game.current_turn.add_action(game_action, target_player)
           if game.current_turn.action.challengeable?
             game.current_turn.wait_for_action_challenge
             self.prompt_challengers(game)
@@ -470,7 +470,7 @@ module Cinch
             m.user.send "You can only block with #{action.upcase} if you are the target."
             return
           end
-          turn.add_counteraction(action, player)
+          turn.add_counteraction(game_action, player)
           Channel(game.channel_name).send "#{player} uses #{action.upcase} to block #{turn.action.action.upcase}"
           self.prompt_challengers(game)
           turn.wait_for_block_challenge

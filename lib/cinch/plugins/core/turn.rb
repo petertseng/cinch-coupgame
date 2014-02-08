@@ -35,12 +35,12 @@ class Turn
 
 
   def add_action(action, target = nil)
-    self.action        = Game::ACTIONS[action.to_sym]
+    self.action        = action
     self.target_player = target
   end
 
   def add_counteraction(action, player)
-    self.counteraction        = Game::ACTIONS[action.to_sym]
+    self.counteraction        = action
     self.counteracting_player = player
     self.reactions            = {}
   end
