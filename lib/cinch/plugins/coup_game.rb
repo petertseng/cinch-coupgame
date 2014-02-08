@@ -1241,8 +1241,7 @@ module Cinch
           m.user.send('Target yourself with the Inquisitor action to draw one card from the Court Deck. You may exchange this card with one of your face-down characters. The card you choose not to keep is returned to the Court Deck.')
           m.user.send('Target an opponent with the Inquisitor to force that opponent to show you one of their character cards (their choice which). You may then allow them to keep that card, or discard it and draw a new one from the Court Deck.')
         when 'reformation'
-          m.user.send('In Reformation, each player can belong to one of two factions: the Protestants or the Catholics.')
-          m.user.send('The initial team distribution alternates around the table.')
+          m.user.send('In Reformation, each player can belong to one of two factions: the Protestants or the Catholics. The initial faction distribution alternates around the table.')
           m.user.send('While there are members of the opposite faction in the game, you may not target your factionmates with Captain, Assassin, Inquisitor, Coup, nor may you block their Foreign Aid. You may still challenge your factionmates.')
           m.user.send('There are now three new actions available:')
           m.user.send("* Apostatize: Pay one coin to the #{Game::BANK_NAME} to change your own faction.")
