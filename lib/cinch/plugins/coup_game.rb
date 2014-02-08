@@ -1212,13 +1212,21 @@ module Cinch
         User(m.user).send "Welcome to CoupBot. You can join a game if there's one getting started with the command \"!join\". For more commands, type \"!help\". If you don't know how to play, you can read a rules summary with \"!rules\". If already know how to play, great. But there's a few things you should know."
       end
 
-      def rules(m)
-        User(m.user).send "Each player starts the game with two coins and two influence - i.e., two face-down character cards; the fifteen card deck consists of three copies of five different characters, each with a unique set of powers."
-        m.user.send("http://boardgamegeek.com/image/1812508/coup")
-        m.user.send("On your turn, you can take any character's action, regardless of which characters you actually have in front of you, or you can take one three actions that require no character: Income, Foreign Aid, or Coup (if you have ten coins, you must Coup).")
-        m.user.send("When you take one of the character actions - whether actively on your turn, or defensively in response to someone else\'s action - that character\'s action automatically succeeds unless an opponent challenges you. In this case, if you can\'t reveal the appropriate character (or choose not to), you lose an influence, turning one of your characters face-up. Face-up characters cannot be used, and if both of your characters are face-up, you\'re out of the game.")
-        m.user.send("If you do have the character in question and choose to reveal it, the opponent loses an influence, then you shuffle that character into the deck and draw a new one, perhaps getting the same character again and perhaps not.")
-        User(m.user).send "The last player to still have influence - that is, a face-down character - wins the game!"
+      def rules(m, section)
+        case rules.section.downcase
+        when 'inquisition'
+          # TODO
+        when 'reformation'
+          # TODO
+        when 'actions'
+        else
+          m.user.send 'Each player starts the game with two coins and two influence - i.e., two face-down character cards; the fifteen card deck consists of three copies of five different characters, each with a unique set of powers.'
+          m.user.send('You can see all possible actions with the command "!rules actions", or by consulting the player aid at http://boardgamegeek.com/image/1812508/coup')
+          m.user.send('On your turn, you can take any character\'s action, regardless of which characters you actually have in front of you, or you can take one three actions that require no character: Income, Foreign Aid, or Coup (if you have ten coins, you must Coup).')
+          m.user.send('When you take one of the character actions - whether actively on your turn, or defensively in response to someone else\'s action - that character\'s action automatically succeeds unless an opponent challenges you. In this case, if you can\'t reveal the appropriate character (or choose not to), you lose an influence, turning one of your characters face-up. Face-up characters cannot be used, and if both of your characters are face-up, you\'re out of the game.')
+          m.user.send('If you do have the character in question and choose to reveal it, the opponent loses an influence, then you shuffle that character into the deck and draw a new one, perhaps getting the same character again and perhaps not.')
+          m.user.send('The last player to still have influence - that is, a face-down character - wins the game!')
+        end
       end
 
       def status(m)
