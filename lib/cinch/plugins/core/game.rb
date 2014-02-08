@@ -52,6 +52,20 @@ class Game
                                 :effect              => "Pay 2 coins to Almshouse, choose player to change faction",
                                 :mode_required       => :reformation),
 
+    :defect      => Action.new( :action              => :defect,
+                                :name                => "Defect",
+                                :cost                => 1,
+                                :effect              => "Pay 1 coin to Corporate Bank, change own faction",
+                                :mode_required       => :incorporation),
+
+    :bribe       => Action.new( :action              => :bribe,
+                                :name                => "Bribe",
+                                :cost                => 2,
+                                :needs_target        => true,
+                                :can_target_friends  => true,
+                                :effect              => "Pay 2 coins to Corporate Bank, choose player to change faction",
+                                :mode_required       => :incorporation),
+
     :duke        => Action.new( :action             => :duke,      
                                 :character_required => :duke, 
                                 :name               => "Tax",
@@ -297,10 +311,10 @@ class Game
       self.current_player.take_coins 7
     when :assassin
       self.current_player.take_coins 3
-    when :apostatize
+    when :apostatize, :defect
       self.current_player.take_coins 1
       @bank += 1
-    when :convert
+    when :convert, :bribe
       self.current_player.take_coins 2
       @bank += 2
     end
@@ -332,9 +346,9 @@ class Game
     when :embezzle
       self.current_player.give_coins @bank
       @bank = 0
-    when :apostatize
+    when :apostatize, :defect
       self.current_player.change_faction
-    when :convert
+    when :convert, :bribe
       self.target_player.change_faction
     end
   end
