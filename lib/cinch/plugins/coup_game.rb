@@ -1154,6 +1154,8 @@ module Cinch
             settings << :inquisitor
           when 'reformation'
             settings << :reformation
+          when 'incorporation'
+            settings << :incorporation
           end
         }
 
