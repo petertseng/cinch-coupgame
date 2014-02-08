@@ -1215,7 +1215,11 @@ module Cinch
       def rules(m, section)
         case rules.section.downcase
         when 'inquisition'
-          # TODO
+          m.user.send('http://boardgamegeek.com/image/1825161/coup')
+          m.user.send('The Inquisitor is a new role that replaces the Ambassador.')
+          m.user.send('Like the Ambassador, the Inquisitor blocks the Captain from stealing coins from you.')
+          m.user.send('Target yourself with the Inquisitor action to draw one card from the Court Deck. You may exchange this card with one of your face-down characters. The card you choose not to keep is returned to the Court Deck.')
+          m.user.send('Target an opponent with the Inquisitor to force that opponent to show you one of their character cards (their choice which). You may then allow them to keep that card, or discard it and draw a new one from the Court Deck.')
         when 'reformation'
           # TODO
         when 'actions'
