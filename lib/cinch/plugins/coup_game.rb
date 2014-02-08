@@ -1266,6 +1266,7 @@ module Cinch
 
             User(m.user).send "!subscribe - subscribe your current nick to receive PMs when someone calls !invite"
             User(m.user).send "!unsubscribe - remove your nick from the invitation list"
+            m.user.send('!notice (on|off) - controls whether CoupBot will use NOTICE or PRIVMSG to communicate private information')
             User(m.user).send "!invite - invites #boardgames and subscribers to join the game"
             User(m.user).send "!changelog (#) - shows changelog for the bot, when provided a number it showed details"
           else
