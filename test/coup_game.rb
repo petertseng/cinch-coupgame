@@ -1819,7 +1819,7 @@ describe Cinch::Plugins::CoupGame do
 
       @game.do_action(message_from(@order[1]), 'apostatize', @order[2])
       expect(@chan.messages).to be == []
-      expect(p.messages).to be == ['APOSTATIZE may only be used if the game type is Reformation.']
+      expect(p.messages).to be == ['APOSTATIZE may only be used if the game type is one of the following: Reformation.']
     end
 
     it 'does not allow convert action in a base game' do
@@ -1828,7 +1828,7 @@ describe Cinch::Plugins::CoupGame do
 
       @game.do_action(message_from(@order[1]), 'convert', @order[2])
       expect(@chan.messages).to be == []
-      expect(p.messages).to be == ['CONVERT may only be used if the game type is Reformation.']
+      expect(p.messages).to be == ['CONVERT may only be used if the game type is one of the following: Reformation.']
     end
 
     it 'does not allow embezzle action in a base game' do
@@ -1837,7 +1837,7 @@ describe Cinch::Plugins::CoupGame do
 
       @game.do_action(message_from(@order[1]), 'embezzle', @order[2])
       expect(@chan.messages).to be == []
-      expect(p.messages).to be == ['EMBEZZLE may only be used if the game type is Reformation.']
+      expect(p.messages).to be == ['EMBEZZLE may only be used if the game type is one of the following: Reformation, Incorporation.']
     end
 
     # ===== Inquisitor =====
@@ -1848,7 +1848,7 @@ describe Cinch::Plugins::CoupGame do
 
       @game.do_action(message_from(@order[1]), 'inquisitor', @order[2])
       expect(@chan.messages).to be == []
-      expect(p.messages).to be == ['INQUISITOR may only be used if the game type is Inquisitor.']
+      expect(p.messages).to be == ['INQUISITOR may only be used if the game type is one of the following: Inquisitor.']
     end
 
     it 'does not allow inquisitor block in a base game' do
@@ -1862,7 +1862,7 @@ describe Cinch::Plugins::CoupGame do
 
       @game.do_block(message_from(@order[2]), 'inquisitor')
       expect(@chan.messages).to be == []
-      expect(p.messages).to be == ['INQUISITOR may only be used if the game type is Inquisitor.']
+      expect(p.messages).to be == ['INQUISITOR may only be used if the game type is one of the following: Inquisitor.']
     end
 
     describe 'status' do

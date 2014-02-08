@@ -36,13 +36,13 @@ class Game
                                 :character_forbidden => :duke,
                                 :name                => "Embezzle",
                                 :effect              => "Take all coins from the Almshouse",
-                                :mode_required       => :reformation),
+                                :mode_required       => [:reformation, :incorporation]),
 
     :apostatize  => Action.new( :action              => :apostatize,
                                 :name                => "Apostatize",
                                 :cost                => 1,
                                 :effect              => "Pay 1 coin to Almshouse, change own faction",
-                                :mode_required       => :reformation),
+                                :mode_required       => [:reformation]),
 
     :convert     => Action.new( :action              => :convert,
                                 :name                => "Convert",
@@ -50,13 +50,13 @@ class Game
                                 :needs_target        => true,
                                 :can_target_friends  => true,
                                 :effect              => "Pay 2 coins to Almshouse, choose player to change faction",
-                                :mode_required       => :reformation),
+                                :mode_required       => [:reformation]),
 
     :defect      => Action.new( :action              => :defect,
                                 :name                => "Defect",
                                 :cost                => 1,
                                 :effect              => "Pay 1 coin to Corporate Bank, change own faction",
-                                :mode_required       => :incorporation),
+                                :mode_required       => [:incorporation]),
 
     :bribe       => Action.new( :action              => :bribe,
                                 :name                => "Bribe",
@@ -64,7 +64,7 @@ class Game
                                 :needs_target        => true,
                                 :can_target_friends  => true,
                                 :effect              => "Pay 2 coins to Corporate Bank, choose player to change faction",
-                                :mode_required       => :incorporation),
+                                :mode_required       => [:incorporation]),
 
     :duke        => Action.new( :action             => :duke,      
                                 :character_required => :duke, 
@@ -93,7 +93,7 @@ class Game
                                 :character_required => :inquisitor,
                                 :name               => "Exchange",
                                 :effect             => "Examine opponent's card",
-                                :mode_required      => :inquisitor,
+                                :mode_required      => [:inquisitor],
                                 :needs_target       => true,
                                 :self_targettable   => true,
                                 :self_effect        => "Exchange card with Court Deck",
@@ -391,7 +391,7 @@ class Game
     # Forbidden mode? Well then definitely false.
     return false if action.mode_forbidden && self.settings.include?(action.mode_forbidden)
     # Usable if action does not require a mode, or the settings include the required mode.
-    action.mode_required.nil? || self.settings.include?(action.mode_required)
+    action.mode_required.nil? || action.mode_required.any? { |mr| self.settings.include?(mr) }
   end
 
   def has_factions?

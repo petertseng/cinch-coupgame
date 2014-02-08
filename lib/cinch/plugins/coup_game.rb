@@ -331,8 +331,9 @@ module Cinch
           m.user.send("#{action.upcase} may not be used if the game type is #{mf.to_s.capitalize}.")
           return false
         end
-        if (mr = Game::ACTIONS[action.to_sym].mode_required) && !game.settings.include?(mr)
-          m.user.send("#{action.upcase} may only be used if the game type is #{mr.to_s.capitalize}.")
+        if (mrs = Game::ACTIONS[action.to_sym].mode_required) && mrs.all? { |mr| !game.settings.include?(mr) }
+          modes = mrs.collect { |mr| mr.to_s.capitalize }.join(', ')
+          m.user.send("#{action.upcase} may only be used if the game type is one of the following: #{modes}.")
           return false
         end
         true
