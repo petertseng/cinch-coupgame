@@ -147,6 +147,9 @@ describe Cinch::Plugins::CoupGame do
             CHANNAME2,
           ],
           :mods => ['p1', 'npmod'],
+          # Upon init, we try to load the settings file to get the PM users.
+          # I'll just load /dev/null, but I'd rather the file read get mocked out...
+          :settings => '/dev/null',
         }
       end
     end
