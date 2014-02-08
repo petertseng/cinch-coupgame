@@ -78,6 +78,9 @@ module Cinch
         @user_games = {}
 
         @forced_id = 16
+
+        settings = load_settings || {}
+        $pm_users = settings['pm_users'] || Set.new
       end
 
       def self.xmatch(regex, args)
@@ -1227,8 +1230,14 @@ module Cinch
       def noticeme(m, toggle)
         if toggle && toggle.downcase == 'on'
           $pm_users.delete(m.user)
+          settings = load_settings || {}
+          settings['pm_users'] = $pm_users
+          save_settings(settings)
         elsif toggle && toggle.downcase == 'off'
           $pm_users.add(m.user)
+          settings = load_settings || {}
+          settings['pm_users'] = $pm_users
+          save_settings(settings)
         end
 
         m.reply("Private communications to you will occur in #{$pm_users.include?(m.user) ? 'PRIVMSG' : 'NOTICE'}")
