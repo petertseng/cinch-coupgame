@@ -35,7 +35,10 @@ class Game
     :embezzle    => Action.new( :action              => :embezzle,
                                 :character_forbidden => :duke,
                                 :name                => "Embezzle",
-                                :effect              => "Take all coins from the Almshouse",
+                                :effect_f            => lambda { |game|
+                                  bank = game.settings.include?(:reformation) ? 'Almshouse' : 'Corporate Bank'
+                                  "Take all coins from the #{bank}"
+                                },
                                 :mode_required       => [:reformation, :incorporation]),
 
     :apostatize  => Action.new( :action              => :apostatize,

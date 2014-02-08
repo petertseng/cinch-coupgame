@@ -938,6 +938,7 @@ module Cinch
           self_target = turn.active_player == turn.target_player
           target_msg = self_target || turn.target_player.nil? ? "" : ": #{turn.target_player}"
           effect = self_target ? turn.action.self_effect : turn.action.effect
+          effect = turn.action.effect_f.call(game) if turn.action.effect_f
           Channel(game.channel_name).send "#{game.current_player} proceeds with #{turn.action.action.upcase}. #{effect}#{target_msg}."
           game.pay_for_current_turn
           game.process_current_turn
