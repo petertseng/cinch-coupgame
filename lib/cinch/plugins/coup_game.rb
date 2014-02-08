@@ -352,12 +352,14 @@ module Cinch
             return
           end
 
+          game_action = Game::ACTIONS[action.to_sym]
+
           return unless check_action(m, game, action)
 
           if target.nil? || target.empty?
             target_msg = ""
 
-            if Game::ACTIONS[action.to_sym].needs_target
+            if game_action.needs_target
               m.user.send("You must specify a target for #{action.upcase}: !action #{action} <playername>")
               return
             end
@@ -365,7 +367,7 @@ module Cinch
             target_player = game.find_player(target)
 
             # No self-targeting!
-            if target_player == game.current_player && !Game::ACTIONS[action.to_sym].self_targettable
+            if target_player == game.current_player && !game_action.self_targettable
               m.user.send("You may not target yourself with #{action.upcase}.")
               return
             end
@@ -377,7 +379,7 @@ module Cinch
 
             target_msg = " on #{target}"
 
-            unless Game::ACTIONS[action.to_sym].can_target_friends || game.is_enemy?(game.current_player, target_player)
+            unless game_action.can_target_friends || game.is_enemy?(game.current_player, target_player)
               us = game.factions[game.current_player.faction]
               them = game.factions[1 - game.current_player.faction]
               m.user.send("You cannot target a fellow #{us} with #{action.upcase} while the #{them} exist!")
@@ -385,7 +387,7 @@ module Cinch
             end
           end
 
-          cost = Game::ACTIONS[action.to_sym].cost
+          cost = game_action.cost
           if game.current_player.coins < cost
             coins = game.current_player.coins
             m.user.send "You need #{cost} coins to use #{action.upcase}, but you only have #{coins} coins."
@@ -453,6 +455,7 @@ module Cinch
         turn = game.current_turn
 
         return unless turn.waiting_for_block? && game.reacting_players.include?(player)
+        game_action = Game::ACTIONS[action.to_sym]
         return unless check_action(m, game, action)
 
         unless game.is_enemy?(player, turn.active_player)
@@ -462,7 +465,7 @@ module Cinch
           return
         end
 
-        if Game::ACTIONS[action.to_sym].blocks == turn.action.action
+        if game_action.blocks == turn.action.action
           if turn.action.needs_target && m.user != turn.target_player.user
             m.user.send "You can only block with #{action.upcase} if you are the target."
             return
