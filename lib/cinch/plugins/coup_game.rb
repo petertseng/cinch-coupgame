@@ -1233,7 +1233,7 @@ module Cinch
       end
 
       def rules(m, section)
-        case rules.section.downcase
+        case section.to_s.downcase
         when 'inquisition'
           m.user.send('http://boardgamegeek.com/image/1825161/coup')
           m.user.send('The Inquisitor is a new role that replaces the Ambassador.')
