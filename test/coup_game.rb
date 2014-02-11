@@ -2334,8 +2334,49 @@ describe Cinch::Plugins::CoupGame do
 
   end
 
-  context 'when p1..2 are playing a two-player game' do
-    TURN_ORDER_REGEX2 = /^Turn order is: (p[1-2]) (p[1-2])$/
+  TURN_ORDER_REGEX2 = /^Turn order is: (p[1-2]) (p[1-2])$/
+
+  context 'when p1..2 are playing a two-player normal game' do
+    INITIAL_CHARS = /^\((\w+)\) \((\w+)\) - Coins: (1|2)$/
+
+    before :each do
+      [1, 2].each { |i| @game.join(message_from("p#{i}")) }
+      @chan.messages.clear
+      @game.start_game(message_from('p1'))
+
+      expect(@chan.messages.size).to be == 3
+      expect(@chan.messages[-3]).to be == 'The game has started.'
+      match = (TURN_ORDER_REGEX2.match(@chan.messages[-2]))
+      @order = match
+      @chan.messages.clear
+
+      @initial_chars = Array.new(3)
+
+      [1, 2].each { |i|
+        p = @players[@order[i]]
+        expect(p.messages.size).to be == 3
+
+        match = (INITIAL_CHARS.match(p.messages[-2]))
+        expect(match).to_not be_nil
+        @initial_chars[i] = match[1]
+      }
+    end
+
+    it 'gives first player one coin' do
+      expect(@game.coins(@order[1])).to be == 1
+    end
+
+    it 'gives second player two coins' do
+      expect(@game.coins(@order[2])).to be == 2
+    end
+
+    it 'reports status' do
+      @game.status(message_from('p1'))
+      expect(@chan.messages).to be == ["Waiting on #{@order[1]} to take an action"]
+    end
+  end
+
+  context 'when p1..2 are playing a two-player variant game' do
     INITIAL_CHAR = /^\((\w+)\) - Coins: (1|2)$/
     SIDE_CHARS = /^1 - \((\w+)\) 2 - \((\w+)\) 3 - \((\w+)\) 4 - \((\w+)\) 5 - \((\w+)\)$/
 
