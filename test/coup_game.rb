@@ -2341,6 +2341,7 @@ describe Cinch::Plugins::CoupGame do
 
     before :each do
       [1, 2].each { |i| @game.join(message_from("p#{i}")) }
+      @game.set_game_settings(message_from('p1'), nil, 'twoplayer')
       @chan.messages.clear
       @game.start_game(message_from('p1'))
 

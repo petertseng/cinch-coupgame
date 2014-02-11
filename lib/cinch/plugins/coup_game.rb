@@ -259,7 +259,7 @@ module Cinch
 
               Channel(game.channel_name).send "Turn order is: #{game.players.map{ |p| p.user.nick }.join(' ')}"
 
-              if game.players.size == 2
+              if game.players.size == 2 && game.settings.include?(:twoplayer)
                 Channel(game.channel_name).send('This is a two-player game. Both players have received their first character card and must now pick their second.')
                 game.current_turn.wait_for_initial_characters
               else

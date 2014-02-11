@@ -257,13 +257,28 @@ class Game
   # Shuffle the deck, pass out characters and coins
   #
   def pass_out_characters_and_coins
+    if self.players.size == 2 && @settings.include?(:twoplayer)
+      side_decks = [[], []]
+      # Uh this is kinda wonky.
+      # Oh Well YOLT (You only live twice) in Coup.
+      5.times {
+        side_decks[0] << self.draw_cards(1)[0]
+        side_decks[1] << self.draw_cards(1)[0]
+        self.deck.rotate!
+      }
+    end
+
     self.deck.shuffle!
 
     # assign loyalties
     self.players.each_with_index do |player, index|
       if self.players.size == 2
-        player.receive_characters(self.draw_cards(1))
-        player.receive_side_characters(*self.draw_cards(5))
+        if @settings.include?(:twoplayer)
+          player.receive_characters(self.draw_cards(1))
+          player.receive_side_characters(*side_decks[index].shuffle)
+        else
+          player.receive_characters(self.draw_cards(2))
+        end
         # first player gets 1 coin and second gets 2.
         player.give_coins(index + 1)
       else
