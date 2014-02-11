@@ -222,8 +222,6 @@ class Game
     self.started = true
     self.deck = build_starting_deck
 
-    self.pass_out_characters_and_coins
-  
     self.players.shuffle!.rotate!(rand(MAX_PLAYERS)) # shuffle seats
     $player_count = self.player_count
 
@@ -237,6 +235,8 @@ class Game
         faction = 1 - faction
       }
     end
+
+    self.pass_out_characters_and_coins
   end
 
   # Build starting deck
