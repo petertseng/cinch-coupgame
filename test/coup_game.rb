@@ -2371,6 +2371,14 @@ describe Cinch::Plugins::CoupGame do
       }
     end
 
+    it 'gives first player one coin' do
+      expect(@game.coins(@order[1])).to be == 1
+    end
+
+    it 'gives second player two coins' do
+      expect(@game.coins(@order[2])).to be == 2
+    end
+
     it 'reports status if neither player has picked' do
       @game.status(message_from('p1'))
       expect(@chan.messages).to be == ["Waiting on players to pick character: #{@order[1]}, #{@order[2]}"]
