@@ -110,13 +110,11 @@ module Cinch
 
       xmatch /flip (1|2)/i,           :method => :flip_card
       xmatch /lose (1|2)/i,           :method => :flip_card
-      xmatch /switch (([1-6]))/i,     :method => :switch_cards
+      xmatch /(switch|keep|pick|swap)\s*([1-6])/i, :method => :pick_cards
 
       xmatch /show (1|2)/i,           :method => :show_to_inquisitor
       xmatch /keep/i,                 :method => :inquisitor_keep
       xmatch /discard/i,              :method => :inquisitor_discard
-
-      xmatch /pick (([1-5]))/i,       :method => :pick_card
 
       xmatch /me$/i,                  :method => :whoami
       xmatch /table(?:\s*(##?\w+))?/i,:method => :show_table
@@ -781,10 +779,7 @@ module Cinch
         end
       end
 
-      def switch_cards(m, choice)
-        game = self.game_of(m)
-        return unless game && game.started? && game.has_player?(m.user)
-        player = game.find_player(m.user)
+      def switch_cards(m, game, player, choice)
         turn = game.current_turn
 
         return unless turn.waiting_for_decision? && turn.decider == player && turn.decision_type == :switch_cards
@@ -903,10 +898,19 @@ module Cinch
         self.start_new_turn(game)
       end
 
-      def pick_card(m, choice)
+      def pick_cards(m, choice)
         game = self.game_of(m)
         return unless game && game.started? && game.has_player?(m.user)
         player = game.find_player(m.user)
+
+        if game.current_turn.waiting_for_initial_characters?
+          self.pick_initial_card(m, game, player, choice)
+        else
+          self.switch_cards(m, game, player, choice)
+        end
+      end
+
+      def pick_initial_card(m, game, player, choice)
         return if player.characters.size == 2
 
         choice = choice.to_i

@@ -787,7 +787,7 @@ describe Cinch::Plugins::CoupGame do
 
       it 'does not let target switch instead of flip' do
         # 2 will now... switch?!
-        @game.switch_cards(message_from(@order[2]), '1')
+        @game.pick_cards(message_from(@order[2]), '1')
         expect(@chan.messages).to be == []
       end
     end
@@ -912,7 +912,7 @@ describe Cinch::Plugins::CoupGame do
       end
 
       it 'lets player switch' do
-        @game.switch_cards(message_from(@order[1]), '1')
+        @game.pick_cards(message_from(@order[1]), '1')
         expect(@chan.messages).to be == [
           "#{@order[1]} shuffles two cards into the Court Deck.",
           "#{@order[2]}: It is your turn. Please choose an action.",
@@ -979,7 +979,7 @@ describe Cinch::Plugins::CoupGame do
       end
 
       it 'lets player switch' do
-        @game.switch_cards(message_from(@order[2]), '1')
+        @game.pick_cards(message_from(@order[2]), '1')
         expect(@chan.messages).to be == [
           "#{@order[2]} shuffles two cards into the Court Deck.",
           "#{@order[3]}: It is your turn. Please choose an action.",
@@ -1140,7 +1140,7 @@ describe Cinch::Plugins::CoupGame do
         end
 
         it 'does not lets target switch' do
-          @game.switch_cards(message_from(@order[2]), '1')
+          @game.pick_cards(message_from(@order[2]), '1')
           expect(@chan.messages).to be == []
         end
       end
@@ -2377,7 +2377,7 @@ describe Cinch::Plugins::CoupGame do
     end
 
     it 'reports status if only first player has picked' do
-      @game.pick_card(message_from(@order[1]), '1')
+      @game.pick_cards(message_from(@order[1]), '1')
       expect(@chan.messages).to be == ["#{@order[1]} has selected a character."]
       @chan.messages.clear
       @game.status(message_from('p1'))
@@ -2385,7 +2385,7 @@ describe Cinch::Plugins::CoupGame do
     end
 
     it 'reports status if only second player has picked' do
-      @game.pick_card(message_from(@order[2]), '1')
+      @game.pick_cards(message_from(@order[2]), '1')
       expect(@chan.messages).to be == ["#{@order[2]} has selected a character."]
       @chan.messages.clear
       @game.status(message_from('p1'))
@@ -2393,8 +2393,8 @@ describe Cinch::Plugins::CoupGame do
     end
 
     it 'starts the game if first picks and then second picks' do
-      @game.pick_card(message_from(@order[1]), '1')
-      @game.pick_card(message_from(@order[2]), '1')
+      @game.pick_cards(message_from(@order[1]), '1')
+      @game.pick_cards(message_from(@order[2]), '1')
       expect(@chan.messages).to be == [
         "#{@order[1]} has selected a character.",
         "#{@order[2]} has selected a character.",
@@ -2403,8 +2403,8 @@ describe Cinch::Plugins::CoupGame do
     end
 
     it 'starts the game if second picks and then first picks' do
-      @game.pick_card(message_from(@order[2]), '1')
-      @game.pick_card(message_from(@order[1]), '1')
+      @game.pick_cards(message_from(@order[2]), '1')
+      @game.pick_cards(message_from(@order[1]), '1')
       expect(@chan.messages).to be == [
         "#{@order[2]} has selected a character.",
         "#{@order[1]} has selected a character.",
@@ -2422,7 +2422,7 @@ describe Cinch::Plugins::CoupGame do
 
     it 'remembers the cards both players picked' do
       [1, 2].each { |i|
-        @game.pick_card(message_from(@order[i]), '1')
+        @game.pick_cards(message_from(@order[i]), '1')
 
         p = @players[@order[i]]
         p.messages.clear
@@ -2439,13 +2439,13 @@ describe Cinch::Plugins::CoupGame do
     end
 
     it 'does nothing the second time if a player picks twice' do
-      @game.pick_card(message_from(@order[1]), '1')
+      @game.pick_cards(message_from(@order[1]), '1')
 
       p = @players[@order[1]]
       p.messages.clear
       @chan.messages.clear
 
-      @game.pick_card(message_from(@order[1]), '1')
+      @game.pick_cards(message_from(@order[1]), '1')
       expect(@chan.messages).to be == []
       expect(p.messages).to be == []
     end
@@ -2558,7 +2558,7 @@ describe Cinch::Plugins::CoupGame do
       end
 
       it 'lets player switch' do
-        @game.switch_cards(message_from(@order[1]), '1')
+        @game.pick_cards(message_from(@order[1]), '1')
         expect(@chan.messages).to be == [
           "#{@order[1]} shuffles a card into the Court Deck.",
           "#{@order[2]}: It is your turn. Please choose an action.",
@@ -2625,7 +2625,7 @@ describe Cinch::Plugins::CoupGame do
       end
 
       it 'lets player switch' do
-        @game.switch_cards(message_from(@order[2]), '1')
+        @game.pick_cards(message_from(@order[2]), '1')
         expect(@chan.messages).to be == [
           "#{@order[2]} shuffles a card into the Court Deck.",
           "#{@order[3]}: It is your turn. Please choose an action.",
