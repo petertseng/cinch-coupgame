@@ -260,14 +260,16 @@ class Game
     self.deck.shuffle!
 
     # assign loyalties
-    self.players.each do |player|
+    self.players.each_with_index do |player, index|
       if self.players.size == 2
         player.receive_characters(self.draw_cards(1))
         player.receive_side_characters(*self.draw_cards(5))
+        # first player gets 1 coin and second gets 2.
+        player.give_coins(index + 1)
       else
         player.receive_characters(self.draw_cards(2))
+        player.give_coins(2)
       end
-      player.give_coins(2)
     end
   end
 

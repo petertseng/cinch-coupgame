@@ -2336,7 +2336,7 @@ describe Cinch::Plugins::CoupGame do
 
   context 'when p1..2 are playing a two-player game' do
     TURN_ORDER_REGEX2 = /^Turn order is: (p[1-2]) (p[1-2])$/
-    INITIAL_CHAR = /^\((\w+)\) - Coins: 2$/
+    INITIAL_CHAR = /^\((\w+)\) - Coins: (1|2)$/
     SIDE_CHARS = /^1 - \((\w+)\) 2 - \((\w+)\) 3 - \((\w+)\) 4 - \((\w+)\) 5 - \((\w+)\)$/
 
     before :each do
@@ -2433,7 +2433,7 @@ describe Cinch::Plugins::CoupGame do
         }.join(' ')
 
         expect(p.messages).to be == [
-          "(#{@initial_chars[i]}) (#{@sides[i][1]}) - Coins: 2 - Set aside: #{set_aside}"
+          "(#{@initial_chars[i]}) (#{@sides[i][1]}) - Coins: #{i} - Set aside: #{set_aside}"
         ]
       }
     end
@@ -2453,7 +2453,7 @@ describe Cinch::Plugins::CoupGame do
     it 'shows table publicly to player' do
       @game.show_table(message_from('p1'))
       expect(@chan.messages).to be == [
-        "#{dehighlight(@order[1])}: (########) - Coins: 2",
+        "#{dehighlight(@order[1])}: (########) - Coins: 1",
         "#{dehighlight(@order[2])}: (########) - Coins: 2",
       ]
     end
@@ -2463,7 +2463,7 @@ describe Cinch::Plugins::CoupGame do
         set_aside = [1, 2, 3, 4, 5].collect { |j|
           "(#{@sides[i][j]})"
         }.join(' ')
-        "#{dehighlight(@order[i])}: (#{@initial_chars[i]}) - Coins: 2 - Set aside: #{set_aside}"
+        "#{dehighlight(@order[i])}: (#{@initial_chars[i]}) - Coins: #{i} - Set aside: #{set_aside}"
       end
 
       it 'shows mods not in the game' do
