@@ -108,8 +108,7 @@ module Cinch
       xmatch /challenge/i,            :method => :react_challenge
       xmatch /bs/i,                   :method => :react_challenge
 
-      xmatch /flip (1|2)/i,           :method => :flip_card
-      xmatch /lose (1|2)/i,           :method => :flip_card
+      xmatch /(flip|lose)\s*(1|2)/i, :method => :flip_card
       xmatch /(switch|keep|pick|swap)\s*([1-6])/i, :method => :pick_cards
 
       xmatch /show (1|2)/i,           :method => :show_to_inquisitor
