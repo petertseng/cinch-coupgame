@@ -303,7 +303,7 @@ module Cinch
           self.tell_characters_to(game, p, show_side: false)
         end
 
-        if game.players.size == 2
+        if game.players.size == 2 && game.settings.include?(:twoplayer)
           game.players.each do |p|
             chars = p.side_cards.each_with_index.map { |char, i|
               "#{i + 1} - (#{char.to_s})"
