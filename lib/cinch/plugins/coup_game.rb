@@ -1189,6 +1189,8 @@ module Cinch
           case opt.downcase
           when 'base'
             settings.clear
+          when 'twoplayer'
+            settings << :twoplayer
           when 'inquisitor', 'inquisition'
             settings << :inquisitor
           when 'reformation'
