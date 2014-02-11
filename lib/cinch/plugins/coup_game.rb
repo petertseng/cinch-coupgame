@@ -1268,7 +1268,7 @@ module Cinch
           when "3"
             User(m.user).send "--- HELP PAGE 3/3 ---"
             m.user.send('!rules (actions|inquisitor|reformation) - provides rules for the game; when provided with an argument, provides specified rules')
-            m.user.send('!settings (modes) - changes the game to the specified game type. modes may be "inquisitor" plus one of ("reformation" or "incorporation"), or blank to see current settings')
+            m.user.send('!settings (modes) - changes the game to the specified game type. modes may be "twoplayer" and/or "inquisitor" plus one of ("reformation" or "incorporation"), or blank to see current settings')
 
             User(m.user).send "!subscribe - subscribe your current nick to receive PMs when someone calls !invite"
             User(m.user).send "!unsubscribe - remove your nick from the invitation list"
