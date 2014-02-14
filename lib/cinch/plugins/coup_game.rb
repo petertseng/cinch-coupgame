@@ -343,7 +343,9 @@ module Cinch
 
         faction_str = game.has_factions? ? " - #{game.factions[player.faction]}" : ''
 
-        "#{char1_str}#{char2_str}#{coins_str}#{faction_str}#{side_str}"
+        chars = player.characters.size == 2 ? char1_str + char2_str : 'Character not selected'
+
+        "#{chars}#{coins_str}#{faction_str}#{side_str}"
       end
 
       def tell_characters_to(game, player, opts = {})
