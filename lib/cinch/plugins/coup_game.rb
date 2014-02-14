@@ -1182,6 +1182,11 @@ module Cinch
 
         return unless game && !game.started?
 
+        unless Channel(game.channel_name).has_user?(m.user)
+          m.user.send("You need to be in #{game.channel_name} to change the settings.")
+          return
+        end
+
         unrecognized = []
         settings = []
         options.split.each { |opt|
