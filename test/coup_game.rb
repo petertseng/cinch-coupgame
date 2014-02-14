@@ -2402,26 +2402,21 @@ describe Cinch::Plugins::CoupGame do
       expect(@chan.messages[-3]).to be == 'The game has started.'
       match = (TURN_ORDER_REGEX2.match(@chan.messages[-2]))
       @order = match
-      expect(@chan.messages[-1]).to be == "This is a two-player game. Both players have received their first character card and must now pick their second."
+      expect(@chan.messages[-1]).to be == "This is a two-player variant game. The starting player receives only 1 coin. Both players are picking their first character."
       @chan.messages.clear
 
-      @initial_chars = Array.new(3)
       @sides = Array.new(3)
 
       [1, 2].each { |i|
         p = @players[@order[i]]
-        expect(p.messages.size).to be == 4
-
-        match = (INITIAL_CHAR.match(p.messages[-3]))
-        expect(match).to_not be_nil
-        @initial_chars[i] = match[1]
+        expect(p.messages.size).to be == 3
 
         match = (SIDE_CHARS.match(p.messages[-2]))
         expect(match).to_not be_nil
         @sides[i] = match
 
         expect(p.messages[-1]).to be ==
-          'Choose a second character card with "!pick #". The other four characters will not be used this game, and only you will know what they are.'
+          'Choose your first character card with "!pick #". The other four characters will not be used this game, and only you will know what they are.'
       }
     end
 
@@ -2436,6 +2431,14 @@ describe Cinch::Plugins::CoupGame do
     it 'reports status if neither player has picked' do
       @game.status(message_from('p1'))
       expect(@chan.messages).to be == ["Waiting on players to pick character: #{@order[1]}, #{@order[2]}"]
+    end
+
+    it 'tells a player his second character after he selects' do
+      p = @players[@order[1]]
+      p.messages.clear
+      @game.pick_cards(message_from(@order[1]), '1')
+      expect(p.messages.shift).to be =~ /\([A-Z]+\) \(#{@sides[1][1]}\)/
+      expect(p.messages).to be == []
     end
 
     it 'reports status if only first player has picked' do
@@ -2491,12 +2494,12 @@ describe Cinch::Plugins::CoupGame do
         @game.whoami(message_from(@order[i]))
 
         set_aside = [2, 3, 4, 5].collect { |j|
-          "(#{@sides[i][j]})"
+          "\\(#{@sides[i][j]}\\)"
         }.join(' ')
 
-        expect(p.messages).to be == [
-          "(#{@initial_chars[i]}) (#{@sides[i][1]}) - Coins: #{i} - Set aside: #{set_aside}"
-        ]
+        expect(p.messages.shift).to be =~
+          /\([A-Z]+\) \(#{@sides[i][1]}\) - Coins: #{i} - Set aside: #{set_aside}/
+        expect(p.messages).to be == []
       }
     end
 
@@ -2515,8 +2518,8 @@ describe Cinch::Plugins::CoupGame do
     it 'shows table publicly to player' do
       @game.show_table(message_from('p1'))
       expect(@chan.messages).to be == [
-        "#{dehighlight(@order[1])}: (########) - Coins: 1",
-        "#{dehighlight(@order[2])}: (########) - Coins: 2",
+        "#{dehighlight(@order[1])}: Character not selected - Coins: 1",
+        "#{dehighlight(@order[2])}: Character not selected - Coins: 2",
       ]
     end
 
@@ -2525,7 +2528,7 @@ describe Cinch::Plugins::CoupGame do
         set_aside = [1, 2, 3, 4, 5].collect { |j|
           "(#{@sides[i][j]})"
         }.join(' ')
-        "#{dehighlight(@order[i])}: (#{@initial_chars[i]}) - Coins: #{i} - Set aside: #{set_aside}"
+        "#{dehighlight(@order[i])}: Character not selected - Coins: #{i} - Set aside: #{set_aside}"
       end
 
       it 'shows mods not in the game' do
