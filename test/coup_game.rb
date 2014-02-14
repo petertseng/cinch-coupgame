@@ -2354,9 +2354,9 @@ describe Cinch::Plugins::CoupGame do
 
       [1, 2].each { |i|
         p = @players[@order[i]]
-        expect(p.messages.size).to be == 3
+        expect(p.messages.size).to be == 2
 
-        match = (INITIAL_CHARS.match(p.messages[-2]))
+        match = (INITIAL_CHARS.match(p.messages[-1]))
         expect(match).to_not be_nil
         @initial_chars[i] = match[1]
       }
