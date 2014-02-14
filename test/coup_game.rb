@@ -206,6 +206,12 @@ describe Cinch::Plugins::CoupGame do
       expect(@chan.messages).to be == ['p1: Need at least 2 to start a game.']
     end
 
+    it 'forbids outsiders from joining' do
+      spammer = MyUser.new('spammer')
+      @game.join(Message.new(spammer, nil), CHANNAME)
+      expect(spammer.messages).to be == ["You need to be in #{CHANNAME} to join the game."]
+    end
+
     it 'reports that game is empty in status' do
       @game.status(message_from('p1'))
       expect(@chan.messages).to be == ['No game in progress.']
@@ -306,6 +312,12 @@ describe Cinch::Plugins::CoupGame do
       @chan.messages.clear
       @game.get_game_settings(message_from('p1'))
       expect(@chan.messages).to be == ['Game settings: Inquisitor.']
+    end
+
+    it 'forbids outsiders from changing settings' do
+      spammer = MyUser.new('spammer')
+      @game.set_game_settings(Message.new(spammer, nil), CHANNAME, 'inquisitor')
+      expect(spammer.messages).to be == ["You need to be in #{CHANNAME} to change the settings."]
     end
 
     it 'asks for channel if non-player asks for settings privately' do
