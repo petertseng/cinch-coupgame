@@ -95,7 +95,7 @@ module Cinch
       # start 
       xmatch /join(?:\s*(##?\w+))?/i, :method => :join
       xmatch /leave/i,                :method => :leave
-      xmatch /start/i,                :method => :start_game
+      xmatch /start(?:\s+(.+))?/i,    :method => :start_game
     
       # game    
       xmatch /(?:action )?(duke|tax|ambassador|exchange|income|foreign(?: |_)aid)/i, :method => :do_action
@@ -242,7 +242,7 @@ module Cinch
         end
       end
 
-      def start_game(m)
+      def start_game(m, options = '')
         game = self.game_of(m)
         return unless game
 
@@ -250,6 +250,22 @@ module Cinch
           if game.at_min_players?
             if game.has_player?(m.user)
               @idle_timers[game.channel_name].stop
+
+              if options && !options.empty?
+                settings, unrecognized = self.class.parse_game_settings(options)
+                unless unrecognized.empty?
+                  ur = unrecognized.collect { |x| '"' + x + '"' }.join(', ')
+                  m.reply('Unrecognized game types: ' + ur, true)
+                  return
+                end
+
+                if game.settings != settings
+                  game.settings = settings
+                  change_prefix = m.channel ? "The game has been changed" :  "#{m.user.nick} has changed the game"
+                  Channel(game.channel_name).send("#{change_prefix} to #{game_settings(game)}.")
+                end
+              end
+
               game.start_game!
 
               Channel(game.channel_name).send "The game has started."

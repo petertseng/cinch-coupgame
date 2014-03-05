@@ -272,6 +272,28 @@ describe Cinch::Plugins::CoupGame do
       expect(@chan.messages[-1]).to be =~ /^FIRST TURN\. Player: p[1-3]\. Please choose an action\./
     end
 
+    it 'lets p1 start base' do
+      @game.start_game(message_from('p1'), 'base')
+      expect(@chan.messages.size).to be == 3
+      expect(@chan.messages[-3]).to be == 'The game has started.'
+      expect(@chan.messages[-2]).to be =~ TURN_ORDER_REGEX3
+      expect(@chan.messages[-1]).to be =~ /^FIRST TURN\. Player: p[1-3]\. Please choose an action\./
+    end
+
+    it 'does not let p1 start nonexistent setting' do
+      @game.start_game(message_from('p1'), 'asillygame')
+      expect(@chan.messages).to be == ['p1: Unrecognized game types: "asillygame"']
+    end
+
+    it 'lets p1 start with options' do
+      @game.start_game(message_from('p1'), 'reformation')
+      expect(@chan.messages.size).to be == 4
+      expect(@chan.messages[-4]).to be == 'The game has been changed to Reformation.'
+      expect(@chan.messages[-3]).to be == 'The game has started.'
+      expect(@chan.messages[-2]).to be =~ TURN_ORDER_REGEX3
+      expect(@chan.messages[-1]).to be =~ /^FIRST TURN\. Player: p[1-3]\. Please choose an action\./
+    end
+
     it 'lets mod kick p2 publicly' do
       @game.kick_user(message_from('npmod'), nil, 'p2')
       expect(@chan.messages).to be == ['p2 has left the game (2/6)']
