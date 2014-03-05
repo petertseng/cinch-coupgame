@@ -1171,6 +1171,31 @@ module Cinch
       # Game Settings
       #--------------------------------------------------------------------------------
 
+      def self.parse_game_settings(options)
+        unrecognized = []
+        settings = []
+        options.split.each { |opt|
+          case opt.downcase
+          when 'base'
+            settings.clear
+          when 'twoplayer'
+            settings << :twoplayer
+          when 'inquisitor', 'inquisition'
+            settings << :inquisitor
+          when 'reformation'
+            settings << :reformation
+            settings.delete(:incorporation)
+          when 'incorporation'
+            settings << :incorporation
+            settings.delete(:reforation)
+          else
+            unrecognized << opt
+          end
+        }
+
+        [settings.uniq, unrecognized]
+      end
+
       def get_game_settings(m, channel_name = nil)
         game = self.game_of(m, channel_name, ['see settings', '!settings'])
 
@@ -1188,26 +1213,8 @@ module Cinch
           return
         end
 
-        unrecognized = []
-        settings = []
-        options.split.each { |opt|
-          case opt.downcase
-          when 'base'
-            settings.clear
-          when 'twoplayer'
-            settings << :twoplayer
-          when 'inquisitor', 'inquisition'
-            settings << :inquisitor
-          when 'reformation'
-            settings << :reformation
-            settings.delete(:incorporation)
-          when 'incorporation'
-            settings << :incorporation
-            settings.delete(:reforation)
-          end
-        }
-
-        game.settings = settings.uniq
+        settings, _ = self.class.parse_game_settings(options)
+        game.settings = settings
 
         change_prefix = m.channel ? "The game has been changed" :  "#{m.user.nick} has changed the game"
 
