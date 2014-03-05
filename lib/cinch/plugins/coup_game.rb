@@ -264,6 +264,9 @@ module Cinch
                   change_prefix = m.channel ? "The game has been changed" :  "#{m.user.nick} has changed the game"
                   Channel(game.channel_name).send("#{change_prefix} to #{game_settings(game)}.")
                 end
+              elsif game.players.size == 2
+                m.reply('To start a two-player game you must choose to play with base rules ("!start base") or two-player variant rules ("!start twoplayer").')
+                return
               end
 
               game.start_game!

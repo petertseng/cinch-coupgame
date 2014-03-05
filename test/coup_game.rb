@@ -2370,13 +2370,38 @@ describe Cinch::Plugins::CoupGame do
 
   TURN_ORDER_REGEX2 = /^Turn order is: (p[1-2]) (p[1-2])$/
 
+  context 'when p1..2 have joined a game' do
+    before :each do
+      [1, 2].each { |i| @game.join(message_from("p#{i}")) }
+      @chan.messages.clear
+    end
+
+    it 'lets p1 start base' do
+      @game.start_game(message_from('p1'), 'base')
+      expect(@chan.messages[0]).to be == 'The game has started.'
+    end
+
+    it 'lets p1 start variant' do
+      @game.start_game(message_from('p1'), 'twoplayer')
+      expect(@chan.messages[0]).to be == 'The game has been changed to Twoplayer.'
+      expect(@chan.messages[1]).to be == 'The game has started.'
+    end
+
+    it 'does not let p1 start without args' do
+      @game.start_game(message_from('p1'))
+      expect(@chan.messages).to be == [
+        'To start a two-player game you must choose to play with base rules ("!start base") or two-player variant rules ("!start twoplayer").'
+      ]
+    end
+  end
+
   context 'when p1..2 are playing a two-player normal game' do
     INITIAL_CHARS = /^\((\w+)\) \((\w+)\) - Coins: (1|2)$/
 
     before :each do
       [1, 2].each { |i| @game.join(message_from("p#{i}")) }
       @chan.messages.clear
-      @game.start_game(message_from('p1'))
+      @game.start_game(message_from('p1'), 'base')
 
       expect(@chan.messages.size).to be == 3
       expect(@chan.messages[-3]).to be == 'The game has started.'
@@ -2416,11 +2441,11 @@ describe Cinch::Plugins::CoupGame do
 
     before :each do
       [1, 2].each { |i| @game.join(message_from("p#{i}")) }
-      @game.set_game_settings(message_from('p1'), nil, 'twoplayer')
       @chan.messages.clear
-      @game.start_game(message_from('p1'))
+      @game.start_game(message_from('p1'), 'twoplayer')
 
-      expect(@chan.messages.size).to be == 3
+      expect(@chan.messages.size).to be == 4
+      expect(@chan.messages[-4]).to be == 'The game has been changed to Twoplayer.'
       expect(@chan.messages[-3]).to be == 'The game has started.'
       match = (TURN_ORDER_REGEX2.match(@chan.messages[-2]))
       @order = match
