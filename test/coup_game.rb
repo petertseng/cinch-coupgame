@@ -2403,10 +2403,12 @@ describe Cinch::Plugins::CoupGame do
       @chan.messages.clear
       @game.start_game(message_from('p1'), 'base')
 
-      expect(@chan.messages.size).to be == 3
-      expect(@chan.messages[-3]).to be == 'The game has started.'
-      match = (TURN_ORDER_REGEX2.match(@chan.messages[-2]))
+      expect(@chan.messages.size).to be == 4
+      expect(@chan.messages[-4]).to be == 'The game has started.'
+      match = (TURN_ORDER_REGEX2.match(@chan.messages[-3]))
       @order = match
+
+      expect(@chan.messages[-2]).to be == 'This is a two-player game. The starting player receives only 1 coin.'
       @chan.messages.clear
 
       @initial_chars = Array.new(3)

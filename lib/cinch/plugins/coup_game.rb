@@ -281,6 +281,7 @@ module Cinch
                 Channel(game.channel_name).send('This is a two-player variant game. The starting player receives only 1 coin. Both players are picking their first character.')
                 game.current_turn.wait_for_initial_characters
               else
+                Channel(game.channel_name).send('This is a two-player game. The starting player receives only 1 coin.') if game.players.size == 2
                 Channel(game.channel_name).send "FIRST TURN. Player: #{game.current_player}. Please choose an action."
               end
               #User(@game.team_leader.user).send "You are team leader. Please choose a team of #{@game.current_team_size} to go on first mission. \"!team#{team_example(@game.current_team_size)}\""
