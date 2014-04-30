@@ -502,6 +502,7 @@ module Cinch
         turn = game.current_turn
 
         return unless turn.waiting_for_block? && game.reacting_players.include?(player)
+        action.downcase!
         game_action = Game::ACTIONS[action.to_sym]
         return unless check_action(m, game, action)
 
