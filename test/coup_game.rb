@@ -190,6 +190,12 @@ describe Cinch::Plugins::CoupGame do
 
   end
 
+  after :each do
+    # Kinda hacky, but without this may make too many threads.
+    timers = @game.instance_variable_get('@idle_timers')
+    timers.each_value(&:stop)
+  end
+
   context 'when game is empty' do
     it 'lets p1 join' do
       @game.join(message_from('p1'))
