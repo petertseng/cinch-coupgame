@@ -2886,6 +2886,44 @@ describe Cinch::Plugins::CoupGame do
       end
     end
 
+    context 'when offensive inquisitor is challenged unsuccessfully by 1-influence player' do
+      before :each do
+        5.times do
+          (1..NUM_PLAYERS).each { |i|
+            @game.do_action(message_from(@order[i]), 'income')
+          }
+        end
+
+        # 1 uses coup on 2, 2 flips card 1
+        @game.do_action(message_from(@order[1]), 'coup', @order[2])
+        @game.flip_card(message_from(@order[2]), '1')
+        # 2 uses coup on 3, 3 flips card 1
+        @game.do_action(message_from(@order[2]), 'coup', @order[3])
+        @game.flip_card(message_from(@order[3]), '1')
+
+        # 3 uses inquisitor on 2
+        @game.force_characters(@order[3], nil, :inquisitor)
+        @game.do_action(message_from(@order[3]), 'inquisitor', @order[2])
+        @chan.messages.clear
+      end
+
+      it 'proceeds to the next player' do
+        @game.react_challenge(message_from(@order[2]))
+        # doh, shift length based on challenged_win length.
+        shift_length = 1 + challenged_win('a', :b, 'c').size
+        expect(@chan.messages.shift(shift_length)).to be == [
+          "#{@order[2]} challenges #{@order[3]} on INQUISITOR!",
+          challenged_win(@order[3], :inquisitor, @order[2]),
+        ].flatten
+        expect(@chan.messages.shift).to be =~ lose_card(@order[2])
+        expect(@chan.messages).to be == [
+          "#{@order[2]} has no more influence, and is out of the game.",
+          "#{@order[3]} proceeds with INQUISITOR. Examine opponent's card: #{@order[2]}.",
+          "#{@order[1]}: It is your turn. Please choose an action.",
+        ]
+      end
+    end
+
     # TODO: There could be tests of the inquisitor being blocked, but... meh.
 
   end

@@ -1020,9 +1020,11 @@ module Cinch
                 self.prompt_to_switch(game, turn.active_player, 1)
               elsif turn.target_player.influence == 2
                 self.prompt_to_pick_card(turn.target_player, "show to #{turn.active_player}", 'show')
-              else
+              elsif turn.target_player.influence == 1
                 i = turn.target_player.characters.index { |c| c.face_down? }
                 self._show_to_inquisitor(game, turn.target_player, i + 1, turn.active_player)
+              else
+                self.start_new_turn(game)
               end
             end
           else
