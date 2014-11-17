@@ -120,10 +120,6 @@ class Turn
     self.state == :decision
   end
 
-  def ended?
-    self.state == :end
-  end
-
   def wait_for_challenge_loser
     if self.state == :action_challenge_reply
       self.state = :action_challenge_loser
