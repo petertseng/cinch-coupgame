@@ -974,6 +974,12 @@ module Cinch
           i = player_info(game, p, show_coins: true, show_side: opts[:cheating], show_secret: opts[:cheating])
           "#{dehighlight_nick(p.to_s)}: #{i}"
         }
+        if opts[:cheating]
+          court_cards = game.deck.map { |c| "(#{c})" }.join(' ')
+          info << "Court Deck: #{court_cards}"
+        else
+          info << "Court Deck: (#{game.deck.size} cards)"
+        end
         unless game.discard_pile.empty?
           discards = game.discard_pile.map{ |c| "[#{c}]" }.join(" ")
           info << "Discard Pile: #{discards}"

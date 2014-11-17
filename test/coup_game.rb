@@ -2160,6 +2160,7 @@ describe Cinch::Plugins::CoupGame do
           "#{dehighlight(@order[1])}: (########) (########) - Coins: 2",
           "#{dehighlight(@order[2])}: (########) (########) - Coins: 2",
           "#{dehighlight(@order[3])}: (########) (########) - Coins: 2",
+          'Court Deck: (9 cards)',
         ]
       end
 
@@ -2192,6 +2193,7 @@ describe Cinch::Plugins::CoupGame do
         (1..3).each { |i|
           expect(@chan.messages.shift).to be =~ expected(i)
         }
+        expect(@chan.messages.shift).to be =~ /Court Deck:( \(\w+\)){9}/
         expect(@chan.messages).to be == ['The game has been reset.']
       end
 
@@ -2201,6 +2203,7 @@ describe Cinch::Plugins::CoupGame do
         (1..3).each { |i|
           expect(@chan.messages.shift).to be =~ expected(i)
         }
+        expect(@chan.messages.shift).to be =~ /Court Deck:( \(\w+\)){9}/
         expect(@chan.messages).to be == ['The game has been reset.']
       end
 
@@ -2210,6 +2213,7 @@ describe Cinch::Plugins::CoupGame do
         (1..3).each { |i|
           expect(@chan.messages.shift).to be =~ expected(i)
         }
+        expect(@chan.messages.shift).to be =~ /Court Deck:( \(\w+\)){9}/
         expect(@chan.messages).to be == ['The game has been reset.']
       end
 
@@ -2229,6 +2233,7 @@ describe Cinch::Plugins::CoupGame do
         (1..3).each { |i|
           expect(@chan.messages.shift).to be =~ expected(i)
         }
+        expect(@chan.messages.shift).to be =~ /Court Deck:( \(\w+\)){9}/
         expect(@chan.messages).to be == ['The game has been reset.']
       end
     end
@@ -2270,6 +2275,7 @@ describe Cinch::Plugins::CoupGame do
         (1..3).each { |i|
           expect(p.messages.shift).to be =~ expected(i)
         }
+        expect(p.messages.shift).to be =~ /Court Deck:( \(\w+\)){9}/
         expect(p.messages).to be == []
       end
     end
@@ -2618,6 +2624,7 @@ describe Cinch::Plugins::CoupGame do
       expect(@chan.messages).to be == [
         "#{dehighlight(@order[1])}: Character not selected - Coins: 1",
         "#{dehighlight(@order[2])}: Character not selected - Coins: 2",
+        "Court Deck: (3 cards)",
       ]
     end
 
@@ -2637,6 +2644,7 @@ describe Cinch::Plugins::CoupGame do
         (1..2).each { |i|
           expect(p.messages.shift).to be == expected(i)
         }
+        expect(p.messages.shift).to be =~ /Court Deck:( \(\w+\)){3}/
         expect(p.messages).to be == []
       end
     end
@@ -3353,6 +3361,7 @@ describe Cinch::Plugins::CoupGame do
         "#{dehighlight(@order[1])}: (########) (########) - Coins: 2 - #{factions[0]}",
         "#{dehighlight(@order[2])}: (########) (########) - Coins: 2 - #{factions[1]}",
         "#{dehighlight(@order[3])}: (########) (########) - Coins: 2 - #{factions[0]}",
+        'Court Deck: (9 cards)',
         "#{bank_name}: 0 coins",
       ]
     end
@@ -3370,6 +3379,7 @@ describe Cinch::Plugins::CoupGame do
         (1..3).each { |i|
           expect(p.messages.shift).to be =~ expected(i)
         }
+        expect(p.messages.shift).to be =~ /Court Deck:( \(\w+\)){9}/
         expect(p.messages).to be == ["#{bank_name}: 0 coins"]
       end
     end
