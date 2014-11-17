@@ -589,7 +589,10 @@ module Cinch
         defendant = turn.challengee_player
         chall_action = turn.challengee_action
 
-        Channel(game.channel_name).send "#{m.user.nick} challenges #{defendant} on #{chall_action.to_s.upcase}!"
+        char = chall_action.character_forbidden? ? chall_action.character_forbidden : chall_action.character_required
+        haveornot = chall_action.character_forbidden? ? 'NOT having' : 'having'
+
+        Channel(game.channel_name).send "#{m.user.nick} challenges #{defendant} on #{haveornot} influence over #{char.upcase}!"
 
         # Prompt player if he has a choice
         self.prompt_challenge_defendant(defendant, chall_action) if defendant.influence == 2 && !chall_action.character_forbidden?

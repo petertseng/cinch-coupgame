@@ -100,8 +100,8 @@ def use_block(player, blocker, blocked_name, blocked_action)
   return "#{player} would like to use #{blocker.upcase} to block #{dehighlight(blocked_name)}'s #{blocked_action.name}"
 end
 
-def challenge_on(challenger, challengee, role)
-  return "#{challenger} challenges #{challengee} on #{role.upcase}!"
+def challenge_on(challenger, challengee, role, extra = nil)
+  return "#{challenger} challenges #{challengee} on #{extra && "#{extra} "}having influence over #{role.upcase}!"
 end
 
 def challenged_win(player, char, challenger)
@@ -3089,7 +3089,7 @@ describe Cinch::Plugins::CoupGame do
 
       @game.react_challenge(message_from(@order[1]))
       expect(@chan.messages).to be == [
-        challenge_on(@order[1], @order[2], :embezzle),
+        challenge_on(@order[1], @order[2], :duke, :NOT),
         "#{@order[2]} reveals a [DUKE]. #{@order[2]} loses the challenge!",
         "#{@order[2]} loses influence over the [DUKE] and cannot use the EMBEZZLE.",
         "#{@order[3]}: It is your turn. Please choose an action.",
@@ -3106,7 +3106,7 @@ describe Cinch::Plugins::CoupGame do
 
       @game.react_challenge(message_from(@order[1]))
       expect(@chan.messages).to be == [
-        challenge_on(@order[1], @order[2], :embezzle),
+        challenge_on(@order[1], @order[2], :duke, :NOT),
         "#{@order[2]} reveals [AMBASSADOR] and [ASSASSIN] and replaces both with new cards from the Court Deck.",
         "#{@order[1]} loses influence for losing the challenge!",
       ]
@@ -3139,7 +3139,7 @@ describe Cinch::Plugins::CoupGame do
 
       @game.react_challenge(message_from(@order[1]))
       expect(@chan.messages).to be == [
-        challenge_on(@order[1], @order[3], :embezzle),
+        challenge_on(@order[1], @order[3], :duke, :NOT),
         "#{@order[3]} reveals a [ASSASSIN] and replaces it with a new card from the Court Deck.",
         "#{@order[1]} loses influence for losing the challenge!",
       ]
