@@ -3098,7 +3098,7 @@ describe Cinch::Plugins::CoupGame do
         expect(@chan.messages[0]).to be == "#{@order[1]} uses ASSASSIN on #{@order[2]}"
       end
 
-      it 'allows targeting opponent with assassin' do
+      it 'allows targeting opponent with coup' do
         5.times do
           (1..NUM_PLAYERS).each { |i|
             @game.do_action(message_from(@order[i]), 'income')
