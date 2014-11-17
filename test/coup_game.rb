@@ -86,7 +86,8 @@ end
 
 def use_action(player, action, target = nil)
   targ = target ? " on #{target}" : ''
-  return "#{player} uses #{action.upcase}#{targ}"
+  action = Game::ACTIONS[action].to_s_full(player, target)
+  return "#{player} would like to use #{action}#{targ}"
 end
 
 def use_block(player, blocker, blocked_name, blocked_action)
