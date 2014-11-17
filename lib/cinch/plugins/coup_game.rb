@@ -661,7 +661,7 @@ module Cinch
 
       def defendant_reveal_and_lose(game, defendant, revealed, action)
         Channel(game.channel_name).send(
-          "#{defendant} loses influence over the [#{revealed}] and cannot use the #{action.action.to_s.upcase}."
+          "#{defendant} loses influence over the [#{revealed}] and cannot use #{action.name} this turn."
         )
         revealed.flip_up
         self.check_player_status(game, defendant)

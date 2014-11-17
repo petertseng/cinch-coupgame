@@ -111,9 +111,10 @@ def challenged_win(player, char, challenger)
   ]
 end
 def challenged_loss(player, expected_char, char)
+  ability = Game::ACTIONS[expected_char].name
   [
     "#{player} reveals a [#{char.to_s.upcase}]. That's not a #{expected_char.to_s.upcase}! #{player} loses the challenge!",
-    "#{player} loses influence over the [#{char.to_s.upcase}] and cannot use the #{expected_char.to_s.upcase}.",
+    "#{player} loses influence over the [#{char.to_s.upcase}] and cannot use #{ability} this turn.",
   ]
 end
 def lose_card(player, char = nil)
@@ -3091,7 +3092,7 @@ describe Cinch::Plugins::CoupGame do
       expect(@chan.messages).to be == [
         challenge_on(@order[1], @order[2], :duke, :NOT),
         "#{@order[2]} reveals a [DUKE]. #{@order[2]} loses the challenge!",
-        "#{@order[2]} loses influence over the [DUKE] and cannot use the EMBEZZLE.",
+        "#{@order[2]} loses influence over the [DUKE] and cannot use Embezzle this turn.",
         "#{@order[3]}: It is your turn. Please choose an action.",
       ]
       expect(@game.coins(@order[2])).to be == 2
