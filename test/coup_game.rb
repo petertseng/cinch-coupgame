@@ -84,6 +84,11 @@ class MyChannel
   end
 end
 
+def use_action(player, action, target = nil)
+  targ = target ? " on #{target}" : ''
+  return "#{player} uses #{action.upcase}#{targ}"
+end
+
 def challenged_win(player, char, challenger)
   [
     "#{player} reveals a [#{char.to_s.upcase}] and replaces it with a new card from the Court Deck.",
@@ -605,7 +610,7 @@ describe Cinch::Plugins::CoupGame do
     it 'lets player take income without reactions' do
       @game.do_action(message_from(@order[1]), 'income')
       expect(@chan.messages).to be == [
-        "#{@order[1]} uses INCOME",
+        use_action(@order[1], :income),
         "#{@order[1]} proceeds with INCOME. Take 1 coin.",
         "#{@order[2]}: It is your turn. Please choose an action.",
       ]
@@ -619,7 +624,7 @@ describe Cinch::Plugins::CoupGame do
       before :each do
         @game.do_action(message_from(@order[1]), 'foreign_aid')
         expect(@chan.messages).to be == [
-          "#{@order[1]} uses FOREIGN_AID",
+          use_action(@order[1], :foreign_aid),
           block_foreign_aid([@order[2], @order[3]], @order[1]),
         ]
         @chan.messages.clear
@@ -805,7 +810,7 @@ describe Cinch::Plugins::CoupGame do
 
         @game.do_action(message_from(@order[1]), 'coup', @order[2])
         expect(@chan.messages).to be == [
-          "#{@order[1]} uses COUP on #{@order[2]}",
+          use_action(@order[1], :coup, @order[2]),
           "#{@order[1]} proceeds with COUP. Pay 7 coins, choose player to lose influence: #{@order[2]}.",
         ]
         @chan.messages.clear
@@ -858,7 +863,7 @@ describe Cinch::Plugins::CoupGame do
 
         @game.do_action(message_from(@order[1]), 'coup', @order[2])
         expect(@chan.messages).to be == [
-          "#{@order[1]} uses COUP on #{@order[2]}",
+          use_action(@order[1], :coup, @order[2]),
           "#{@order[1]} proceeds with COUP. Pay 7 coins, choose player to lose influence: #{@order[2]}.",
         ]
 
@@ -890,7 +895,7 @@ describe Cinch::Plugins::CoupGame do
         # So if 3 coups 2 now, 2 should die!
         @game.do_action(message_from(@order[3]), 'coup', @order[2])
         expect(@chan.messages.shift(2)).to be == [
-          "#{@order[3]} uses COUP on #{@order[2]}",
+          use_action(@order[3], :coup, @order[2]),
           "#{@order[3]} proceeds with COUP. Pay 7 coins, choose player to lose influence: #{@order[2]}.",
         ]
       end
@@ -916,7 +921,7 @@ describe Cinch::Plugins::CoupGame do
       before :each do
         @game.do_action(message_from(@order[1]), 'ambassador')
         expect(@chan.messages).to be == [
-          "#{@order[1]} uses AMBASSADOR",
+          use_action(@order[1], :ambassador),
           challenge_prompt([@order[2], @order[3]], @order[1], :ambassador),
         ].compact
         @chan.messages.clear
@@ -983,7 +988,7 @@ describe Cinch::Plugins::CoupGame do
 
         @game.do_action(message_from(@order[2]), 'ambassador')
         expect(@chan.messages).to be == [
-          "#{@order[2]} uses AMBASSADOR",
+          use_action(@order[2], :ambassador),
           challenge_prompt([@order[3], @order[1]], @order[2], :ambassador),
         ].compact
         @chan.messages.clear
@@ -1038,7 +1043,7 @@ describe Cinch::Plugins::CoupGame do
 
         @game.do_action(message_from(@order[1]), 'ambassador')
         expect(@chan.messages).to be == [
-          "#{@order[1]} uses AMBASSADOR",
+          use_action(@order[1], :ambassador),
           challenge_prompt([@order[2], @order[3]], @order[1], :ambassador),
         ].compact
         @chan.messages.clear
@@ -1131,7 +1136,7 @@ describe Cinch::Plugins::CoupGame do
         # Now first player uses assassin action
         @game.do_action(message_from(@order[1]), 'assassin', @order[2])
         expect(@chan.messages).to be == [
-          "#{@order[1]} uses ASSASSIN on #{@order[2]}",
+          use_action(@order[1], :assassin, @order[2]),
           challenge_prompt([@order[2], @order[3]], @order[1], :assassin, @order[2]),
         ].compact
         @chan.messages.clear
@@ -1283,7 +1288,7 @@ describe Cinch::Plugins::CoupGame do
 
         @game.do_action(message_from(@order[1]), 'assassin', @order[2])
         expect(@chan.messages).to be == [
-          "#{@order[1]} uses ASSASSIN on #{@order[2]}",
+          use_action(@order[1], :assassin, @order[2]),
           challenge_prompt([@order[2], @order[3]], @order[1], :assassin, @order[2]),
         ].compact
         @chan.messages.clear
@@ -1579,7 +1584,7 @@ describe Cinch::Plugins::CoupGame do
       before :each do
         @game.do_action(message_from(@order[1]), 'captain', @order[2])
         expect(@chan.messages).to be == [
-          "#{@order[1]} uses CAPTAIN on #{@order[2]}",
+          use_action(@order[1], :captain, @order[2]),
           challenge_prompt([@order[2], @order[3]], @order[1], :captain, @order[2]),
         ].compact
         @chan.messages.clear
@@ -1636,7 +1641,7 @@ describe Cinch::Plugins::CoupGame do
 
         @game.do_action(message_from(@order[1]), 'captain', @order[2])
         expect(@chan.messages).to be == [
-          "#{@order[1]} uses CAPTAIN on #{@order[2]}",
+          use_action(@order[1], :captain, @order[2]),
           challenge_prompt([@order[2], @order[3]], @order[1], :captain, @order[2]),
         ].compact
         @chan.messages.clear
@@ -1766,7 +1771,7 @@ describe Cinch::Plugins::CoupGame do
     it 'gives 3 coins if player uses duke unchallenged' do
       @game.do_action(message_from(@order[1]), 'duke')
       expect(@chan.messages).to be == [
-        "#{@order[1]} uses DUKE",
+        use_action(@order[1], :duke),
         challenge_prompt([@order[2], @order[3]], @order[1], :duke),
       ].compact
       @chan.messages.clear
@@ -1796,7 +1801,7 @@ describe Cinch::Plugins::CoupGame do
 
         @game.do_action(message_from(@order[1]), 'duke')
         expect(@chan.messages).to be == [
-          "#{@order[1]} uses DUKE",
+          use_action(@order[1], :duke),
           challenge_prompt([@order[2], @order[3]], @order[1], :duke),
         ].compact
         @chan.messages.clear
@@ -2642,7 +2647,7 @@ describe Cinch::Plugins::CoupGame do
       before :each do
         @game.do_action(message_from(@order[1]), 'inquisitor', @order[1])
         expect(@chan.messages).to be == [
-          "#{@order[1]} uses INQUISITOR on #{@order[1]}",
+          use_action(@order[1], :inquisitor, @order[1]),
           challenge_prompt([@order[2], @order[3]], @order[1], :inquisitor, @order[1]),
         ].compact
         @chan.messages.clear
@@ -2709,7 +2714,7 @@ describe Cinch::Plugins::CoupGame do
 
         @game.do_action(message_from(@order[2]), 'inquisitor', @order[2])
         expect(@chan.messages).to be == [
-          "#{@order[2]} uses INQUISITOR on #{@order[2]}",
+          use_action(@order[2], :inquisitor, @order[2]),
           challenge_prompt([@order[3], @order[1]], @order[2], :inquisitor, @order[2]),
         ].compact
         @chan.messages.clear
@@ -2762,7 +2767,7 @@ describe Cinch::Plugins::CoupGame do
       before :each do
         @game.do_action(message_from(@order[1]), 'captain', @order[2])
         expect(@chan.messages).to be == [
-          "#{@order[1]} uses CAPTAIN on #{@order[2]}",
+          use_action(@order[1], :captain, @order[2]),
           challenge_prompt([@order[2], @order[3]], @order[1], :captain, @order[2]),
         ].compact
         @chan.messages.clear
@@ -2794,7 +2799,7 @@ describe Cinch::Plugins::CoupGame do
       before :each do
         @game.do_action(message_from(@order[1]), 'inquisitor', @order[2])
         expect(@chan.messages).to be == [
-          "#{@order[1]} uses INQUISITOR on #{@order[2]}",
+          use_action(@order[1], :inquisitor, @order[2]),
           challenge_prompt([@order[2], @order[3]], @order[1], :inquisitor, @order[2]),
         ].compact
         @chan.messages.clear
@@ -2901,7 +2906,7 @@ describe Cinch::Plugins::CoupGame do
 
         @game.do_action(message_from(@order[2]), 'inquisitor', @order[3])
         expect(@chan.messages).to be == [
-          "#{@order[2]} uses INQUISITOR on #{@order[3]}",
+          use_action(@order[2], :inquisitor, @order[3]),
           challenge_prompt([@order[3], @order[1]], @order[2], :inquisitor, @order[3]),
         ].compact
         @chan.messages.clear
@@ -2978,7 +2983,7 @@ describe Cinch::Plugins::CoupGame do
       @game.do_action(message_from(@order[1]), convert_self_name)
 
       expect(@chan.messages).to be == [
-        "#{@order[1]} uses #{convert_self_name.upcase}",
+        use_action(@order[1], convert_self_name),
         "#{@order[1]} proceeds with #{convert_self_name.upcase}. Pay 1 coin to #{bank_name}, change own faction.",
         "#{@order[2]}: It is your turn. Please choose an action.",
       ]
@@ -2994,7 +2999,7 @@ describe Cinch::Plugins::CoupGame do
       @game.do_action(message_from(@order[1]), convert_other_name, @order[2])
 
       expect(@chan.messages).to be == [
-        "#{@order[1]} uses #{convert_other_name.upcase} on #{@order[2]}",
+        use_action(@order[1], convert_other_name, @order[2]),
         "#{@order[1]} proceeds with #{convert_other_name.upcase}. Pay 2 coins to #{bank_name}, choose player to change faction: #{@order[2]}.",
         "#{@order[2]}: It is your turn. Please choose an action.",
       ]
@@ -3006,7 +3011,7 @@ describe Cinch::Plugins::CoupGame do
       @game.do_action(message_from(@order[1]), convert_other_name, @order[3])
 
       expect(@chan.messages).to be == [
-        "#{@order[1]} uses #{convert_other_name.upcase} on #{@order[3]}",
+        use_action(@order[1], convert_other_name, @order[3]),
         "#{@order[1]} proceeds with #{convert_other_name.upcase}. Pay 2 coins to #{bank_name}, choose player to change faction: #{@order[3]}.",
         "#{@order[2]}: It is your turn. Please choose an action.",
       ]
@@ -3027,7 +3032,7 @@ describe Cinch::Plugins::CoupGame do
       @game.do_action(message_from(@order[2]), 'embezzle')
 
       expect(@chan.messages).to be == [
-        "#{@order[2]} uses EMBEZZLE",
+        use_action(@order[2], :embezzle),
         challenge_prompt([@order[3], @order[1]], @order[2], :embezzle),
       ].compact
       @chan.messages.clear
@@ -3128,7 +3133,7 @@ describe Cinch::Plugins::CoupGame do
     shared_examples "first player can target second" do
       it 'allows targeting opponent with captain' do
         @game.do_action(message_from(@order[1]), 'captain', @order[2])
-        expect(@chan.messages[0]).to be == "#{@order[1]} uses CAPTAIN on #{@order[2]}"
+        expect(@chan.messages[0]).to be == use_action(@order[1], :captain, @order[2])
       end
 
       it 'allows targeting opponent with assassin' do
@@ -3138,7 +3143,7 @@ describe Cinch::Plugins::CoupGame do
         @chan.messages.clear
 
         @game.do_action(message_from(@order[1]), 'assassin', @order[2])
-        expect(@chan.messages[0]).to be == "#{@order[1]} uses ASSASSIN on #{@order[2]}"
+        expect(@chan.messages[0]).to be == use_action(@order[1], :assassin, @order[2])
       end
 
       it 'allows targeting opponent with coup' do
@@ -3150,7 +3155,7 @@ describe Cinch::Plugins::CoupGame do
         @chan.messages.clear
 
         @game.do_action(message_from(@order[1]), 'coup', @order[2])
-        expect(@chan.messages[0]).to be == "#{@order[1]} uses COUP on #{@order[2]}"
+        expect(@chan.messages[0]).to be == use_action(@order[1], :coup, @order[2])
       end
     end
 
@@ -3206,7 +3211,7 @@ describe Cinch::Plugins::CoupGame do
         before :each do
           @game.do_action(message_from(@order[1]), 'foreign_aid')
           expect(@chan.messages).to be == [
-            "#{@order[1]} uses FOREIGN_AID",
+            use_action(@order[1], :foreign_aid),
             block_foreign_aid([@order[2]], @order[1], factions[1]),
           ]
           @chan.messages.clear
@@ -3232,7 +3237,7 @@ describe Cinch::Plugins::CoupGame do
       it 'allows blocking opponents foreign aid' do
         @game.do_action(message_from(@order[1]), 'foreign_aid')
         expect(@chan.messages).to be == [
-          "#{@order[1]} uses FOREIGN_AID",
+          use_action(@order[1], :foreign_aid),
           block_foreign_aid([@order[2]], @order[1], factions[1]),
         ]
         @chan.messages.clear
@@ -3244,7 +3249,7 @@ describe Cinch::Plugins::CoupGame do
       it 'proceeds when all opponents have passed blocking foreign aid' do
         @game.do_action(message_from(@order[1]), 'foreign_aid')
         expect(@chan.messages).to be == [
-          "#{@order[1]} uses FOREIGN_AID",
+          use_action(@order[1], :foreign_aid),
           block_foreign_aid([@order[2]], @order[1], factions[1]),
         ]
         @chan.messages.clear
@@ -3272,7 +3277,7 @@ describe Cinch::Plugins::CoupGame do
       it 'allows blocking opponents foreign aid' do
         @game.do_action(message_from(@order[1]), 'foreign_aid')
         expect(@chan.messages).to be == [
-          "#{@order[1]} uses FOREIGN_AID",
+          use_action(@order[1], :foreign_aid),
           block_foreign_aid([@order[2], @order[3]], @order[1]),
         ]
         @chan.messages.clear
@@ -3347,8 +3352,8 @@ describe Cinch::Plugins::CoupGame do
       @chan.messages.clear
     end
 
-    let(:convert_self_name) do 'apostatize' end
-    let(:convert_other_name) do 'convert' end
+    let(:convert_self_name) do :apostatize end
+    let(:convert_other_name) do :convert end
     let(:bank_name) do 'Almshouse' end
     let(:factions) do ['Protestant', 'Catholic'] end
 
@@ -3372,8 +3377,8 @@ describe Cinch::Plugins::CoupGame do
       @chan.messages.clear
     end
 
-    let(:convert_self_name) do 'defect' end
-    let(:convert_other_name) do 'bribe' end
+    let(:convert_self_name) do :defect end
+    let(:convert_other_name) do :bribe end
     let(:bank_name) do 'Corporate Bank' end
     let(:factions) do ['Resistance', 'Imperial'] end
 
@@ -3397,8 +3402,8 @@ describe Cinch::Plugins::CoupGame do
       @chan.messages.clear
     end
 
-    let(:convert_self_name) do 'apostatize' end
-    let(:convert_other_name) do 'convert' end
+    let(:convert_self_name) do :apostatize end
+    let(:convert_other_name) do :convert end
     let(:bank_name) do 'Almshouse' end
     let(:factions) do ['Protestant', 'Catholic'] end
 
@@ -3408,7 +3413,7 @@ describe Cinch::Plugins::CoupGame do
 
     it 'allows targeting opponent with inquisitor' do
       @game.do_action(message_from(@order[1]), 'inquisitor', @order[2])
-      expect(@chan.messages[0]).to be == "#{@order[1]} uses INQUISITOR on #{@order[2]}"
+      expect(@chan.messages[0]).to be == use_action(@order[1], :inquisitor, @order[2])
     end
 
     it 'does not allow targeting factionmate with inquisitor' do
@@ -3424,7 +3429,7 @@ describe Cinch::Plugins::CoupGame do
 
     it 'allows targeting self with inquisitor' do
       @game.do_action(message_from(@order[1]), 'inquisitor', @order[1])
-      expect(@chan.messages[0]).to be == "#{@order[1]} uses INQUISITOR on #{@order[1]}"
+      expect(@chan.messages[0]).to be == use_action(@order[1], :inquisitor, @order[1])
     end
   end
 
