@@ -106,7 +106,8 @@ def blocked_by(actor, action, blocker, block_action)
 end
 
 def proceed_with(actor, action, str)
-  return "#{actor} proceeds with #{action.upcase}. #{str}"
+  action = Game::ACTIONS[action]
+  return "#{actor} proceeds with #{action.name}. #{str}"
 end
 
 def challenge_on(challenger, challengee, role, extra = nil)
