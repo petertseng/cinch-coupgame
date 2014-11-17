@@ -1392,9 +1392,9 @@ module Cinch
         if game.started?
           turn = game.current_turn
 
-          action = "#{dehighlight_nick(turn.active_player.user.nick)}'s #{turn.action.to_s.upcase}" if turn.action
+          action = "#{dehighlight_nick(turn.active_player.user.nick)}'s #{turn.action.name}" if turn.action
           action = "#{action} on #{dehighlight_nick(turn.target_player.user.nick)}" if turn.target_player
-          block = "#{dehighlight_nick(turn.counteracting_player.user.nick)}'s #{turn.counteraction.to_s.upcase} blocking #{action}" if turn.counteraction
+          block = "#{dehighlight_nick(turn.counteracting_player.user.nick)}'s #{turn.counteraction.character_required.upcase} blocking #{action}" if turn.counteraction
 
           if turn.waiting_for_action?
             status = "Waiting on #{turn.active_player} to take an action"
@@ -1420,7 +1420,7 @@ module Cinch
           elsif turn.waiting_for_block_challenge_loser?
             status = "Waiting on #{turn.block_challenger} to pick character to lose"
           elsif turn.waiting_for_decision?
-            status = "Waiting on #{turn.decider} to make decision on #{turn.action.to_s.upcase}"
+            status = "Waiting on #{turn.decider} to make decision on #{turn.action.name}"
           elsif turn.waiting_for_initial_characters?
             players = game.not_selected_initial_character.map(&:user).join(", ")
             status = 'Waiting on players to pick character: ' + players

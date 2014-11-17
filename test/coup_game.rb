@@ -1958,7 +1958,7 @@ describe Cinch::Plugins::CoupGame do
         @game.status(message_from(@order[1]))
         # Hmm, I'm relying on this to be in turn order, but is that always correct?
         expect(@chan.messages).to be == [
-          "Waiting on players to PASS or CHALLENGE #{dehighlight(@order[1])}'s AMBASSADOR: #{@order[2]}, #{@order[3]}"
+          "Waiting on players to PASS or CHALLENGE #{dehighlight(@order[1])}'s Exchange: #{@order[2]}, #{@order[3]}"
         ]
       end
 
@@ -1969,7 +1969,7 @@ describe Cinch::Plugins::CoupGame do
         @game.status(message_from(@order[1]))
         # Hmm, I'm relying on this to be in turn order, but is that always correct?
         expect(@chan.messages).to be == [
-          "Waiting on #{@order[1]} to respond to challenge against #{dehighlight(@order[1])}'s AMBASSADOR"
+          "Waiting on #{@order[1]} to respond to challenge against #{dehighlight(@order[1])}'s Exchange"
         ]
       end
 
@@ -1990,7 +1990,7 @@ describe Cinch::Plugins::CoupGame do
         @chan.messages.clear
         @game.status(message_from(@order[1]))
         expect(@chan.messages).to be == [
-          "Waiting on players to PASS or BLOCK #{dehighlight(@order[1])}'s CAPTAIN on #{dehighlight(@order[2])}: #{@order[2]}"
+          "Waiting on players to PASS or BLOCK #{dehighlight(@order[1])}'s Extort on #{dehighlight(@order[2])}: #{@order[2]}"
         ]
       end
 
@@ -2000,7 +2000,7 @@ describe Cinch::Plugins::CoupGame do
         @game.status(message_from(@order[1]))
         # Hmm, I'm relying on this to be in turn order, but is that always correct?
         expect(@chan.messages).to be == [
-          "Waiting on players to PASS or BLOCK #{dehighlight(@order[1])}'s FOREIGN_AID: #{@order[2]}, #{@order[3]}"
+          "Waiting on players to PASS or BLOCK #{dehighlight(@order[1])}'s Foreign Aid: #{@order[2]}, #{@order[3]}"
         ]
       end
 
@@ -2010,7 +2010,7 @@ describe Cinch::Plugins::CoupGame do
         @chan.messages.clear
         @game.status(message_from(@order[1]))
         # Hmm, I'm relying on this to be in turn order, but is that always correct?
-        block = "#{dehighlight(@order[2])}'s DUKE blocking #{dehighlight(@order[1])}'s FOREIGN_AID"
+        block = "#{dehighlight(@order[2])}'s DUKE blocking #{dehighlight(@order[1])}'s Foreign Aid"
         expect(@chan.messages).to be == [
           "Waiting on players to PASS or CHALLENGE #{block}: #{@order[1]}, #{@order[3]}"
         ]
@@ -2022,7 +2022,7 @@ describe Cinch::Plugins::CoupGame do
         @game.react_challenge(message_from(@order[3]))
         @chan.messages.clear
         @game.status(message_from(@order[1]))
-        block = "#{dehighlight(@order[2])}'s DUKE blocking #{dehighlight(@order[1])}'s FOREIGN_AID"
+        block = "#{dehighlight(@order[2])}'s DUKE blocking #{dehighlight(@order[1])}'s Foreign Aid"
         # Hmm, I'm relying on this to be in turn order, but is that always correct?
         expect(@chan.messages).to be == [
           "Waiting on #{@order[2]} to respond to challenge against #{block}"
@@ -2047,7 +2047,7 @@ describe Cinch::Plugins::CoupGame do
         @game.react_pass(message_from(@order[3]))
         @chan.messages.clear
         @game.status(message_from(@order[1]))
-        expect(@chan.messages).to be == ["Waiting on #{@order[1]} to make decision on AMBASSADOR"]
+        expect(@chan.messages).to be == ["Waiting on #{@order[1]} to make decision on Exchange"]
       end
 
       it 'reports waiting on coup decision' do
@@ -2059,7 +2059,7 @@ describe Cinch::Plugins::CoupGame do
         @game.do_action(message_from(@order[1]), 'coup', @order[2])
         @chan.messages.clear
         @game.status(message_from(@order[1]))
-        expect(@chan.messages).to be == ["Waiting on #{@order[2]} to make decision on COUP"]
+        expect(@chan.messages).to be == ["Waiting on #{@order[2]} to make decision on Coup"]
       end
     end
 
