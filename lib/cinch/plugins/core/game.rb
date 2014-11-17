@@ -373,11 +373,6 @@ class Game
     end
   end
 
-  def process_counteraction(player, action)
-    self.current_turn.reactions = {}
-    self.current_turn.counteraction = action
-  end
-
   def not_reacted
     reacted_players = self.current_turn.reactions.keys
     self.reacting_players.reject{ |player| reacted_players.include?(player) }
