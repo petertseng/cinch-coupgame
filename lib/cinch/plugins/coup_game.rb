@@ -39,6 +39,7 @@ module Cinch
 
     ACTION_ALIASES = {
       'foreign aid' => 'foreign_aid',
+      'foreignaid' => 'foreign_aid',
       'tax' => 'duke',
       'assassinate' => 'assassin',
       'kill' => 'assassin',
@@ -98,7 +99,7 @@ module Cinch
       xmatch /start(?:\s+(.+))?/i,    :method => :start_game
     
       # game    
-      xmatch /(?:action )?(duke|tax|ambassador|exchange|income|foreign(?: |_)aid)/i, :method => :do_action
+      xmatch /(?:action )?(duke|tax|ambassador|exchange|income|foreign(?: |_)?aid)/i, :method => :do_action
       xmatch /(?:action )?(recant|repent|apostatize|defect|betray|embezzle)/i, :method => :do_action
       xmatch /(?:action )?(assassin(?:ate)?|kill|captain|steal|extort|coup)(?: (.+))?/i, :method => :do_action
       xmatch /(?:action )?(inquisitor|convert|bribe)(?: (.+))?/i, :method => :do_action
