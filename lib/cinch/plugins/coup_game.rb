@@ -460,13 +460,21 @@ module Cinch
 
       def prompt_challengers(game)
         turn = game.current_turn
-        action = "#{dehighlight_nick(turn.active_player.user.nick)}'s #{turn.action.to_s.upcase}"
-        action = "#{action} on #{dehighlight_nick(turn.target_player.user.nick)}" if turn.target_player
-        action = "#{dehighlight_nick(turn.counteracting_player.user.nick)}'s #{turn.counteraction.to_s.upcase} blocking #{action}" if turn.counteraction
+        challenged = turn.challengee_action
+
+        char = challenged.character_forbidden? ? challenged.character_forbidden : challenged.character_required
+        haveornot = challenged.character_forbidden? ? 'NOT have' : 'have'
+        challengeable = "#{dehighlight_nick(turn.challengee_player.user.nick)} claims to #{haveornot} influence over #{char.upcase}"
+
+        if turn.counteraction
+          why_char = "Blocking #{dehighlight_nick(turn.active_player.user.nick)}'s #{turn.action.name}"
+        else
+          why_char = "Using #{turn.action.name}#{turn.target_player && " on #{dehighlight_nick(turn.target_player.user.nick)}"}"
+        end
 
         list = game.reacting_players.collect(&:to_s).join(', ')
 
-        Channel(game.channel_name).send("All other players (#{list}): Would you like to challenge #{action} (\"!challenge\") or not (\"!pass\")?")
+        Channel(game.channel_name).send("All other players (#{list}): #{challengeable} (#{why_char}). Would you like to challenge (\"!challenge\") or not (\"!pass\")?")
       end
 
       def prompt_blocker(game)

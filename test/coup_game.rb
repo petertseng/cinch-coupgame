@@ -128,12 +128,24 @@ def dehighlight(nickname)
 end
 
 def challenge_prompt(players, actor, action, target = nil, blocker = nil, counteraction = nil)
-  list = players.join(', ')
-  action = "#{dehighlight(actor)}'s #{action.to_s.upcase}"
-  action = "#{action} on #{dehighlight(target)}" if target
-  action = "#{dehighlight(blocker)}'s #{counteraction.to_s.upcase} blocking #{action}" if counteraction
+  # DOH, super duplicated code from prompt_challengers in CoupGame
+  challenged_sym = counteraction || action
+  challengee = blocker || actor
+  challenged = Game::ACTIONS[challenged_sym]
 
-  "All other players (#{list}): Would you like to challenge #{action} (\"!challenge\") or not (\"!pass\")?"
+  char = challenged.character_forbidden? ? challenged.character_forbidden : challenged.character_required
+  haveornot = challenged.character_forbidden? ? 'NOT have' : 'have'
+  challengeable = "#{dehighlight(challengee)} claims to #{haveornot} influence over #{char.upcase}"
+
+  if counteraction
+    why_char = "Blocking #{dehighlight(actor)}'s #{Game::ACTIONS[action].name}"
+  else
+    why_char = "Using #{challenged.name}#{target && " on #{dehighlight(target)}"}"
+  end
+
+  list = players.join(', ')
+
+  return "All other players (#{list}): #{challengeable} (#{why_char}). Would you like to challenge (\"!challenge\") or not (\"!pass\")?"
 end
 
 def block_foreign_aid(blocker_names, aided, blocker_group = "other")
