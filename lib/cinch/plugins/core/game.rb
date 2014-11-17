@@ -105,7 +105,7 @@ class Game
 
     :captain     => Action.new( :action             => :captain, 
                                 :character_required => :captain,  
-                                :name               => "Extort",    
+                                :name               => "Steal",
                                 :effect             => "Take 2 coins from another player",  
                                 :needs_target       => true,
                                 :blocks             => :captain,

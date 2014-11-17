@@ -1640,7 +1640,7 @@ describe Cinch::Plugins::CoupGame do
 
         expect(@chan.messages).to be == [
           "#{@order[NUM_PLAYERS]} passes.",
-          "#{@order[2]}: Would you like to block #{dehighlight(@order[1])}'s Extort (\"!block captain\" or \"!block ambassador\") or not (\"!pass\")?",
+          "#{@order[2]}: Would you like to block #{dehighlight(@order[1])}'s Steal (\"!block captain\" or \"!block ambassador\") or not (\"!pass\")?",
         ]
         @chan.messages.clear
       end
@@ -1701,7 +1701,7 @@ describe Cinch::Plugins::CoupGame do
 
         expect(@chan.messages.shift).to be =~ lose_card(@order[2])
         expect(@chan.messages).to be == [
-          "#{@order[2]}: Would you like to block #{dehighlight(@order[1])}'s Extort (\"!block captain\" or \"!block ambassador\") or not (\"!pass\")?",
+          "#{@order[2]}: Would you like to block #{dehighlight(@order[1])}'s Steal (\"!block captain\" or \"!block ambassador\") or not (\"!pass\")?",
         ]
       end
 
@@ -1990,7 +1990,7 @@ describe Cinch::Plugins::CoupGame do
         @chan.messages.clear
         @game.status(message_from(@order[1]))
         expect(@chan.messages).to be == [
-          "Waiting on players to PASS or BLOCK #{dehighlight(@order[1])}'s Extort on #{dehighlight(@order[2])}: #{@order[2]}"
+          "Waiting on players to PASS or BLOCK #{dehighlight(@order[1])}'s Steal on #{dehighlight(@order[2])}: #{@order[2]}"
         ]
       end
 
@@ -2820,7 +2820,7 @@ describe Cinch::Plugins::CoupGame do
 
         expect(@chan.messages).to be == [
           "#{@order[NUM_PLAYERS]} passes.",
-          "#{@order[2]}: Would you like to block #{dehighlight(@order[1])}'s Extort (\"!block captain\" or \"!block inquisitor\") or not (\"!pass\")?",
+          "#{@order[2]}: Would you like to block #{dehighlight(@order[1])}'s Steal (\"!block captain\" or \"!block inquisitor\") or not (\"!pass\")?",
         ]
         @chan.messages.clear
       end
