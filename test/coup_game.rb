@@ -100,6 +100,10 @@ def use_block(player, blocker, blocked_name, blocked_action)
   return "#{player} would like to use #{blocker.upcase} to block #{dehighlight(blocked_name)}'s #{blocked_action.name}"
 end
 
+def blocked_by(actor, action, blocker, block_action)
+  return "#{actor}'s #{action.upcase} was blocked by #{blocker} with #{block_action.upcase}."
+end
+
 def challenge_on(challenger, challengee, role, extra = nil)
   return "#{challenger} challenges #{challengee} on #{extra && "#{extra} "}having influence over #{role.upcase}!"
 end
@@ -540,7 +544,7 @@ describe Cinch::Plugins::CoupGame do
       @game.react_pass(message_from(@order[1]))
       expect(@chan.messages).to be == [
         "#{@order[1]} passes.",
-        "#{@order[1]}'s CAPTAIN was blocked by #{@order[2]} with #{rolename.upcase}.",
+        blocked_by(@order[1], :captain, @order[2], rolename),
         "#{@order[2]}: It is your turn. Please choose an action.",
       ]
 
@@ -576,7 +580,7 @@ describe Cinch::Plugins::CoupGame do
 
         expect(@chan.messages.shift).to be =~ lose_card(@order[1])
         expect(@chan.messages).to be == [
-          "#{@order[1]}'s CAPTAIN was blocked by #{@order[2]} with #{rolename.upcase}.",
+          blocked_by(@order[1], :captain, @order[2], rolename),
           "#{@order[2]}: It is your turn. Please choose an action.",
         ]
 
@@ -711,7 +715,7 @@ describe Cinch::Plugins::CoupGame do
         @game.react_pass(message_from(@order[1]))
         expect(@chan.messages).to be == [
           "#{@order[1]} passes.",
-          "#{@order[1]}'s FOREIGN_AID was blocked by #{@order[2]} with DUKE.",
+          blocked_by(@order[1], :foreign_aid, @order[2], :duke),
           "#{@order[2]}: It is your turn. Please choose an action.",
         ]
 
@@ -746,7 +750,7 @@ describe Cinch::Plugins::CoupGame do
 
           expect(@chan.messages.shift).to be =~ lose_card(@order[1])
           expect(@chan.messages).to be == [
-            "#{@order[1]}'s FOREIGN_AID was blocked by #{@order[2]} with DUKE.",
+            blocked_by(@order[1], :foreign_aid, @order[2], :duke),
             "#{@order[2]}: It is your turn. Please choose an action.",
           ]
 
@@ -1244,7 +1248,7 @@ describe Cinch::Plugins::CoupGame do
 
         expect(@chan.messages).to be == [
           "#{@order[1]} passes.",
-          "#{@order[1]}'s ASSASSIN was blocked by #{@order[2]} with CONTESSA.",
+          blocked_by(@order[1], :assassin, @order[2], :contessa),
           "#{@order[2]}: It is your turn. Please choose an action.",
         ]
 
@@ -1280,7 +1284,7 @@ describe Cinch::Plugins::CoupGame do
 
           expect(@chan.messages.shift).to be =~ lose_card(@order[1])
           expect(@chan.messages).to be == [
-            "#{@order[1]}'s ASSASSIN was blocked by #{@order[2]} with CONTESSA.",
+            blocked_by(@order[1], :assassin, @order[2], :contessa),
             "#{@order[2]}: It is your turn. Please choose an action.",
           ]
 
