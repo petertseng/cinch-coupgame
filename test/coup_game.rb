@@ -2886,6 +2886,49 @@ describe Cinch::Plugins::CoupGame do
       end
     end
 
+    context 'when player with uses offensive inquisitor on 1-influence player' do
+      before :each do
+        5.times do
+          (1..NUM_PLAYERS).each { |i|
+            @game.do_action(message_from(@order[i]), 'income')
+          }
+        end
+
+        # 1 uses coup on 3, 3 flips card 1
+        @game.do_action(message_from(@order[1]), 'coup', @order[3])
+        @game.flip_card(message_from(@order[3]), '1')
+        @chan.messages.clear
+
+        @game.do_action(message_from(@order[2]), 'inquisitor', @order[3])
+        expect(@chan.messages).to be == [
+          "#{@order[2]} uses INQUISITOR on #{@order[3]}",
+          challenge_prompt([@order[3], @order[1]], @order[2], :inquisitor, @order[3]),
+        ].compact
+        @chan.messages.clear
+
+        p = @players[@order[2]]
+        p.messages.clear
+
+      end
+
+      it 'shows inquisitor the card without asking for a choice' do
+        # Have everyone pass
+        (3..NUM_PLAYERS).each { |i|
+          @game.react_pass(message_from(@order[i]))
+          expect(@chan.messages).to be == ["#{@order[i]} passes."]
+          @chan.messages.clear
+        }
+        @game.react_pass(message_from(@order[1]))
+
+        expect(@chan.messages).to be == [
+          "#{@order[1]} passes.",
+          "#{@order[2]} proceeds with INQUISITOR. Examine opponent's card: #{@order[3]}.",
+          "#{@order[3]} passes a card to #{@order[2]}.",
+          "#{@order[2]}: Should #{@order[3]} be allowed to keep this card (\"!keep\") or not (\"!discard\")?",
+        ]
+      end
+    end
+
     context 'when offensive inquisitor is challenged unsuccessfully by 1-influence player' do
       before :each do
         5.times do
