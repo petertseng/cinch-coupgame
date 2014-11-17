@@ -100,6 +100,10 @@ def use_block(player, blocker, blocked_name, blocked_action)
   return "#{player} would like to use #{blocker.upcase} to block #{dehighlight(blocked_name)}'s #{blocked_action.name}"
 end
 
+def challenge_on(challenger, challengee, role)
+  return "#{challenger} challenges #{challengee} on #{role.upcase}!"
+end
+
 def challenged_win(player, char, challenger)
   [
     "#{player} reveals a [#{char.to_s.upcase}] and replaces it with a new card from the Court Deck.",
@@ -556,7 +560,7 @@ describe Cinch::Plugins::CoupGame do
 
         @game.react_challenge(message_from(@order[1]))
         expect(@chan.messages).to be == [
-          "#{@order[1]} challenges #{@order[2]} on #{rolename.upcase}!",
+          challenge_on(@order[1], @order[2], rolename),
         ]
         @chan.messages.clear
       end
@@ -726,7 +730,7 @@ describe Cinch::Plugins::CoupGame do
 
           @game.react_challenge(message_from(@order[1]))
           expect(@chan.messages).to be == [
-            "#{@order[1]} challenges #{@order[2]} on DUKE!",
+            challenge_on(@order[1], @order[2], :duke),
           ]
           @chan.messages.clear
         end
@@ -1073,7 +1077,7 @@ describe Cinch::Plugins::CoupGame do
 
         @game.react_challenge(message_from(@order[2]))
         expect(@chan.messages).to be == [
-          "#{@order[2]} challenges #{@order[1]} on AMBASSADOR!",
+          challenge_on(@order[2], @order[1], :ambassador),
         ]
         @chan.messages.clear
       end
@@ -1260,7 +1264,7 @@ describe Cinch::Plugins::CoupGame do
 
           @game.react_challenge(message_from(@order[1]))
           expect(@chan.messages).to be == [
-            "#{@order[1]} challenges #{@order[2]} on CONTESSA!",
+            challenge_on(@order[1], @order[2], :contessa),
           ]
           @chan.messages.clear
         end
@@ -1318,7 +1322,7 @@ describe Cinch::Plugins::CoupGame do
 
         @game.react_challenge(message_from(@order[2]))
         expect(@chan.messages).to be == [
-          "#{@order[2]} challenges #{@order[1]} on ASSASSIN!",
+          challenge_on(@order[2], @order[1], :assassin),
         ]
         @chan.messages.clear
       end
@@ -1433,7 +1437,7 @@ describe Cinch::Plugins::CoupGame do
 
       it 'moves on to the next turn after flip' do
         expect(@chan.messages).to be == [
-          "#{@order[2]} challenges #{@order[3]} on CONTESSA!",
+          challenge_on(@order[2], @order[3], :contessa),
           challenged_loss(@order[3], :contessa, :assassin),
           "#{@order[3]} has no more influence, and is out of the game.",
           "#{@order[2]} proceeds with ASSASSIN. Pay 3 coins, choose player to lose influence: #{@order[3]}.",
@@ -1671,7 +1675,7 @@ describe Cinch::Plugins::CoupGame do
 
         @game.react_challenge(message_from(@order[2]))
         expect(@chan.messages).to be == [
-          "#{@order[2]} challenges #{@order[1]} on CAPTAIN!",
+          challenge_on(@order[2], @order[1], :captain),
         ]
         @chan.messages.clear
       end
@@ -1831,7 +1835,7 @@ describe Cinch::Plugins::CoupGame do
 
         @game.react_challenge(message_from(@order[2]))
         expect(@chan.messages).to be == [
-          "#{@order[2]} challenges #{@order[1]} on DUKE!",
+          challenge_on(@order[2], @order[1], :duke),
         ]
         @chan.messages.clear
       end
@@ -2301,7 +2305,7 @@ describe Cinch::Plugins::CoupGame do
         @game.react_challenge(message_from(@order[1]))
 
         expect(@chan.messages[0...-1]).to be == [
-          "#{@order[1]} challenges #{@order[2]} on AMBASSADOR!",
+          challenge_on(@order[1], @order[2], :ambassador),
           challenged_loss(@order[2], :ambassador, :assassin),
           "#{@order[2]} has no more influence, and is out of the game.",
           "Game is over! #{@order[1]} wins!",
@@ -2320,7 +2324,7 @@ describe Cinch::Plugins::CoupGame do
         @game.react_challenge(message_from(@order[1]))
 
         expect(@chan.messages[0...-1]).to be == [
-          "#{@order[1]} challenges #{@order[2]} on AMBASSADOR!",
+          challenge_on(@order[1], @order[2], :ambassador),
           challenged_loss(@order[2], :ambassador, :assassin),
           "#{@order[2]} has no more influence, and is out of the game.",
           "Game is over! #{@order[1]} wins!",
@@ -2983,7 +2987,7 @@ describe Cinch::Plugins::CoupGame do
         # doh, shift length based on challenged_win length.
         shift_length = 1 + challenged_win('a', :b, 'c').size
         expect(@chan.messages.shift(shift_length)).to be == [
-          "#{@order[2]} challenges #{@order[3]} on INQUISITOR!",
+          challenge_on(@order[2], @order[3], :inquisitor),
           challenged_win(@order[3], :inquisitor, @order[2]),
         ].flatten
         expect(@chan.messages.shift).to be =~ lose_card(@order[2])
@@ -3085,7 +3089,7 @@ describe Cinch::Plugins::CoupGame do
 
       @game.react_challenge(message_from(@order[1]))
       expect(@chan.messages).to be == [
-        "#{@order[1]} challenges #{@order[2]} on EMBEZZLE!",
+        challenge_on(@order[1], @order[2], :embezzle),
         "#{@order[2]} reveals a [DUKE]. #{@order[2]} loses the challenge!",
         "#{@order[2]} loses influence over the [DUKE] and cannot use the EMBEZZLE.",
         "#{@order[3]}: It is your turn. Please choose an action.",
@@ -3102,7 +3106,7 @@ describe Cinch::Plugins::CoupGame do
 
       @game.react_challenge(message_from(@order[1]))
       expect(@chan.messages).to be == [
-        "#{@order[1]} challenges #{@order[2]} on EMBEZZLE!",
+        challenge_on(@order[1], @order[2], :embezzle),
         "#{@order[2]} reveals [AMBASSADOR] and [ASSASSIN] and replaces both with new cards from the Court Deck.",
         "#{@order[1]} loses influence for losing the challenge!",
       ]
@@ -3135,7 +3139,7 @@ describe Cinch::Plugins::CoupGame do
 
       @game.react_challenge(message_from(@order[1]))
       expect(@chan.messages).to be == [
-        "#{@order[1]} challenges #{@order[3]} on EMBEZZLE!",
+        challenge_on(@order[1], @order[3], :embezzle),
         "#{@order[3]} reveals a [ASSASSIN] and replaces it with a new card from the Court Deck.",
         "#{@order[1]} loses influence for losing the challenge!",
       ]
