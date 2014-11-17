@@ -89,6 +89,10 @@ def use_action(player, action, target = nil)
   return "#{player} uses #{action.upcase}#{targ}"
 end
 
+def use_block(player, blocker, blocked_name, blocked_action)
+  return "#{player} uses #{blocker.upcase} to block #{blocked_action.upcase}"
+end
+
 def challenged_win(player, char, challenger)
   [
     "#{player} reveals a [#{char.to_s.upcase}] and replaces it with a new card from the Court Deck.",
@@ -498,7 +502,7 @@ describe Cinch::Plugins::CoupGame do
     it 'blocks steal if target blocks unchallenged' do
       @game.do_block(message_from(@order[2]), rolename)
       expect(@chan.messages).to be == [
-        "#{@order[2]} uses #{rolename.upcase} to block CAPTAIN",
+        use_block(@order[2], rolename, @order[1], :captain),
         challenge_prompt([@order[1], @order[3]], @order[1], :captain, @order[2], @order[2], rolesym),
       ].compact
       @chan.messages.clear
@@ -526,7 +530,7 @@ describe Cinch::Plugins::CoupGame do
 
         @game.do_block(message_from(@order[2]), rolename)
         expect(@chan.messages).to be == [
-          "#{@order[2]} uses #{rolename.upcase} to block CAPTAIN",
+          use_block(@order[2], rolename, @order[1], :captain),
           challenge_prompt([@order[1], @order[3]], @order[1], :captain, @order[2], @order[2], rolesym),
         ].compact
         @chan.messages.clear
@@ -669,7 +673,7 @@ describe Cinch::Plugins::CoupGame do
       it 'blocks aid if a player blocks with duke unchallenged' do
         @game.do_block(message_from(@order[2]), 'duke')
         expect(@chan.messages).to be == [
-          "#{@order[2]} uses DUKE to block FOREIGN_AID",
+          use_block(@order[2], :duke, @order[1], :foreign_aid),
           challenge_prompt([@order[1], @order[3]], @order[1], :foreign_aid, nil, @order[2], :duke),
         ].compact
         @chan.messages.clear
@@ -696,7 +700,7 @@ describe Cinch::Plugins::CoupGame do
 
           @game.do_block(message_from(@order[2]), 'duke')
           expect(@chan.messages).to be == [
-            "#{@order[2]} uses DUKE to block FOREIGN_AID",
+            use_block(@order[2], :duke, @order[1], :foreign_aid),
             challenge_prompt([@order[1], @order[3]], @order[1], :foreign_aid, nil, @order[2], :duke),
           ].compact
           @chan.messages.clear
@@ -1202,7 +1206,7 @@ describe Cinch::Plugins::CoupGame do
       it 'blocks assassination if target blocks with contessa unchallenged' do
         @game.do_block(message_from(@order[2]), 'contessa')
         expect(@chan.messages).to be == [
-          "#{@order[2]} uses CONTESSA to block ASSASSIN",
+          use_block(@order[2], :contessa, @order[1], :assassin),
           challenge_prompt([@order[1], @order[3]], @order[1], :assassin, @order[2], @order[2], :contessa),
         ].compact
         @chan.messages.clear
@@ -1230,7 +1234,7 @@ describe Cinch::Plugins::CoupGame do
 
           @game.do_block(message_from(@order[2]), 'contessa')
           expect(@chan.messages).to be == [
-            "#{@order[2]} uses CONTESSA to block ASSASSIN",
+            use_block(@order[2], :contessa, @order[1], :assassin),
             challenge_prompt([@order[1], @order[3]], @order[1], :assassin, @order[2], @order[2], :contessa),
           ].compact
           @chan.messages.clear
@@ -3243,7 +3247,7 @@ describe Cinch::Plugins::CoupGame do
         @chan.messages.clear
 
         @game.do_block(message_from(@order[2]), 'duke')
-        expect(@chan.messages[0]).to be == "#{@order[2]} uses DUKE to block FOREIGN_AID"
+        expect(@chan.messages[0]).to be == use_block(@order[2], :duke, @order[1], :foreign_aid)
       end
 
       it 'proceeds when all opponents have passed blocking foreign aid' do
@@ -3283,7 +3287,7 @@ describe Cinch::Plugins::CoupGame do
         @chan.messages.clear
 
         @game.do_block(message_from(@order[2]), 'duke')
-        expect(@chan.messages[0]).to be == "#{@order[2]} uses DUKE to block FOREIGN_AID"
+        expect(@chan.messages[0]).to be == use_block(@order[2], :duke, @order[1], :foreign_aid)
       end
     end
   end
