@@ -60,10 +60,11 @@ class Action
     self.action.to_s
   end
 
-  def to_s_full(actor, target)
+  def to_s_full(game, actor, target)
     req = @character_required && "Requires #{@character_required.capitalize}"
     forbid = @character_forbidden && "Cannot have #{@character_forbidden.capitalize}"
     effect = actor == target && @self_effect ? @self_effect : @effect
+    effect = @effect_f.call(game) if @effect_f
     return "#{@name} (#{[req, forbid, effect].compact.join(', ')})"
   end
 

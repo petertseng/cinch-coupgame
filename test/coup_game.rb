@@ -84,9 +84,14 @@ class MyChannel
   end
 end
 
-def use_action(player, action, target = nil)
+def use_action(player, action, target = nil, settings = nil)
   targ = target ? " on #{target}" : ''
-  action = Game::ACTIONS[action].to_s_full(player, target)
+
+  # TODO hmm, this is pretty bad
+  game = Game.new('blah')
+  game.settings = settings if settings
+
+  action = Game::ACTIONS[action].to_s_full(game, player, target)
   return "#{player} would like to use #{action}#{targ}"
 end
 
@@ -3050,7 +3055,7 @@ describe Cinch::Plugins::CoupGame do
       @game.do_action(message_from(@order[2]), 'embezzle')
 
       expect(@chan.messages).to be == [
-        use_action(@order[2], :embezzle),
+        use_action(@order[2], :embezzle, nil, game_modes),
         challenge_prompt([@order[3], @order[1]], @order[2], :embezzle),
       ].compact
       @chan.messages.clear
@@ -3374,6 +3379,7 @@ describe Cinch::Plugins::CoupGame do
     let(:convert_other_name) do :convert end
     let(:bank_name) do 'Almshouse' end
     let(:factions) do ['Protestant', 'Catholic'] end
+    let(:game_modes) do [:reformation] end
 
     it_behaves_like 'game with faction-changing actions'
     it_behaves_like 'game with factional targetting rules'
@@ -3399,6 +3405,7 @@ describe Cinch::Plugins::CoupGame do
     let(:convert_other_name) do :bribe end
     let(:bank_name) do 'Corporate Bank' end
     let(:factions) do ['Resistance', 'Imperial'] end
+    let(:game_modes) do [:incorporation] end
 
     it_behaves_like 'game with faction-changing actions'
     it_behaves_like 'game with factional targetting rules'
@@ -3424,6 +3431,7 @@ describe Cinch::Plugins::CoupGame do
     let(:convert_other_name) do :convert end
     let(:bank_name) do 'Almshouse' end
     let(:factions) do ['Protestant', 'Catholic'] end
+    let(:game_modes) do [:reformation] end
 
     it_behaves_like 'game with faction-changing actions'
     it_behaves_like 'game with factional targetting rules'

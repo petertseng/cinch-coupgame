@@ -442,7 +442,7 @@ module Cinch
             return
           end
 
-          Channel(game.channel_name).send "#{m.user.nick} would like to use #{game_action.to_s_full(game.current_player, target_player)}#{target_msg}"
+          Channel(game.channel_name).send "#{m.user.nick} would like to use #{game_action.to_s_full(game, game.current_player, target_player)}#{target_msg}"
           game.current_turn.add_action(game_action, target_player)
           if game.current_turn.action.challengeable?
             game.current_turn.wait_for_action_challenge
