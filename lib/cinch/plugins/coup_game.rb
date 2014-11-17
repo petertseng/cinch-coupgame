@@ -519,7 +519,7 @@ module Cinch
         unless game.is_enemy?(player, turn.active_player)
           us = game.factions[game.current_player.faction]
           them = game.factions[1 - game.current_player.faction]
-          m.user.send("You cannot block a fellow #{us}'s #{turn.action.action.upcase} while the #{them} exist!")
+          m.user.send("You cannot block a fellow #{us}'s #{turn.action.name} while the #{them} exist!")
           return
         end
 
@@ -534,7 +534,7 @@ module Cinch
           self.prompt_challengers(game)
           turn.wait_for_block_challenge
         else
-          User(m.user).send "#{action.upcase} does not block that #{turn.action.action.upcase}."
+          User(m.user).send "#{action.upcase} does not block #{turn.action.name}."
         end
       end
 

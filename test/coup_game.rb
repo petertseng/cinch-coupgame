@@ -660,7 +660,7 @@ describe Cinch::Plugins::CoupGame do
       it 'does not let a captain block' do
         @game.do_block(message_from(@order[2]), 'captain')
         expect(@chan.messages).to be == []
-        expect(@players[@order[2]].messages[-1]).to be == 'CAPTAIN does not block that FOREIGN_AID.'
+        expect(@players[@order[2]].messages[-1]).to be == 'CAPTAIN does not block Foreign Aid.'
       end
 
       it 'does nothing if player passes himself' do
@@ -3251,7 +3251,7 @@ describe Cinch::Plugins::CoupGame do
           @game.do_block(message_from(@order[3]), 'duke')
           expect(@chan.messages).to be == []
           expect(p.messages).to be == [
-            "You cannot block a fellow #{factions[0]}'s FOREIGN_AID while the #{factions[1]} exist!"
+            "You cannot block a fellow #{factions[0]}'s Foreign Aid while the #{factions[1]} exist!"
           ]
         end
 
