@@ -159,7 +159,7 @@ end
 
 def block_foreign_aid(blocker_names, aided, blocker_group = "other")
   list = blocker_names.join(', ')
-  "All #{blocker_group} players (#{list}): Would you like to block #{dehighlight(aided)}'s FOREIGN_AID (\"!block duke\") or not (\"!pass\")?"
+  "All #{blocker_group} players (#{list}): Would you like to block #{dehighlight(aided)}'s Foreign Aid (\"!block duke\") or not (\"!pass\")?"
 end
 
 describe Cinch::Plugins::CoupGame do
@@ -1148,7 +1148,7 @@ describe Cinch::Plugins::CoupGame do
     end
 
     def block_assassin(victim, assassin)
-      "#{victim}: Would you like to block #{dehighlight(assassin)}'s ASSASSIN (\"!block contessa\") or not (\"!pass\")?"
+      "#{victim}: Would you like to block #{dehighlight(assassin)}'s Assassinate (\"!block contessa\") or not (\"!pass\")?"
     end
 
     context 'when player uses assassin unchallenged' do
@@ -1629,7 +1629,7 @@ describe Cinch::Plugins::CoupGame do
 
         expect(@chan.messages).to be == [
           "#{@order[NUM_PLAYERS]} passes.",
-          "#{@order[2]}: Would you like to block #{dehighlight(@order[1])}'s CAPTAIN (\"!block captain\" or \"!block ambassador\") or not (\"!pass\")?",
+          "#{@order[2]}: Would you like to block #{dehighlight(@order[1])}'s Extort (\"!block captain\" or \"!block ambassador\") or not (\"!pass\")?",
         ]
         @chan.messages.clear
       end
@@ -1690,7 +1690,7 @@ describe Cinch::Plugins::CoupGame do
 
         expect(@chan.messages.shift).to be =~ lose_card(@order[2])
         expect(@chan.messages).to be == [
-          "#{@order[2]}: Would you like to block #{dehighlight(@order[1])}'s CAPTAIN (\"!block captain\" or \"!block ambassador\") or not (\"!pass\")?",
+          "#{@order[2]}: Would you like to block #{dehighlight(@order[1])}'s Extort (\"!block captain\" or \"!block ambassador\") or not (\"!pass\")?",
         ]
       end
 
@@ -2809,7 +2809,7 @@ describe Cinch::Plugins::CoupGame do
 
         expect(@chan.messages).to be == [
           "#{@order[NUM_PLAYERS]} passes.",
-          "#{@order[2]}: Would you like to block #{dehighlight(@order[1])}'s CAPTAIN (\"!block captain\" or \"!block inquisitor\") or not (\"!pass\")?",
+          "#{@order[2]}: Would you like to block #{dehighlight(@order[1])}'s Extort (\"!block captain\" or \"!block inquisitor\") or not (\"!pass\")?",
         ]
         @chan.messages.clear
       end

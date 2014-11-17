@@ -500,7 +500,7 @@ module Cinch
           end
           prefix << " (#{enemies.collect(&:to_s).join(', ')})"
         end
-        act_str = "#{dehighlight_nick(game.current_turn.active_player.user.nick)}'s #{action.action.to_s.upcase}"
+        act_str = "#{dehighlight_nick(game.current_turn.active_player.user.nick)}'s #{action.name}"
         Channel(game.channel_name).send("#{prefix}: Would you like to block #{act_str} (#{blockers}) or not (\"!pass\")?")
       end
 
