@@ -117,9 +117,9 @@ def dehighlight(nickname)
 end
 
 def challenge_prompt(players, actor, action, target = nil, blocker = nil, counteraction = nil)
-  # target does nothing for now, but maybe later...
   list = players.join(', ')
   action = "#{dehighlight(actor)}'s #{action.to_s.upcase}"
+  action = "#{action} on #{dehighlight(target)}" if target
   action = "#{dehighlight(blocker)}'s #{counteraction.to_s.upcase} blocking #{action}" if counteraction
 
   "All other players (#{list}): Would you like to challenge #{action} (\"!challenge\") or not (\"!pass\")?"
@@ -1947,7 +1947,7 @@ describe Cinch::Plugins::CoupGame do
         @chan.messages.clear
         @game.status(message_from(@order[1]))
         expect(@chan.messages).to be == [
-          "Waiting on players to PASS or BLOCK #{dehighlight(@order[1])}'s CAPTAIN: #{@order[2]}"
+          "Waiting on players to PASS or BLOCK #{dehighlight(@order[1])}'s CAPTAIN on #{dehighlight(@order[2])}: #{@order[2]}"
         ]
       end
 

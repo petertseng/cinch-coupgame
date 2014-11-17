@@ -461,6 +461,7 @@ module Cinch
       def prompt_challengers(game)
         turn = game.current_turn
         action = "#{dehighlight_nick(turn.active_player.user.nick)}'s #{turn.action.to_s.upcase}"
+        action = "#{action} on #{dehighlight_nick(turn.target_player.user.nick)}" if turn.target_player
         action = "#{dehighlight_nick(turn.counteracting_player.user.nick)}'s #{turn.counteraction.to_s.upcase} blocking #{action}" if turn.counteraction
 
         list = game.reacting_players.collect(&:to_s).join(', ')
@@ -1380,6 +1381,7 @@ module Cinch
           turn = game.current_turn
 
           action = "#{dehighlight_nick(turn.active_player.user.nick)}'s #{turn.action.to_s.upcase}" if turn.action
+          action = "#{action} on #{dehighlight_nick(turn.target_player.user.nick)}" if turn.target_player
           block = "#{dehighlight_nick(turn.counteracting_player.user.nick)}'s #{turn.counteraction.to_s.upcase} blocking #{action}" if turn.counteraction
 
           if turn.waiting_for_action?
