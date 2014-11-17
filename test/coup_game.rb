@@ -91,7 +91,8 @@ def use_action(player, action, target = nil)
 end
 
 def use_block(player, blocker, blocked_name, blocked_action)
-  return "#{player} uses #{blocker.upcase} to block #{blocked_action.upcase}"
+  blocked_action = Game::ACTIONS[blocked_action]
+  return "#{player} would like to use #{blocker.upcase} to block #{dehighlight(blocked_name)}'s #{blocked_action.name}"
 end
 
 def challenged_win(player, char, challenger)
