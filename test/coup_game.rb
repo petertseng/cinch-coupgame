@@ -101,7 +101,8 @@ def use_block(player, blocker, blocked_name, blocked_action)
 end
 
 def blocked_by(actor, action, blocker, block_action)
-  return "#{actor}'s #{action.upcase} was blocked by #{blocker} with #{block_action.upcase}."
+  blocked_action = Game::ACTIONS[action]
+  return "#{actor}'s #{blocked_action.name} was blocked by #{blocker} with #{block_action.upcase}."
 end
 
 def proceed_with(actor, action, str)

@@ -1004,7 +1004,7 @@ module Cinch
         turn = game.current_turn
         if turn.counteracted? && !turn.block_challenge_successful
           game.pay_for_current_turn
-          Channel(game.channel_name).send "#{turn.active_player}'s #{turn.action.action.upcase} was blocked by #{turn.counteracting_player} with #{turn.counteraction.action.upcase}."
+          Channel(game.channel_name).send "#{turn.active_player}'s #{turn.action.name} was blocked by #{turn.counteracting_player} with #{turn.counteraction.character_required.upcase}."
           self.start_new_turn(game)
         elsif !turn.action_challenge_successful
           self_target = turn.active_player == turn.target_player
