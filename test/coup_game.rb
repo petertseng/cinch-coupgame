@@ -3339,4 +3339,50 @@ describe Cinch::Plugins::CoupGame do
     it_behaves_like 'game with factional info'
   end
 
+  context 'when p1..3 are playing a reformation inquisitor game' do
+    before :each do
+      (1..NUM_PLAYERS).each { |i| @game.join(message_from("p#{i}")) }
+      @game.set_game_settings(message_from('p1'), nil, 'reformation inquisitor')
+      @chan.messages.clear
+      @game.start_game(message_from('p1'))
+
+      expect(@chan.messages.size).to be == 3
+      expect(@chan.messages[-3]).to be == 'The game has started.'
+      match = (TURN_ORDER_REGEX3.match(@chan.messages[-2]))
+      @order = match
+      expect(@chan.messages[-1]).to be == "FIRST TURN. Player: #{@order[1]}. Please choose an action."
+      @chan.messages.clear
+    end
+
+    let(:convert_self_name) do 'apostatize' end
+    let(:convert_other_name) do 'convert' end
+    let(:bank_name) do 'Almshouse' end
+    let(:factions) do ['Protestant', 'Catholic'] end
+
+    it_behaves_like 'game with faction-changing actions'
+    it_behaves_like 'game with factional targetting rules'
+    it_behaves_like 'game with factional info'
+
+    it 'allows targeting opponent with inquisitor' do
+      @game.do_action(message_from(@order[1]), 'inquisitor', @order[2])
+      expect(@chan.messages[0]).to be == "#{@order[1]} uses INQUISITOR on #{@order[2]}"
+    end
+
+    it 'does not allow targeting factionmate with inquisitor' do
+      p = @players[@order[1]]
+      p.messages.clear
+
+      @game.do_action(message_from(@order[1]), 'inquisitor', @order[3])
+      expect(@chan.messages).to be == []
+      expect(p.messages).to be == [
+        "You cannot target a fellow #{factions[0]} with INQUISITOR while the #{factions[1]} exist!"
+      ]
+    end
+
+    it 'allows targeting self with inquisitor' do
+      @game.do_action(message_from(@order[1]), 'inquisitor', @order[1])
+      expect(@chan.messages[0]).to be == "#{@order[1]} uses INQUISITOR on #{@order[1]}"
+    end
+  end
+
 end
