@@ -164,10 +164,6 @@ class Turn
     self.state = :block_challenge_reply
   end
 
-  def wait_for_block_challenge_loser
-    self.state = :block_challenge_loser
-  end
-
   def wait_for_decision
     self.state = :decision
   end
