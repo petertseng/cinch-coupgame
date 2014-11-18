@@ -146,7 +146,7 @@ module Cinch
       listen_to :leaving,            :method => :remove_if_not_started
       listen_to :op,                 :method => :devoice_everyone_on_start
 
-      xmatch /notice(?:\s+(on|off))?/i,       :method => :noticeme
+      xmatch /notice(?:\s+(on|off|list))?/i,  :method => :noticeme
 
 
       #--------------------------------------------------------------------------------
@@ -1289,6 +1289,11 @@ module Cinch
       end
 
       def noticeme(m, toggle)
+        if toggle && toggle.downcase == 'list' && self.is_mod?(m.user.nick)
+          m.reply("PRIVMSG users: #{$pm_users.to_a}")
+          return
+        end
+
         if toggle && toggle.downcase == 'on'
           $pm_users.delete(m.user.nick)
           settings = load_settings || {}
