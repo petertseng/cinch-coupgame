@@ -146,7 +146,7 @@ module Cinch
       listen_to :leaving,            :method => :remove_if_not_started
       listen_to :op,                 :method => :devoice_everyone_on_start
 
-      xmatch /notice(?:\s+(on|off|list))?/i,  :method => :noticeme
+      xmatch /notice(?:\s+(on|off|list))?(?:\s+(.+))?/i, :method => :noticeme
 
 
       #--------------------------------------------------------------------------------
@@ -1288,25 +1288,28 @@ module Cinch
         game
       end
 
-      def noticeme(m, toggle)
+      def noticeme(m, toggle, nick)
         if toggle && toggle.downcase == 'list' && self.is_mod?(m.user.nick)
           m.reply("PRIVMSG users: #{$pm_users.to_a}")
           return
         end
 
+        # Mods can act on any nick. Others act only on self.
+        target = nick && self.is_mod?(m.user.nick) ? nick : m.user.nick
+
         if toggle && toggle.downcase == 'on'
-          $pm_users.delete(m.user.nick)
+          $pm_users.delete(target)
           settings = load_settings || {}
           settings['pm_users'] = $pm_users
           save_settings(settings)
         elsif toggle && toggle.downcase == 'off'
-          $pm_users.add(m.user.nick)
+          $pm_users.add(target)
           settings = load_settings || {}
           settings['pm_users'] = $pm_users
           save_settings(settings)
         end
 
-        m.reply("Private communications to you will occur in #{$pm_users.include?(m.user.nick) ? 'PRIVMSG' : 'NOTICE'}")
+        m.reply("Private communications to #{target} will occur in #{$pm_users.include?(target) ? 'PRIVMSG' : 'NOTICE'}")
       end
 
       def help(m, page)
