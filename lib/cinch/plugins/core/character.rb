@@ -5,17 +5,17 @@
 class Character
 
   attr_reader :id
-  attr_accessor :name, :face_down
+  attr_reader :name, :face_down
 
   def initialize(id, name)
     @id = id
-    self.name = name
-    self.face_down = true
+    @name = name
+    @face_down = true
   end 
 
   def flip_up
     raise "card #{@id} is already face-up" unless self.face_down?
-    self.face_down = false
+    @face_down = false
   end
 
   def face_down?
