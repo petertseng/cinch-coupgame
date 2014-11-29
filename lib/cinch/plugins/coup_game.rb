@@ -109,7 +109,7 @@ module Cinch
       xmatch /challenge/i,            :method => :react_challenge
       xmatch /bs/i,                   :method => :react_challenge
 
-      xmatch /(?:flip|lose)\s*(1|2)/i, :method => :flip_card
+      xmatch /(?:flip|lose)\s*(1|2|all)/i, :method => :flip_card
       xmatch /(?:switch|keep|pick|swap)\s*([1-6])/i, :method => :pick_cards
 
       xmatch /show (1|2)/i,           :method => :show_to_inquisitor
@@ -595,7 +595,7 @@ module Cinch
         Channel(game.channel_name).send "#{m.user.nick} challenges #{defendant} on #{haveornot} influence over #{char.upcase}!"
 
         # Prompt player if he has a choice
-        self.prompt_challenge_defendant(defendant, chall_action) if defendant.influence == 2 && !chall_action.character_forbidden?
+        self.prompt_challenge_defendant(defendant, chall_action) if defendant.influence == 2
 
         if turn.waiting_for_action_challenge?
           turn.wait_for_action_challenge_reply
@@ -605,33 +605,14 @@ module Cinch
           turn.block_challenger = player
         end
 
-        if chall_action.character_required?
-          # If he doesn't have a choice, just sleep 3 seconds and make the choice for him.
-          if defendant.influence == 1
-            expected_state = turn.state
-            sleep(3)
-            i = defendant.characters.index { |c| c.face_down? }
-            self.respond_to_challenge(game, defendant, i + 1, chall_action, player) if turn.state == expected_state
-          end
-        elsif chall_action.character_forbidden?
-          # sleep for suspense
-          sleep(3)
+        return unless defendant.influence == 1
 
-          if !defendant.has_character?(chall_action.character_forbidden)
-            # Do NOT have a forbidden character, so win the challenge.
-            chars = defendant.characters.select { |c| c.face_down? }
-            defendant_reveal_and_win(game, defendant, chars, player)
-          else
-            # Do have a forbidden character.
-            index = defendant.character_position(chall_action.character_forbidden)
-            card = "[#{chall_action.character_forbidden.to_s.upcase}]"
-            Channel(game.channel_name).send("#{defendant} reveals a #{card}. #{defendant} loses the challenge!")
-
-            defendant_reveal_and_lose(game, defendant, defendant.characters[index], chall_action)
-          end
-        else
-          raise "how are we waiting_for_challenges if #{chall_action} not challengeable?"
-        end
+        # If defendant has 1 influence, we can auto-respond, but we'll wait 3 seconds for suspense.
+        expected_state = turn.state
+        sleep(3)
+        i = defendant.characters.index { |c| c.face_down? }
+        # Make sure the defendant didn't manually respond (which is allowed) before we auto-respond, though.
+        self.respond_to_challenge(game, defendant, i + 1, chall_action, player) if turn.state == expected_state
       end
 
       def defendant_reveal_and_win(game, defendant, chars, challenger)
@@ -777,6 +758,11 @@ module Cinch
 
 
       def respond_to_challenge(game, player, position, action, challenger)
+        if position.to_s.downcase == 'all' && player.influence == 2
+          respond_to_challenge_all(game, player, action, challenger)
+          return
+        end
+
         pos = position.to_i
         unless pos == 1 || pos == 2
           player.user.send("#{pos} is not a valid option to reveal.")
@@ -789,14 +775,46 @@ module Cinch
           return
         end
 
-        turn = game.current_turn
-
-        if revealed.name == action.character_required
-          defendant_reveal_and_win(game, player, [revealed], challenger)
+        if action.character_required?
+          if revealed.name == action.character_required
+            defendant_reveal_and_win(game, player, [revealed], challenger)
+          else
+            Channel(game.channel_name).send "#{player} reveals a [#{revealed}]. That's not a #{action.character_required.to_s.upcase}! #{player} loses the challenge!"
+            defendant_reveal_and_lose(game, player, revealed, action)
+          end
+        elsif action.character_forbidden?
+          # If I have 2 influence and I am flipping one character, I'm losing it no matter what. I can't win.
+          # If I have 1 influence, I win if it's not the character, I lose if it is.
+          if player.influence == 1 && revealed.name != action.character_forbidden
+            defendant_reveal_and_win(game, player, [revealed], challenger)
+          else
+            Channel(game.channel_name).send("#{player} reveals a [#{revealed}]. #{player} loses the challenge!")
+            defendant_reveal_and_lose(game, player, revealed, action)
+          end
         else
-          Channel(game.channel_name).send "#{player} reveals a [#{revealed}]. That's not a #{action.character_required.to_s.upcase}! #{player} loses the challenge!"
-          defendant_reveal_and_lose(game, player, revealed, action)
+          raise "respond_to_challenge for an unchallengeable action?"
         end
+      end
+
+      def respond_to_challenge_all(game, player, action, challenger)
+        unless action.character_forbidden?
+          player.user.send('You may only flip all cards in response to a challenge of NOT having influence over a character.')
+          return
+        end
+
+        if player.influence <= 1
+          player.user.send("You can only flip all cards when you have more than one.")
+          return
+        end
+
+        if player.has_character?(action.character_forbidden)
+          player.user.send("You cannot flip all cards because you have a #{action.character_forbidden.to_s.upcase}.")
+          return
+        end
+
+        # Do NOT have a forbidden character, so win the challenge.
+        chars = player.characters.select { |c| c.face_down? }
+        defendant_reveal_and_win(game, player, chars, challenger)
       end
 
       def prompt_to_switch(game, target, cards = 2)

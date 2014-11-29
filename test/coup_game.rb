@@ -1926,6 +1926,20 @@ describe Cinch::Plugins::CoupGame do
       expect(p.messages).to be == ['EMBEZZLE may only be used if the game type is one of the following: Reformation, Incorporation.']
     end
 
+    it 'does not allow flip all in response to a character-required challenge' do
+      @game.do_action(message_from(@order[1]), 'ambassador')
+      @game.react_challenge(message_from(@order[2]))
+
+      p = @players[@order[1]]
+      p.messages.clear
+      @chan.messages.clear
+
+      @game.flip_card(message_from(@order[1]), 'all')
+      expect(@chan.messages).to be == []
+      expect(p.messages).to be == ['You may only flip all cards in response to a challenge of NOT having influence over a character.']
+    end
+
+
     # ===== Inquisitor =====
 
     it 'does not allow inquisitor action in a base game' do
@@ -3099,40 +3113,76 @@ describe Cinch::Plugins::CoupGame do
       expect(@game.coins(@order[2])).to be == 3
     end
 
-    context 'when player using Embezzle has 2 characters and one is a Duke' do
+    context 'when player using Embezzle is challenged with 2 characters and one is a Duke' do
       before :each do
         # Put some money in the bank first
         @game.do_action(message_from(@order[1]), convert_self_name)
         @game.force_characters(@order[2], :ambassador, :duke)
         @game.do_action(message_from(@order[2]), 'embezzle')
         @chan.messages.clear
+
+        @game.react_challenge(message_from(@order[1]))
+        expect(@chan.messages).to be == [challenge_on(@order[1], @order[2], :duke, :NOT)]
+        @chan.messages.clear
       end
 
-      it 'does not give money when embezzler challenged successfully' do
-        @game.react_challenge(message_from(@order[1]))
+      it 'gives no money if embezzler flips the other card' do
+        @game.flip_card(message_from(@order[2]), '1')
         expect(@chan.messages).to be == [
-          challenge_on(@order[1], @order[2], :duke, :NOT),
+          "#{@order[2]} reveals a [AMBASSADOR]. #{@order[2]} loses the challenge!",
+          "#{@order[2]} loses influence over the [AMBASSADOR] and cannot use Embezzle this turn.",
+          "#{@order[3]}: It is your turn. Please choose an action.",
+        ]
+        expect(@game.coins(@order[2])).to be == 2
+      end
+
+      it 'gives no money if embezzler flips the Duke' do
+        @game.flip_card(message_from(@order[2]), '2')
+        expect(@chan.messages).to be == [
           "#{@order[2]} reveals a [DUKE]. #{@order[2]} loses the challenge!",
           "#{@order[2]} loses influence over the [DUKE] and cannot use Embezzle this turn.",
           "#{@order[3]}: It is your turn. Please choose an action.",
         ]
         expect(@game.coins(@order[2])).to be == 2
       end
+
+      it 'does not allow embezzler to flip all cards' do
+        p = @players[@order[2]]
+        p.messages.clear
+
+        @game.flip_card(message_from(@order[2]), 'all')
+        expect(@chan.messages).to be == []
+        expect(p.messages).to be == ['You cannot flip all cards because you have a DUKE.']
+        expect(@game.coins(@order[2])).to be == 2
+      end
     end
 
-    context 'when player using Embezzle has 2 characters and neither is a Duke' do
+    context 'when player using Embezzle is challenged with 2 characters and neither is a Duke' do
       before :each do
         # Put some money in the bank first
         @game.do_action(message_from(@order[1]), convert_self_name)
         @game.force_characters(@order[2], :ambassador, :assassin)
         @game.do_action(message_from(@order[2]), 'embezzle')
         @chan.messages.clear
+
+        @game.react_challenge(message_from(@order[1]))
+        expect(@chan.messages).to be == [challenge_on(@order[1], @order[2], :duke, :NOT)]
+        @chan.messages.clear
       end
 
-      it 'flips two cards and gives money when 2-influence embezzler challenged unsuccessfully' do
-        @game.react_challenge(message_from(@order[1]))
+      it 'gives no money if embezzler flips any card' do
+        @game.flip_card(message_from(@order[2]), '1')
         expect(@chan.messages).to be == [
-          challenge_on(@order[1], @order[2], :duke, :NOT),
+          "#{@order[2]} reveals a [AMBASSADOR]. #{@order[2]} loses the challenge!",
+          "#{@order[2]} loses influence over the [AMBASSADOR] and cannot use Embezzle this turn.",
+          "#{@order[3]}: It is your turn. Please choose an action.",
+        ]
+        expect(@game.coins(@order[2])).to be == 2
+      end
+
+      it 'flips two cards and gives money if embezzler flips all' do
+        @game.flip_card(message_from(@order[2]), 'all')
+        expect(@chan.messages).to be == [
           "#{@order[2]} reveals [AMBASSADOR] and [ASSASSIN] and replaces both with new cards from the Court Deck.",
           "#{@order[1]} loses influence for losing the challenge!",
         ]
