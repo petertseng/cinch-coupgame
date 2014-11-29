@@ -4,7 +4,7 @@
 
 class Turn
 
-  attr_accessor :active_player, :action, :target_player, :counteracting_player, :counteraction, :decider, :reactions, :state
+  attr_reader :active_player, :action, :target_player, :counteracting_player, :counteraction, :decider, :reactions, :state
 
   attr_accessor :action_challenger
   attr_accessor :block_challenger
@@ -15,14 +15,14 @@ class Turn
   attr_accessor :decision_type
 
   def initialize(player)
-    self.state                = :action # action, reactions, paused, decision, end
-    self.active_player        = player
-    self.target_player        = nil
-    self.action               = nil
-    self.counteraction        = nil
-    self.counteracting_player = nil
-    self.decider              = nil # for when waiting on flips
-    self.reactions            = {}
+    @state                = :action # action, reactions, paused, decision, end
+    @active_player        = player
+    @target_player        = nil
+    @action               = nil
+    @counteraction        = nil
+    @counteracting_player = nil
+    @decider              = nil # for when waiting on flips
+    @reactions            = {}
 
     @action_challenger = nil
     @block_challenger = nil
@@ -35,27 +35,27 @@ class Turn
 
 
   def add_action(action, target = nil)
-    self.action        = action
-    self.target_player = target
+    @action        = action
+    @target_player = target
   end
 
   def add_counteraction(action, player)
-    self.counteraction        = action
-    self.counteracting_player = player
-    self.reactions            = {}
+    @counteraction        = action
+    @counteracting_player = player
+    @reactions            = {}
   end
 
   def pass(player)
     if self.waiting_for_reactions?
-      return false if self.reactions[player] == :pass
-      self.reactions[player] = :pass
+      return false if @reactions[player] == :pass
+      @reactions[player] = :pass
       return true
     end
     false
   end
 
   def make_decider(player)
-    self.decider = player
+    @decider = player
   end
 
   def counteracted?
@@ -122,50 +122,50 @@ class Turn
 
   def wait_for_challenge_loser
     if self.state == :action_challenge_reply
-      self.state = :action_challenge_loser
+      @state = :action_challenge_loser
     elsif self.state == :block_challenge_reply
-      self.state = :block_challenge_loser
+      @state = :block_challenge_loser
     else
       raise "wait_for_challenge_loser at state #{self.state}"
     end
   end
 
   def wait_for_initial_characters
-    self.state = :initial_characters
+    @state = :initial_characters
   end
 
   def wait_for_action
-    self.state = :action
+    @state = :action
   end
 
   def wait_for_action_challenge
-    self.state = :action_challenge
+    @state = :action_challenge
   end
 
   def wait_for_action_challenge_reply
-    self.state = :action_challenge_reply
+    @state = :action_challenge_reply
   end
 
   def wait_for_block
-    self.state = :block
-    self.reactions = {}
+    @state = :block
+    @reactions = {}
   end
 
   def wait_for_block_challenge
-    self.state = :block_challenge
-    self.reactions = {}
+    @state = :block_challenge
+    @reactions = {}
   end
 
   def wait_for_block_challenge_reply
-    self.state = :block_challenge_reply
+    @state = :block_challenge_reply
   end
 
   def wait_for_decision
-    self.state = :decision
+    @state = :decision
   end
 
   def end_turn
-    self.state = :end
+    @state = :end
   end
 
 end
