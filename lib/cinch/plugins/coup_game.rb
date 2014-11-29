@@ -608,9 +608,10 @@ module Cinch
         if chall_action.character_required?
           # If he doesn't have a choice, just sleep 3 seconds and make the choice for him.
           if defendant.influence == 1
+            expected_state = turn.state
             sleep(3)
             i = defendant.characters.index { |c| c.face_down? }
-            self.respond_to_challenge(game, defendant, i + 1, chall_action, player)
+            self.respond_to_challenge(game, defendant, i + 1, chall_action, player) if turn.state == expected_state
           end
         elsif chall_action.character_forbidden?
           # sleep for suspense
