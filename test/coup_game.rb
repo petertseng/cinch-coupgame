@@ -3177,6 +3177,21 @@ describe Cinch::Plugins::CoupGame do
         ]
         expect(@game.coins(@order[3])).to be == 8
       end
+
+      it 'knocks out the player if a Duke uses Embezzle' do
+        @game.force_characters(@order[3], nil, :duke)
+        @game.do_action(message_from(@order[3]), 'embezzle')
+        @chan.messages.clear
+
+        @game.react_challenge(message_from(@order[1]))
+        expect(@chan.messages).to be == [
+          challenge_on(@order[1], @order[3], :duke, :NOT),
+          "#{@order[3]} reveals a [DUKE]. #{@order[3]} loses the challenge!",
+          "#{@order[3]} loses influence over the [DUKE] and cannot use Embezzle this turn.",
+          "#{@order[3]} has no more influence, and is out of the game.",
+          "#{@order[1]}: It is your turn. Please choose an action.",
+        ]
+      end
     end
   end
 
