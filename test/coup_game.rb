@@ -3141,37 +3141,42 @@ describe Cinch::Plugins::CoupGame do
       expect(@game.coins(@order[2])).to be == 3
     end
 
-    it 'flips one card and gives money when 1-influence embezzler challenged unsuccessfully' do
-      5.times do
-        (1..NUM_PLAYERS).each { |i|
-          @game.do_action(message_from(@order[i]), 'income')
-        }
+    context 'when player has 1 influence' do
+      before :each do
+        5.times do
+          (1..NUM_PLAYERS).each { |i|
+            @game.do_action(message_from(@order[i]), 'income')
+          }
+        end
+
+        # Put some money in the bank first
+        @game.do_action(message_from(@order[1]), convert_self_name)
+        @game.do_action(message_from(@order[2]), 'coup', @order[3])
+        @game.flip_card(message_from(@order[3]), '1')
       end
 
-      # Put some money in the bank first
-      @game.do_action(message_from(@order[1]), convert_self_name)
-      @game.force_characters(@order[3], :ambassador, :assassin)
-      @game.do_action(message_from(@order[2]), 'coup', @order[3])
-      @game.flip_card(message_from(@order[3]), '1')
-      @game.do_action(message_from(@order[3]), 'embezzle')
-      @chan.messages.clear
+      it 'flips 1 card and gives money if a non-Duke uses Embezzle' do
+        @game.force_characters(@order[3], nil, :assassin)
+        @game.do_action(message_from(@order[3]), 'embezzle')
+        @chan.messages.clear
 
-      @game.react_challenge(message_from(@order[1]))
-      expect(@chan.messages).to be == [
-        challenge_on(@order[1], @order[3], :duke, :NOT),
-        "#{@order[3]} reveals a [ASSASSIN] and replaces it with a new card from the Court Deck.",
-        "#{@order[1]} loses influence for losing the challenge!",
-      ]
-      @chan.messages.clear
+        @game.react_challenge(message_from(@order[1]))
+        expect(@chan.messages).to be == [
+          challenge_on(@order[1], @order[3], :duke, :NOT),
+          "#{@order[3]} reveals a [ASSASSIN] and replaces it with a new card from the Court Deck.",
+          "#{@order[1]} loses influence for losing the challenge!",
+        ]
+        @chan.messages.clear
 
-      @game.flip_card(message_from(@order[1]), '1')
+        @game.flip_card(message_from(@order[1]), '1')
 
-      expect(@chan.messages.shift).to be =~ lose_card(@order[1])
-      expect(@chan.messages).to be == [
-        proceed_with(@order[3], :embezzle, "Take all coins from the #{bank_name}."),
-        "#{@order[1]}: It is your turn. Please choose an action.",
-      ]
-      expect(@game.coins(@order[3])).to be == 8
+        expect(@chan.messages.shift).to be =~ lose_card(@order[1])
+        expect(@chan.messages).to be == [
+          proceed_with(@order[3], :embezzle, "Take all coins from the #{bank_name}."),
+          "#{@order[1]}: It is your turn. Please choose an action.",
+        ]
+        expect(@game.coins(@order[3])).to be == 8
+      end
     end
   end
 
