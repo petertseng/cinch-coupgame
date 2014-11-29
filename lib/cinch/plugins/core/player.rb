@@ -4,14 +4,14 @@
 
 class Player
 
-  attr_accessor :user, :characters, :coins
+  attr_reader :user, :characters, :coins
   attr_reader :side_cards
   attr_accessor :faction
 
   def initialize(user)
-    self.user = user
-    self.characters = []
-    self.coins = 0
+    @user = user
+    @characters = []
+    @coins = 0
 
     # The four cards set aside in a 2p game.
     @side_cards = []
@@ -66,16 +66,16 @@ class Player
   end
 
   def give_coins(amount)
-    self.coins += amount
+    @coins += amount
   end
 
   def take_coins(amount)
     if self.coins < amount
       taken = self.coins
-      self.coins = 0
+      @coins = 0
       return taken
     end
-    self.coins -= amount
+    @coins -= amount
     amount
   end
 
