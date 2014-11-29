@@ -3099,46 +3099,54 @@ describe Cinch::Plugins::CoupGame do
       expect(@game.coins(@order[2])).to be == 3
     end
 
-    it 'does not give money when embezzler challenged successfully' do
-      # Put some money in the bank first
-      @game.do_action(message_from(@order[1]), convert_self_name)
-      @game.force_characters(@order[2], :ambassador, :duke)
-      @game.do_action(message_from(@order[2]), 'embezzle')
-      @chan.messages.clear
+    context 'when player using Embezzle has 2 characters and one is a Duke' do
+      before :each do
+        # Put some money in the bank first
+        @game.do_action(message_from(@order[1]), convert_self_name)
+        @game.force_characters(@order[2], :ambassador, :duke)
+        @game.do_action(message_from(@order[2]), 'embezzle')
+        @chan.messages.clear
+      end
 
-      @game.react_challenge(message_from(@order[1]))
-      expect(@chan.messages).to be == [
-        challenge_on(@order[1], @order[2], :duke, :NOT),
-        "#{@order[2]} reveals a [DUKE]. #{@order[2]} loses the challenge!",
-        "#{@order[2]} loses influence over the [DUKE] and cannot use Embezzle this turn.",
-        "#{@order[3]}: It is your turn. Please choose an action.",
-      ]
-      expect(@game.coins(@order[2])).to be == 2
+      it 'does not give money when embezzler challenged successfully' do
+        @game.react_challenge(message_from(@order[1]))
+        expect(@chan.messages).to be == [
+          challenge_on(@order[1], @order[2], :duke, :NOT),
+          "#{@order[2]} reveals a [DUKE]. #{@order[2]} loses the challenge!",
+          "#{@order[2]} loses influence over the [DUKE] and cannot use Embezzle this turn.",
+          "#{@order[3]}: It is your turn. Please choose an action.",
+        ]
+        expect(@game.coins(@order[2])).to be == 2
+      end
     end
 
-    it 'flips two cards and gives money when 2-influence embezzler challenged unsuccessfully' do
-      # Put some money in the bank first
-      @game.do_action(message_from(@order[1]), convert_self_name)
-      @game.force_characters(@order[2], :ambassador, :assassin)
-      @game.do_action(message_from(@order[2]), 'embezzle')
-      @chan.messages.clear
+    context 'when player using Embezzle has 2 characters and neither is a Duke' do
+      before :each do
+        # Put some money in the bank first
+        @game.do_action(message_from(@order[1]), convert_self_name)
+        @game.force_characters(@order[2], :ambassador, :assassin)
+        @game.do_action(message_from(@order[2]), 'embezzle')
+        @chan.messages.clear
+      end
 
-      @game.react_challenge(message_from(@order[1]))
-      expect(@chan.messages).to be == [
-        challenge_on(@order[1], @order[2], :duke, :NOT),
-        "#{@order[2]} reveals [AMBASSADOR] and [ASSASSIN] and replaces both with new cards from the Court Deck.",
-        "#{@order[1]} loses influence for losing the challenge!",
-      ]
-      @chan.messages.clear
+      it 'flips two cards and gives money when 2-influence embezzler challenged unsuccessfully' do
+        @game.react_challenge(message_from(@order[1]))
+        expect(@chan.messages).to be == [
+          challenge_on(@order[1], @order[2], :duke, :NOT),
+          "#{@order[2]} reveals [AMBASSADOR] and [ASSASSIN] and replaces both with new cards from the Court Deck.",
+          "#{@order[1]} loses influence for losing the challenge!",
+        ]
+        @chan.messages.clear
 
-      @game.flip_card(message_from(@order[1]), '1')
+        @game.flip_card(message_from(@order[1]), '1')
 
-      expect(@chan.messages.shift).to be =~ lose_card(@order[1])
-      expect(@chan.messages).to be == [
-        proceed_with(@order[2], :embezzle, "Take all coins from the #{bank_name}."),
-        "#{@order[3]}: It is your turn. Please choose an action.",
-      ]
-      expect(@game.coins(@order[2])).to be == 3
+        expect(@chan.messages.shift).to be =~ lose_card(@order[1])
+        expect(@chan.messages).to be == [
+          proceed_with(@order[2], :embezzle, "Take all coins from the #{bank_name}."),
+          "#{@order[3]}: It is your turn. Please choose an action.",
+        ]
+        expect(@game.coins(@order[2])).to be == 3
+      end
     end
 
     context 'when player has 1 influence' do
