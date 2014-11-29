@@ -117,7 +117,7 @@ class Game
                                 :blocks             => :assassin)
   }
 
-  attr_accessor :started, :players, :deck, :discard_pile, :turns, :invitation_sent
+  attr_reader :started, :players, :deck, :discard_pile, :turns, :invitation_sent
   attr_accessor :ambassador_cards, :ambassador_options
   attr_accessor :inquisitor_shown_card
   attr_reader :channel_name
@@ -127,11 +127,11 @@ class Game
   def initialize(channel_name)
     @channel_name = channel_name
     @settings = []
-    self.started         = false
-    self.players         = []
-    self.discard_pile    = []
-    self.turns           = []
-    self.invitation_sent = false
+    @started         = false
+    @players         = []
+    @discard_pile    = []
+    @turns           = []
+    @invitation_sent = false
     @ambassador_cards = []
     @ambassador_options = []
     @inquisitor_shown_card = nil
@@ -201,11 +201,11 @@ class Game
   # Invitation handlers
 
   def mark_invitation_sent
-    self.invitation_sent = true
+    @invitation_sent = true
   end
 
   def reset_invitation
-    self.invitation_sent = false
+    @invitation_sent = false
   end
 
   def invitation_sent?
@@ -219,8 +219,8 @@ class Game
   # Starts up the game
   #
   def start_game!
-    self.started = true
-    self.deck = build_starting_deck
+    @started = true
+    @deck = build_starting_deck
 
     self.players.shuffle!.rotate!(rand(MAX_PLAYERS)) # shuffle seats
     $player_count = self.player_count
