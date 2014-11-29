@@ -4,7 +4,7 @@
 
 class Turn
 
-  attr_reader :active_player, :action, :target_player, :counteracting_player, :counteraction, :decider, :reactions, :state
+  attr_reader :active_player, :action, :target_player, :counteracting_player, :counteraction, :decider, :state
 
   attr_accessor :action_challenger
   attr_accessor :block_challenger
@@ -33,6 +33,9 @@ class Turn
     @decision_type = nil # lose influence, switch cards, show to inquisitor, keep/discard
   end 
 
+  def reacted_players
+    @reactions.keys
+  end
 
   def add_action(action, target = nil)
     @action        = action
