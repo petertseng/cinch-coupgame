@@ -5,7 +5,7 @@
 
 class Action
 
-  attr_accessor :action, :name, :character_required, :effect, :needs_target, :has_decision, :cost, :blocks, :blockable_by
+  attr_reader :action, :name, :character_required, :effect, :needs_target, :has_decision, :cost, :blocks, :blockable_by
   attr_reader :can_target_friends
   attr_reader :character_forbidden
   attr_reader :mode_forbidden
@@ -15,17 +15,17 @@ class Action
   attr_reader :effect_f
 
   def initialize(options)
-    self.action              = options[:action]
-    self.name                = options[:name] 
-    self.character_required  = options[:character_required] || nil          
-    @character_forbidden     = options[:character_forbidden] || nil
-    self.effect              = options[:effect] || ""
-    self.needs_target        = options[:needs_target] || false
-    @can_target_friends      = options[:can_target_friends] || false
-    self.has_decision        = options[:has_decision] || false
-    self.cost                = options[:cost] || 0
-    self.blocks              = options[:blocks] || nil
-    self.blockable_by        = options[:blockable_by] || []
+    @action              = options[:action]
+    @name                = options[:name]
+    @character_required  = options[:character_required] || nil
+    @character_forbidden = options[:character_forbidden] || nil
+    @effect              = options[:effect] || ""
+    @needs_target        = options[:needs_target] || false
+    @can_target_friends  = options[:can_target_friends] || false
+    @has_decision        = options[:has_decision] || false
+    @cost                = options[:cost] || 0
+    @blocks              = options[:blocks] || nil
+    @blockable_by        = options[:blockable_by] || []
 
     @mode_forbidden = options[:mode_forbidden] || nil
     @mode_required = options[:mode_required] || nil
