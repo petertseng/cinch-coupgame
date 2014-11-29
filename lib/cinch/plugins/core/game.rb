@@ -6,8 +6,6 @@ require 'json'
 # GAME
 #================================================================================
 
-$player_count = 0
-
 class Game
 
 
@@ -223,7 +221,6 @@ class Game
     @deck = build_starting_deck
 
     self.players.shuffle!.rotate!(rand(MAX_PLAYERS)) # shuffle seats
-    $player_count = self.player_count
 
     self.next_turn
 
