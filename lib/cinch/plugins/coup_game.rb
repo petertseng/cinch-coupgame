@@ -595,7 +595,7 @@ module Cinch
         Channel(game.channel_name).send "#{m.user.nick} challenges #{defendant} on #{haveornot} influence over #{char.upcase}!"
 
         # Prompt player if he has a choice
-        self.prompt_challenge_defendant(defendant, chall_action) if defendant.influence == 2
+        self.prompt_challenge_defendant(defendant, m.user.nick, chall_action, "#{haveornot} influence over #{char.upcase}") if defendant.influence == 2
 
         if turn.waiting_for_action_challenge?
           turn.wait_for_action_challenge_reply
@@ -671,9 +671,12 @@ module Cinch
         user.send("Choose a character to #{what}: 1 - (#{character_1}) or 2 - (#{character_2}); \"!#{cmd} 1\" or \"!#{cmd} 2\"")
       end
 
-      def prompt_challenge_defendant(target, action)
+      def prompt_challenge_defendant(target, challenger, action, what_challenged)
         user = User(target.user)
-        user.send("You are being challenged to show a #{action}!")
+        user.send("#{challenger} challenges your claim of #{what_challenged}")
+        if action.character_forbidden? && !target.has_character?(action.character_forbidden)
+          user.send('You can reveal both your cards with "!flip all" to win the challenge, or you can choose to lose by revealing only one:')
+        end
         prompt_to_pick_card(target, 'reveal', 'flip')
       end
 
