@@ -708,7 +708,13 @@ module Cinch
 
       # Couped, or assassinated
       def couped(game, player, position)
-        character = player.flip_character_card(position.to_i)
+        pos = position.to_i
+        unless pos == 1 || pos == 2
+          player.user.send("#{pos} is not a valid option to reveal.")
+          return
+        end
+
+        character = player.flip_character_card(pos)
         if character.nil?
           player.user.send "You have already flipped that card."
           return
