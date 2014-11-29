@@ -347,19 +347,16 @@ class Game
     when :foreign_aid
       self.current_player.give_coins 2
     when :coup
-      self.current_turn.make_decider self.target_player
-      self.current_turn.decision_type = :lose_influence
+      self.current_turn.make_decider(self.target_player, :lose_influence)
     when :duke
       self.current_player.give_coins 3
     when :assassin
-      self.current_turn.make_decider self.target_player
-      self.current_turn.decision_type = :lose_influence
+      self.current_turn.make_decider(self.target_player, :lose_influence)
     when :ambassador
-      self.current_turn.make_decider self.current_player
-      self.current_turn.decision_type = :switch_cards
+      self.current_turn.make_decider(self.current_player, :switch_cards)
     when :inquisitor
-      self.current_turn.make_decider self.target_player
-      self.current_turn.decision_type = self.target_player == self.current_player ? :switch_cards : :show_to_inquisitor
+      decision_type = self.target_player == self.current_player ? :switch_cards : :show_to_inquisitor
+      self.current_turn.make_decider(self.target_player, decision_type)
     when :captain
       taken = self.target_player.take_coins 2
       self.current_player.give_coins taken

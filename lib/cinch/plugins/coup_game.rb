@@ -905,8 +905,7 @@ module Cinch
 
         game.inquisitor_shown_card = revealed
         turn = game.current_turn
-        turn.make_decider(inquisitor)
-        turn.decision_type = :keep_or_discard
+        turn.make_decider(inquisitor, :keep_or_discard)
       end
 
       def inquisitor_keep(m)

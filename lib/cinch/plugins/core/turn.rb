@@ -12,7 +12,7 @@ class Turn
   attr_accessor :action_challenge_successful
   attr_accessor :block_challenge_successful
 
-  attr_accessor :decision_type
+  attr_reader :decision_type
 
   def initialize(player)
     @state                = :action # action, reactions, paused, decision, end
@@ -57,8 +57,9 @@ class Turn
     false
   end
 
-  def make_decider(player)
+  def make_decider(player, decision_type)
     @decider = player
+    @decision_type = decision_type
   end
 
   def counteracted?
