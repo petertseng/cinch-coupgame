@@ -301,15 +301,22 @@ class Game
 
   # Removes character from player, switches with new from deck
   #
-  def replace_character_with_new(player, character)
+  def replace_character_with_new(player, character, opts = {})
     position = player.character_position(character)
     old_character = player.characters[position]
 
     raise "Replaced #{player}'s face-up #{character}" unless old_character.face_down?
 
-    self.deck << old_character
-    self.deck.shuffle!
-    player.characters[position] = self.deck.shift
+    if opts[:draw_first]
+      self.deck.shuffle!
+      player.characters[position] = self.deck.shift
+      self.deck << old_character
+      self.deck.shuffle!
+    else
+      self.deck << old_character
+      self.deck.shuffle!
+      player.characters[position] = self.deck.shift
+    end
   end
 
   # Shuffles these two cards into the deck

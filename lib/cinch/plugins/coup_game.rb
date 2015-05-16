@@ -954,7 +954,7 @@ module Cinch
         return unless turn.waiting_for_decision? && turn.decider == player && turn.decision_type == :keep_or_discard
 
         Channel(game.channel_name).send("#{turn.target_player} is forced to discard that card and replace it with another from the Court Deck.")
-        game.replace_character_with_new(turn.target_player, game.inquisitor_shown_card.name)
+        game.replace_character_with_new(turn.target_player, game.inquisitor_shown_card.name, draw_first: true)
         self.tell_characters_to(game, turn.target_player, show_coins: false)
         self.start_new_turn(game)
       end
