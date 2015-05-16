@@ -34,28 +34,27 @@ end
 
 module Cinch
   module Plugins
-
-    CHANGELOG_FILE = File.expand_path(File.dirname(__FILE__)) + "/changelog.yml"
-
-    ACTION_ALIASES = {
-      'foreign aid' => 'foreign_aid',
-      'foreignaid' => 'foreign_aid',
-      'tax' => 'duke',
-      'assassinate' => 'assassin',
-      'kill' => 'assassin',
-      'steal' => 'captain',
-      'extort' => 'captain',
-      'exchange' => 'ambassador',
-      'recant' => 'apostatize',
-      'repent' => 'apostatize',
-      'betray' => 'defect',
-    }
-
-    # Length of the longest character's name (Ambassador / Inquisitor)
-    LONGEST_NAME = 10
-
     class CoupGame
       include Cinch::Plugin
+
+      CHANGELOG_FILE = File.expand_path(File.dirname(__FILE__)) + "/changelog.yml"
+
+      ACTION_ALIASES = {
+        'foreign aid' => 'foreign_aid',
+        'foreignaid' => 'foreign_aid',
+        'tax' => 'duke',
+        'assassinate' => 'assassin',
+        'kill' => 'assassin',
+        'steal' => 'captain',
+        'extort' => 'captain',
+        'exchange' => 'ambassador',
+        'recant' => 'apostatize',
+        'repent' => 'apostatize',
+        'betray' => 'defect',
+      }
+
+      # Length of the longest character's name (Ambassador / Inquisitor)
+      LONGEST_NAME = 10
 
       def initialize(*args)
         super
