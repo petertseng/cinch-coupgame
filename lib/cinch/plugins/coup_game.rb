@@ -1158,17 +1158,19 @@ module Cinch
         @idle_timers[channel.name].start
       end
 
-      def kick_user(m, channel_name, nick)
-        return unless self.is_mod? m.user.nick
-        game = self.game_of(m, channel_name, ['kick a user', '!kick'])
+      def kick_user(m, nick)
+        return unless self.is_mod?(m.user.nick)
 
-        return unless game
+        user = User(nick)
+        game = @user_games[user]
 
-        if game.not_started?
+        if !game
+          m.user.send("#{nick} is not in a game")
+        elsif game.started?
+          m.user.send("You can't kick someone while a game is in progress.")
+        else
           user = User(nick)
           self.remove_user_from_game(user, game)
-        else
-          m.user.send "You can't kick someone while a game is in progress."
         end
       end
 

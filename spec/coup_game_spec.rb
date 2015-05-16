@@ -348,25 +348,17 @@ describe Cinch::Plugins::CoupGame do
     end
 
     it 'lets mod kick p2 publicly' do
-      @game.kick_user(message_from('npmod'), nil, 'p2')
+      @game.kick_user(message_from('npmod'), 'p2')
       expect(@chan.messages).to be == ['p2 has left the game (2/6)']
     end
 
-    it 'lets participating mod kick p2 privately without channel argument' do
-      @game.kick_user(pm_from('p1'), nil, 'p2')
+    it 'lets participating mod kick p2 privately' do
+      @game.kick_user(pm_from('p1'), 'p2')
       expect(@chan.messages).to be == ['p2 has left the game (2/6)']
     end
 
-    it 'asks for channel when non-participating mod kicks p2 privately without channel argument' do
-      @game.kick_user(pm_from('npmod'), nil, 'p2')
-      expect(@chan.messages).to be == []
-      expect(@players['npmod'].messages).to be == [
-        'To kick a user via PM you must specify the channel: !kick #channel'
-      ]
-    end
-
-    it 'lets non-participating mod kick p2 privately specifying channel argument' do
-      @game.kick_user(pm_from('npmod'), CHANNAME, 'p2')
+    it 'lets non-participating mod kick p2 privately' do
+      @game.kick_user(pm_from('npmod'), 'p2')
       expect(@chan.messages).to be == ['p2 has left the game (2/6)']
     end
   end
@@ -2259,7 +2251,7 @@ describe Cinch::Plugins::CoupGame do
     it 'does not allow kicking from game in progress' do
       p = @players['p1']
       p.messages.clear
-      @game.kick_user(pm_from('p1'), nil, 'p2')
+      @game.kick_user(pm_from('p1'), 'p2')
       expect(p.messages).to be == ['You can\'t kick someone while a game is in progress.']
       expect(@chan.messages).to be == []
     end
