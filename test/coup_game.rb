@@ -41,8 +41,10 @@ class MyUser
     # IS THIS RIGHT?! Does this work in irc?!?!
     if that.is_a?(String)
       @name == that
-    else
+    elsif that.is_a?(MyUser)
       @name == that.name
+    else
+      false
     end
   end
 
