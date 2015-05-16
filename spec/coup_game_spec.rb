@@ -198,7 +198,7 @@ describe Cinch::Plugins::CoupGame do
         }
       end
     end
-    b.loggers.stub('debug') { nil }
+    b.loggers.first.level = :warn
 
     @player_names = ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'npc', 'npmod']
     @players = Hash.new { |h, x| raise 'Nonexistent player ' + x }
@@ -211,8 +211,8 @@ describe Cinch::Plugins::CoupGame do
     @chan2 = MyChannel.new(CHANNAME2, @players)
 
     @game = Cinch::Plugins::CoupGame.new(b)
-    @game.stub('sleep') { |x| nil }
-    @game.stub('Channel') { |x|
+    allow(@game).to receive('sleep').and_return(nil)
+    allow(@game).to receive('Channel') { |x|
       if x == CHANNAME
         @chan
       elsif x == CHANNAME2
@@ -223,7 +223,7 @@ describe Cinch::Plugins::CoupGame do
         raise 'Asked for channel ' + x
       end
     }
-    @game.stub('User') { |x|
+    allow(@game).to receive('User') { |x|
       if x.is_a?(String)
         @players[x]
       elsif x.is_a?(MyUser)
