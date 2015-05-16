@@ -4,9 +4,8 @@
 
 class Player
 
-  attr_reader :user, :characters, :coins
-  attr_reader :side_cards
-  attr_accessor :faction
+  attr_accessor :user, :faction
+  attr_reader :characters, :coins, :side_cards
 
   def initialize(user)
     @user = user
