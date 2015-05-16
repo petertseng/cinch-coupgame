@@ -9,6 +9,7 @@ require 'json'
 class Game
 
 
+  GAME_NAME = 'Coup'
   MIN_PLAYERS = 2
   MAX_PLAYERS = 6
   COINS = 50
@@ -115,45 +116,43 @@ class Game
                                 :blocks             => :assassin)
   }
 
-  attr_reader :started, :players, :deck, :discard_pile, :turns, :invitation_sent
+  attr_reader :players, :deck, :discard_pile, :turns
   attr_accessor :ambassador_cards, :ambassador_options
   attr_accessor :inquisitor_shown_card
   attr_reader :channel_name
-  attr_accessor :settings
+  attr_reader :settings
   attr_reader :bank
   
-  def initialize(channel_name)
+  def initialize(channel_name, users, settings = [])
     @channel_name = channel_name
-    @settings = []
-    @started         = false
-    @players         = []
+    @settings = (settings || []).freeze
     @discard_pile    = []
     @turns           = []
-    @invitation_sent = false
     @ambassador_cards = []
     @ambassador_options = []
     @inquisitor_shown_card = nil
     @bank = 0
 
     @active_player_killed = false
+
+    @players = users.map { |u| Player.new(u) }
+    @deck = build_starting_deck
+
+    self.players.shuffle!.rotate!(rand(MAX_PLAYERS)) # shuffle seats
+
+    self.next_turn
+
+    # Do this after #next_turn since next_turn rotates the players!
+    if self.has_factions?
+      faction = 0
+      self.players.each { |p|
+        p.faction = faction
+        faction = 1 - faction
+      }
+    end
+
+    self.pass_out_characters_and_coins
   end
-
-  #----------------------------------------------
-  # Game Status
-  #----------------------------------------------
-
-  def started?
-    self.started == true
-  end
-
-  def not_started?
-    self.started == false 
-  end
-
-  def accepting_players?
-    self.not_started? && ! self.at_max_players?
-  end
-
 
   #----------------------------------------------
   # Game Setup
@@ -161,22 +160,12 @@ class Game
 
   # Player handlers
 
-  def at_max_players?
-    self.player_count == MAX_PLAYERS
+  def size
+    @players.size
   end
 
-  def at_min_players?
-    self.player_count >= MIN_PLAYERS
-  end
-
-  def add_player(user)
-    added = nil
-    unless self.has_player?(user)
-      new_player = Player.new(user)
-      self.players << new_player
-      added = new_player
-    end
-    added
+  def users
+    @players.map(&:user)
   end
 
   def has_player?(user)
@@ -195,46 +184,16 @@ class Game
     removed
   end
 
-
-  # Invitation handlers
-
-  def mark_invitation_sent
-    @invitation_sent = true
-  end
-
-  def reset_invitation
-    @invitation_sent = false
-  end
-
-  def invitation_sent?
-    self.invitation_sent == true
+  def replace_player(user1, user2)
+    player = self.find_player(user1)
+    return false unless player
+    player.user = user2
+    true
   end
 
   #----------------------------------------------
   # Game 
   #----------------------------------------------
-
-  # Starts up the game
-  #
-  def start_game!
-    @started = true
-    @deck = build_starting_deck
-
-    self.players.shuffle!.rotate!(rand(MAX_PLAYERS)) # shuffle seats
-
-    self.next_turn
-
-    # Do this after #next_turn since next_turn rotates the players!
-    if self.has_factions?
-      faction = 0
-      self.players.each { |p|
-        p.faction = faction
-        faction = 1 - faction
-      }
-    end
-
-    self.pass_out_characters_and_coins
-  end
 
   # Build starting deck
   #

@@ -92,8 +92,7 @@ def use_action(player, action, target = nil, settings = nil)
   targ = target ? " on #{target}" : ''
 
   # TODO hmm, this is pretty bad
-  game = Game.new('blah')
-  game.settings = settings if settings
+  game = Game.new('blah', %w(p1 p2), settings || [])
 
   action = Game::ACTIONS[action].to_s_full(game, player, target)
   return "#{player} would like to use #{action}#{targ}"
@@ -256,7 +255,7 @@ describe Cinch::Plugins::CoupGame do
 
     it 'does not let p1 start' do
       @game.start_game(message_from('p1'))
-      expect(@chan.messages).to be == ['p1: Need at least 2 to start a game.']
+      expect(@chan.messages).to be == ['p1: Need at least 2 to start a game of Coup.']
     end
 
     it 'forbids outsiders from joining' do
@@ -267,7 +266,7 @@ describe Cinch::Plugins::CoupGame do
 
     it 'reports that game is empty in status' do
       @game.status(message_from('p1'))
-      expect(@chan.messages).to be == ['No game in progress.']
+      expect(@chan.messages).to be == ['No game of Coup in progress. Join and start one!']
     end
   end
 
@@ -290,12 +289,12 @@ describe Cinch::Plugins::CoupGame do
 
     it 'does not let p1 start' do
       @game.start_game(message_from('p1'))
-      expect(@chan.messages).to be == ['p1: Need at least 2 to start a game.']
+      expect(@chan.messages).to be == ['p1: Need at least 2 to start a game of Coup.']
     end
 
     it 'reports that p1 is in game in status' do
       @game.status(message_from('p1'))
-      expect(@chan.messages).to be == ['A game is forming. 1 players have joined: p1']
+      expect(@chan.messages).to be == ['A game of Coup is forming. 1 players have joined: p1']
     end
   end
 
@@ -382,7 +381,7 @@ describe Cinch::Plugins::CoupGame do
   describe 'settings' do
     it 'reports settings publicly' do
       @game.get_game_settings(message_from('p1'))
-      expect(@chan.messages).to be == ['Game settings: Base.']
+      expect(@chan.messages).to be == ['Next game settings: Base.']
     end
 
     it 'allows changing settings publicly' do
@@ -394,7 +393,7 @@ describe Cinch::Plugins::CoupGame do
       @game.set_game_settings(message_from('p1'), nil, 'inquisitor')
       @chan.messages.clear
       @game.get_game_settings(message_from('p1'))
-      expect(@chan.messages).to be == ['Game settings: Inquisitor.']
+      expect(@chan.messages).to be == ['Next game settings: Inquisitor.']
     end
 
     it 'forbids outsiders from changing settings' do
@@ -428,7 +427,7 @@ describe Cinch::Plugins::CoupGame do
       p.messages.clear
       @game.get_game_settings(pm_from('p1'), CHANNAME)
       expect(@chan.messages).to be == []
-      expect(p.messages).to be == ['Game settings: Base.']
+      expect(p.messages).to be == ['Next game settings: Base.']
     end
 
     it 'changes settings if non-player changes settings privately specifying channel' do
@@ -450,7 +449,7 @@ describe Cinch::Plugins::CoupGame do
         p = @players['p1']
         @game.get_game_settings(pm_from('p1'), nil)
         expect(@chan.messages).to be == []
-        expect(p.messages).to be == ['Game settings: Base.']
+        expect(p.messages).to be == ['Next game settings: Base.']
       end
 
       it 'lets a player change settings privately without channel argument' do
@@ -2164,20 +2163,6 @@ describe Cinch::Plugins::CoupGame do
         expect(@chan.messages).to be == []
         expect(p.messages).to be == expected_table
       end
-    end
-
-    describe 'list_players' do
-      let(:expected_table) do
-        ["#{dehighlight(@order[1])} #{dehighlight(@order[2])} #{dehighlight(@order[3])}"]
-      end
-
-      let(:expected_error) do
-        'To list players via PM you must specify the channel: !who #channel'
-      end
-
-      let(:method) do :list_players end
-
-      it_behaves_like 'information source'
     end
 
     describe 'show_table' do
