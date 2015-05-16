@@ -1,3 +1,5 @@
+require 'simplecov'
+SimpleCov.start { add_filter '/spec/' }
 require File.expand_path(File.dirname(__FILE__)) + '/../lib/cinch/plugins/coup_game'
 
 TURN_ORDER_REGEX3 = /^Turn order is: (p[1-3]) (p[1-3]) (p[1-3])$/
