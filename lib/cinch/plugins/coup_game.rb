@@ -1203,9 +1203,11 @@ module Cinch
           # inform channel
           Channel(game.channel_name).send "#{user1.nick} has been replaced with #{user2.nick}"
 
-          # tell characters to new player
-          User(player.user).send "="*40
-          self.tell_characters_to(game, player)
+          if game.started?
+            # tell characters to new player
+            User(player.user).send "="*40
+            self.tell_characters_to(game, player)
+          end
         end
       end
 
