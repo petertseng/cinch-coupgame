@@ -361,6 +361,22 @@ describe Cinch::Plugins::CoupGame do
       @game.kick_user(pm_from('npmod'), 'p2')
       expect(@chan.messages).to be == ['p2 has left the game (2/6)']
     end
+
+    context 'when mod replaces p3 with p4' do
+      before :each do
+        @game.replace_user(pm_from('p1'), 'p3', 'p4')
+      end
+
+      it 'no longers lets p3 start the game' do
+        @chan.messages.clear
+        @game.start_game(message_from('p3'))
+        expect(@chan.messages).to be == ['p3: You are not in the game.']
+      end
+
+      it 'announces to the channel' do
+        expect(@chan.messages).to be == ['p3 has been replaced with p4']
+      end
+    end
   end
 
   describe 'settings' do
